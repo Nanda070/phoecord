@@ -308,7 +308,7 @@ Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.
 
 **Files:** `crates/phoecord-installer-gui/**`
 
-- [ ] Toolkit decided (open question); one window: client list, Install / Uninstall / Repair, status; English and Russian (needs 1.7.1).
+- [ ] `eframe` (egui) app with an embedded font that has Cyrillic glyphs; one window: client list, Install / Uninstall / Repair, status; English and Russian (needs 1.7.1).
 
 **Done when:** a non-developer installs and removes PhoeCord without a terminal.
 
@@ -324,7 +324,9 @@ Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.
 
 **Files:** `.github/workflows/release.yml`, `docs/SECRETS.md`
 
-- [ ] Tag-triggered build for the three OSes; `SHA256SUMS`; signing if a certificate exists; release notes from `docs/_template/release.md`.
+- [ ] Tag-triggered build for the three OSes; `SHA256SUMS`; no Authenticode signing yet; release notes from `docs/_template/release.md` with the SmartScreen note.
+- [ ] Send the SignPath Foundation application; record the answer in the ledger and `docs/SECRETS.md`.
+- [ ] Submit the loader DLL to Microsoft Defender's false-positive portal for each release.
 
 **Done when:** pushing tag `v0.5.0` produces a GitHub release with binaries and checksums.
 

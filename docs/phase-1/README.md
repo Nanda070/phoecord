@@ -20,6 +20,9 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 - The repository is public, `nanda070/phoecord` (Nanda 23.11.2026: "Public", translated).
 - The copyright holder is Cheterin Group (Nanda 23.11.2026: "Copyright in LICENSE", translated).
 - Hybrid architecture: the network is the base, the UI layer is targeted; dynamic plugins through an external runtime (Nanda 23.11.2026, project brief).
+- Plugin runtime: WASM (wasmtime + WIT), not Lua or QuickJS (Nanda 23.11.2026: "I don't know, decide yourself what's better", translated; decided by Claude, see `docs/DECISIONS.md`).
+- Installer GUI on egui, not GPUI (same delegation).
+- No code signing in Phase 1, like Vencord; apply to SignPath Foundation (free for open source) before 1.0 (same delegation, after checking that Vencord's installer is unsigned).
 - Git history stays as it is; no force-push to `main` (Nanda 23.11.2026: "keep the history", translated).
 - Docs, plans and templates follow the VALORANT repository's structure (Nanda 23.11.2026: "like VALORANT", translated).
 - All documentation is English-only; the app must support Russian later (Nanda 23.11.2026: "translate all docs to English, no Russian at all, though the program should support Russian in the future", translated). Localization becomes stage 1.7.
@@ -28,9 +31,7 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 
 ## Open questions
 
-- **Plugin runtime: WASM (wasmtime + WIT)?** [`ARCHITECTURE.md`](../../ARCHITECTURE.md) proposes WASM over Lua and QuickJS (strong sandbox, typed contract, TypeScript via `componentize-js`). Needs Nanda's confirmation before stage 1.3.
-- **Installer GUI on GPUI or something lighter (egui / native Win32)?** GPUI is practice for Phase 2 but heavier and less mature on Windows. Decide before 1.4.3.
-- **Code signing.** Without a code signing certificate, Windows SmartScreen will warn users, and an unsigned `version.dll` may trip antivirus. Whether to buy one and in whose name: Nanda, before 1.4.5.
+none
 
 ## Who does what
 
@@ -105,7 +106,7 @@ Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do 
 
 - **Phoenix Canary ships before the phase ends.** Drop 1.4.3 and 1.2.9, bring 1.5 and 1.6 to a minimum, and start Phase 2 (2.1 reconnaissance) in parallel.
 - **Phoenix ignores the proxy or pins certificates.** The network layer then depends on the loader (ARCHITECTURE.md, "Phoenix and the proxy", option 3); 1.5 becomes required for every plugin, not just UI ones.
-- **Antivirus flags `version.dll` as malware.** Code signing (question above), open source, submitting samples to Microsoft and major vendors before release.
+- **Antivirus flags `version.dll` as malware.** SignPath Foundation signing before 1.0, open source, submitting samples to Microsoft and major vendors before release.
 - **Discord changes the Gateway protocol.** Caught by `selftest` (1.1.8) and fixtures; the fix goes into `phoecord-proxy::codec`, plugins stay untouched.
 - **WASM is slow on the hot path.** Run the 1.1.10 benchmark on a WASM chain too; if p99 > 1 ms, `message_logger` and `fake_nitro` stay native.
 - **Account bans.** Client modification breaks Discord's Terms. Plugins do nothing the server would see as bot activity (mass requests, self-bots); this rule applies to every PR review.

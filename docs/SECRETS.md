@@ -14,7 +14,7 @@ Which secrets the project has, where they live, who holds them and how to rotate
 |:---|:---|:---|:---|
 | Local CA key (`ca.key`) of each user | The user's own PhoeCord data folder, owner-only permissions | Each user, never the project | The user's proxy |
 | GitHub repository admin | GitHub account `Nanda070` | Nanda | Repository settings, secrets, releases |
-| Release signing key (code signing certificate) | Not created yet (Phase 1 open question); will be a GitHub Actions secret or a hardware token | Nanda | Release workflow (1.4.5) |
+| Release signing key (code signing certificate) | None in Phase 1 (releases unsigned, like Vencord). Before 1.0: SignPath Foundation signs in its own HSM through GitHub Actions; the project holds only the SignPath API token as an Actions secret | Nanda | Release workflow (1.4.5) |
 | GitHub Actions secrets | Repository settings → Secrets; none yet | Nanda | CI |
 | Dependabot | GitHub app on the repository, no secret | — | `dependabot/*` branches |
 

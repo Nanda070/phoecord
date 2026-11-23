@@ -24,6 +24,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 ### Changed
 
 - All documentation is English-only.
+- Decided: WASM plugin runtime, egui installer GUI, unsigned Phase 1 releases with SignPath Foundation signing before 1.0.
 
 ### Fixed
 

@@ -6,7 +6,7 @@ in its plan's `ai/ledger.md` first, then rerun the script.
 
 ## Phase 1. Before the Phoenix Canary public beta
 
-Source: `docs/phase-1/ai/ledger.md`, decisions: 7.
+Source: `docs/phase-1/ai/ledger.md`, decisions: 10.
 
 - Ruling: the repository is public on Nanda070's account (owner Nanda, 2026-11-23, "Public" (translated)) — why: open-source MIT project — risk: everything pushed is published at once; secrets rules in AGENTS.md and SECRETS.md
 - Ruling: the copyright holder is Cheterin Group, next to the retained upstream MIT copyright line (owner Nanda, 2026-11-23, "Copyright in LICENSE" (translated)) — why: project ownership — risk: none
@@ -15,3 +15,6 @@ Source: `docs/phase-1/ai/ledger.md`, decisions: 7.
 - Ruling: all documentation is English-only; the app gets Russian localization later, as stage 1.7 (owner Nanda, 2026-11-23, "translate all docs to English, no Russian at all, though the program should support Russian in the future" (translated)) — why: international audience — risk: Russian app strings drift; CI key check in 1.7.5
 - Ruling: git history stays as it is, the first commit message is not rewritten and main is never force-pushed (owner Nanda, 2026-11-23, "keep the history" (translated)) — why: a public repository's history is not rewritten — risk: the first commit message names the upstream project
 - Ruling: all branches end up in main: PR #4 merged, Dependabot PRs #2 and #3 folded into one PR, #1 closed (owner Nanda, 2026-11-23, "merge the branches into one" (translated)) — why: one line of history, no stray branches — risk: none
+- Ruling: the plugin runtime is WASM (wasmtime + WIT Component Model), not Lua or QuickJS (owner Nanda delegated, 2026-11-23, "I don't know, decide yourself what's better" (translated); decided by Claude) — why: strongest sandbox for code that sees every message, typed contract shared by host and guest, near-native speed on the Gateway hot path, TypeScript still possible via componentize-js — risk: wasmtime adds 10–15 MB; the 1.1.10 benchmark decides which built-ins stay native
+- Ruling: the installer GUI uses egui (eframe), not GPUI (owner Nanda delegated, 2026-11-23, "I don't know, decide yourself what's better" (translated); decided by Claude) — why: small static binary, mature on all three OSes, stable API; GPUI knowledge comes from stage 1.6 — risk: a different look from Phoenix; the GUI is a thin layer and can be swapped
+- Ruling: Phase 1 releases are not Authenticode-signed, like Vencord's installer (unsigned, 300+ €/year cited on vencord.dev/download); apply to SignPath Foundation for free OSS signing before 1.0 (owner Nanda asked "does Vencord have one?" (translated) and delegated; decided by Claude) — why: no cost now; our version.dll is riskier for antivirus than Vencord's asar patch, so signing matters before a wide release — risk: SmartScreen warnings and possible false positives until signed; mitigated by SHA256SUMS, Defender false-positive submissions and a README note

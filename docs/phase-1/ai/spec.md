@@ -98,7 +98,7 @@ Known v0 defects fixed while porting: an unused `PathBuf` import broke `-D warni
 - `discover() -> Vec<Client>`: Windows `%LOCALAPPDATA%\Discord*\app-*`, macOS `/Applications/Discord*.app`, Linux PATH, Flatpak, Snap.
 - `install(client)`, `repair(client)`, `uninstall_all()`; every step idempotent and logged to `data/install.log` so uninstall can undo exactly what install did.
 - Autostart: Windows per-user Run key or scheduled task, macOS LaunchAgent, Linux systemd user unit.
-- GUI over the same functions (toolkit decided before 1.4.3).
+- GUI over the same functions, on egui (`eframe`), in its own crate `phoecord-installer-gui`.
 
 ### 3.5 Loader (`phoecord-loader`)
 
@@ -127,7 +127,7 @@ Known v0 defects fixed while porting: an unused `PathBuf` import broke `-D warni
 
 ## 5. Docs
 
-- `ARCHITECTURE.md`: §3.1 API additions; runtime decision after the open question is answered; installer GUI toolkit; localization details if they change.
+- `ARCHITECTURE.md`: §3.1 API additions; keep the runtime and installer sections in sync with the code; localization details if they change.
 - `docs/CODE_MAP.md`: every new module, the config keys and env variables of §3.2, `data/` layout.
 - `docs/PROJECT_MAP.md`: plugin statuses.
 - `docs/RUNBOOK.md`: remove the *(1.1)* markers as commands land; add WASM and loader failure rows.

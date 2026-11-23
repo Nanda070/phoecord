@@ -133,7 +133,7 @@ name.ru = "ClearURLs"
 | Typed contract | WIT → generated bindings for host and guest | None | None (only `.d.ts`) |
 | Size | wasmtime ≈ 10–15 MB | ≈ 0.5 MB | ≈ 1 MB |
 
-**Proposal (awaiting the owner's confirmation, Phase 1 open question):** the main runtime is **WASM (wasmtime + WIT)**. The contract is written once in `wit/phoecord.wit` and mirrors `phoecord-core::plugin`. JS authors write TypeScript and build a component with `componentize-js`, so a separate QuickJS is not needed. Lua is rejected: too weak a sandbox for code that sees every message.
+**Decision (23.11.2026, see `docs/DECISIONS.md`):** the main runtime is **WASM (wasmtime + WIT)**. The contract is written once in `wit/phoecord.wit` and mirrors `phoecord-core::plugin`. JS authors write TypeScript and build a component with `componentize-js`, so a separate QuickJS is not needed. Lua is rejected: too weak a sandbox for code that sees every message.
 
 Guest limits: no WASI files or sockets; a per-event timeout (epoch, 5 ms by default); a memory limit (32 MB by default); on a panic or a limit hit the plugin is disabled until restart and the event passes as `Pass`.
 
@@ -185,6 +185,12 @@ Process: Ghidra/IDA + the open GPUI (Zed) sources → find the function → make
 | The proxy is not running | The loader does not interfere with the client and intercepts nothing |
 
 ---
+
+## Installer and releases
+
+- **GUI toolkit: [egui](https://github.com/emilk/egui) (`eframe`).** Pure Rust, one small static binary, mature on Windows, macOS and Linux, no runtime to install. GPUI was considered for practice before Phase 2, but it is heavier and its API still moves; GPUI knowledge comes from the research stage (1.6) instead. The GUI is a thin layer over `phoecord-installer`, so the toolkit can change later without touching install logic. Cyrillic needs an embedded font with Cyrillic glyphs (egui's default font has none).
+- **Code signing, Phase 1: unsigned, like Vencord.** Vencord's Windows installer is not signed either; its download page explains the SmartScreen warning and cites a cost of over 300 € a year. Our releases ship `SHA256SUMS`, reproducible CI builds and a "SmartScreen warning" note in the README and release notes.
+- **Code signing, before 1.0: apply to SignPath Foundation** (free code signing for open-source projects, through GitHub Actions). Reason: unlike Vencord, which patches Discord's `app.asar`, PhoeCord installs a proxy `version.dll` next to the client, a pattern antivirus engines treat with suspicion. If the application is refused, revisit a paid certificate before 1.0. Until then, the loader is submitted to Microsoft Defender's false-positive portal with each release.
 
 ## Localization
 

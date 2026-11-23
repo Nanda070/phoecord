@@ -64,9 +64,9 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 - [ ] `phoecord-installer`: find Stable / PTB / Canary on Windows, macOS, Linux (Flatpak, Snap)
 - [ ] Install and remove the CA, autostart the proxy (service / LaunchAgent / systemd user unit)
-- [ ] GUI: a client list and "Install", "Uninstall", "Repair" buttons
+- [ ] GUI on egui: a client list and "Install", "Uninstall", "Repair" buttons
 - [ ] Full rollback: CA, DLL, autostart, folders, one button
-- [ ] Signed releases and `SHA256SUMS` on GitHub Releases
+- [ ] Releases with `SHA256SUMS` on GitHub Releases (unsigned in Phase 1, like Vencord); SignPath Foundation application sent
 
 ### 1.5 DLL sideloading prototype · `0.6`
 
