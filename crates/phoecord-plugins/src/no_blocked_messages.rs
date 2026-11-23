@@ -7,11 +7,18 @@
 //! skip `MESSAGE_CREATE` from blocked or ignored users (`RelationshipStore.isBlocked` /
 //! `isIgnored`). On the wire that is: learn who is blocked (relationship type 2) or ignored
 //! (`user_ignored`) from `READY` and the `RELATIONSHIP_*` events, then drop `MESSAGE_CREATE` and
-//! `MESSAGE_UPDATE` from them and remove their messages from message-history answers.
+//! `MESSAGE_UPDATE` from them and, if `filter_history` is on, remove their messages from
+//! message-history answers.
 //!
-//! Setting (`[plugins.no_blocked_messages]`): `apply_to_ignored_users` (default `true`), as in
-//! Vencord. Vencord's `ignoreMessages` has no separate switch here: dropping the message is the
-//! whole effect of this plugin.
+//! Settings (`[plugins.no_blocked_messages]`):
+//! - `apply_to_ignored_users` (default `true`), as in Vencord.
+//! - `filter_history` (default `false`). When `false`, `GET /channels/{id}/messages` answers are
+//!   left untouched and only live messages are dropped, so old messages from blocked users still
+//!   show when you scroll back. When `true`, history is filtered too, but a page then has fewer
+//!   messages than the client asked for, and the client may take that as "no older messages" and
+//!   stop loading further back. Turn it on only if you accept that trade-off.
+//!
+//! Vencord's `ignoreMessages` has no separate switch here: dropping the live message is always on.
 
 use phoecord_core::plugin::API_VERSION;
 use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
@@ -127,6 +134,12 @@ impl State {
     }
 }
 
+fn filter_history(host: &dyn Host) -> bool {
+    host.setting("filter_history")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+}
+
 fn with_ignored(host: &dyn Host) -> bool {
     host.setting("apply_to_ignored_users")
         .and_then(|v| v.as_bool())
@@ -177,6 +190,9 @@ impl Plugin for NoBlockedMessages {
                 body,
                 ..
             } if is_history(method, route) => {
+                if !filter_history(host) {
+                    return Verdict::Pass;
+                }
                 let with_ignored = with_ignored(host);
                 let st = self.state.lock().unwrap();
                 let Some(list) = body.as_list_mut() else {
@@ -311,6 +327,7 @@ mod tests {
     fn chain_drops_blocked_messages_and_filters_history() {
         let chain = Chain::new(vec![Box::new(NoBlockedMessages::new())]);
         let mut h = Cfg::default();
+        h.0.insert("filter_history".into(), Val::Bool(true));
         dispatch(&chain, &mut h, READY);
 
         assert!(matches!(
@@ -336,6 +353,27 @@ mod tests {
 
         let mut other = j(r#"[{"id":"1","author":{"id":"10"}}]"#);
         let out = chain.rest_response(&mut h, "GET", "/channels/9/pins", 200, &mut other);
+        assert_eq!(out, Outcome::Untouched);
+    }
+
+    #[test]
+    fn history_is_left_alone_unless_filter_history_is_on() {
+        let chain = Chain::new(vec![Box::new(NoBlockedMessages::new())]);
+        let mut h = Cfg::default();
+        dispatch(&chain, &mut h, READY);
+        let json = r#"[{"id":"1","author":{"id":"10"}},{"id":"2","author":{"id":"11"}}]"#;
+        let mut history = j(json);
+        let out = chain.rest_response(&mut h, "GET", "/channels/9/messages", 200, &mut history);
+        assert_eq!(out, Outcome::Untouched);
+        assert_eq!(history, j(json));
+        // Live messages are dropped either way.
+        assert!(matches!(
+            dispatch(&chain, &mut h, &msg("MESSAGE_CREATE", "10")),
+            Outcome::Dropped { .. }
+        ));
+        h.0.insert("filter_history".into(), Val::Bool(false));
+        let mut history = j(json);
+        let out = chain.rest_response(&mut h, "GET", "/channels/9/messages", 200, &mut history);
         assert_eq!(out, Outcome::Untouched);
     }
 
