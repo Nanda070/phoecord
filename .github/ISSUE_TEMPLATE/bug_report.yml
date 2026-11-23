@@ -1,74 +1,81 @@
-name: Баг
-description: Что-то работает не так, как ожидалось
+name: Bug
+description: Something does not work as expected
 title: "fix: "
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Уязвимость? **Не открывайте issue** — см. [SECURITY.md](https://github.com/nanda070/phoecord/blob/main/SECURITY.md).
-        Не вставляйте токены Discord, `ca.key` и переписку в логи.
+        A vulnerability? **Do not open an issue**, see [SECURITY.md](https://github.com/nanda070/phoecord/blob/main/SECURITY.md).
+        Never paste Discord tokens, `ca.key` or private messages into logs.
   - type: textarea
     id: what
     attributes:
-      label: Что случилось
-      description: Что вы сделали, что ожидали и что получилось.
+      label: What happened
+      description: What you did, what you expected and what happened instead.
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Как повторить
+      label: Steps to reproduce
       placeholder: "1. phoecord launch\n2. ...\n3. ..."
     validations:
       required: true
   - type: dropdown
     id: layer
     attributes:
-      label: Слой
+      label: Layer
       options:
-        - Сеть (прокси, REST, Gateway)
-        - UI (загрузчик, темы, хуки)
-        - Плагин
-        - Инсталлер / CLI
-        - Не знаю
+        - Network (proxy, REST, Gateway)
+        - UI (loader, themes, hooks)
+        - Plugin
+        - Installer / CLI
+        - Not sure
     validations:
       required: true
   - type: input
     id: plugin
     attributes:
-      label: Плагин
-      description: id плагина, если баг в нём (`phoecord plugins`).
+      label: Plugin
+      description: The plugin id, if the bug is in one (`phoecord plugins`).
       placeholder: message_logger
   - type: input
     id: version
     attributes:
-      label: Версия PhoeCord
-      description: "`phoecord --version` или коммит."
+      label: PhoeCord version
+      description: "`phoecord --version` or a commit."
     validations:
       required: true
   - type: dropdown
     id: client
     attributes:
-      label: Клиент Discord
+      label: Discord client
       options:
         - Stable
         - PTB
         - Canary
         - Phoenix Canary
-        - Другой (укажите ниже)
+        - Other (say below)
     validations:
       required: true
   - type: input
     id: os
     attributes:
-      label: ОС
+      label: OS
       placeholder: Windows 11 24H2 / Ubuntu 24.04 / macOS 15
     validations:
       required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: App language
+      options:
+        - English
+        - Russian
   - type: textarea
     id: logs
     attributes:
-      label: Логи
-      description: "Запустите с `PHOECORD_LOG=phoecord=debug`. Уберите токены и личные данные."
+      label: Logs
+      description: "Run with `PHOECORD_LOG=phoecord=debug`. Remove tokens and personal data."
       render: text

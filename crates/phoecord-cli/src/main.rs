@@ -1,6 +1,6 @@
 //! `phoecord`: command line front end.
 //!
-//! Status: scaffold. Commands are ported from Ashcord's CLI as the proxy lands (ROADMAP.md, 1.1):
+//! Status: scaffold. Commands are ported from the v0 CLI as the proxy lands (ROADMAP.md, 1.1):
 //! `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `log`, `selftest`.
 
 use phoecord_plugin_runtime::Chain;

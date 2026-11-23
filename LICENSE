@@ -1,7 +1,7 @@
 MIT License
 
 Copyright (c) 2026 Cheterin Group
-Copyright (c) 2026 Tjabooo (Ashcord, https://github.com/Tjabooo/ashcord)
+Copyright (c) 2026 Tjabooo
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ---
-
-PhoeCord is a fork of Ashcord. Files carrying the header
-"Ported from Ashcord (https://github.com/Tjabooo/ashcord), MIT, Copyright (c) 2026 Tjabooo."
-contain code from Ashcord 0.1.0 (commit 5ade8b9). Ashcord's original license
-text is identical to the one above, with the single copyright line
-"Copyright (c) 2026 Tjabooo".
 
 PhoeCord is not affiliated with, endorsed by or sponsored by Discord Inc.,
 Vencord or Zed Industries.

@@ -1,6 +1,3 @@
-// Ported from Ashcord (https://github.com/Tjabooo/ashcord), MIT, Copyright (c) 2026 Tjabooo.
-// See LICENSE and the Credits section of README.md.
-
 //! The local certificate authority. Every install makes its own, and it may only sign certificates for
 //! Discord's domains (an X.509 name constraint), so trusting it can't expose any other site.
 

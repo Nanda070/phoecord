@@ -1,6 +1,3 @@
-// Ported from Ashcord (https://github.com/Tjabooo/ashcord), MIT, Copyright (c) 2026 Tjabooo.
-// See LICENSE and the Credits section of README.md.
-
 //! Erlang External Term Format, the binary gateway encoding the Discord desktop client uses.
 
 use crate::val::Val;

@@ -1,6 +1,3 @@
-// Ported from Ashcord (https://github.com/Tjabooo/ashcord), MIT, Copyright (c) 2026 Tjabooo.
-// See LICENSE and the Credits section of README.md.
-
 //! Gateway transport: payload encoding (JSON / ETF) and stream compression (zlib-stream / zstd-stream).
 //!
 //! Compression contexts are shared across a whole connection, so once PhoeCord changes one message it

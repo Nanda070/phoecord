@@ -1,26 +1,26 @@
-## Что сделано
+## What
 
-<!-- Коротко: что и зачем изменено. Название PR — тип(область): описание, например feat(proxy): wire gateway into plugin chain. Если закрывает пункт роадмапа — укажи его: ROADMAP.md, 1.1. -->
+<!-- Briefly: what changed and why. PR title as type(scope): description, e.g. feat(proxy): wire gateway into plugin chain. If it closes a plan task, name it: docs/phase-1, task 1.1.4. -->
 
-## Как проверить
+## How to test
 
-<!-- Шаги для ревьюера: команды, клиент Discord (Stable / Canary / Phoenix), что должно получиться. -->
+<!-- Steps for the reviewer: commands, Discord client (Stable / Canary / Phoenix), what should happen. -->
 
-## Проверки
+## Checks
 
-<!-- Итог локальных проверок или ссылка на зелёный CI. -->
+<!-- The output summary of scripts/check.sh, or a link to the green CI run. -->
 
-## Чек-лист
+## Checklist
 
-- [ ] Ветка с префиксом `feat/` `fix/` `refactor/` `chore/` `docs/`, коммиты в формате Conventional Commits
-- [ ] Ветка перебазирована на свежий `main` (`git rebase origin/main`)
-- [ ] `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` проходят
-- [ ] Тесты не ходят в сеть и не требуют токена Discord
-- [ ] Изменение Plugin API (`Event`, `Verdict`, `Host`, `Manifest`) — отмечено меткой `api`, `API_VERSION` поднят, если нужно
-- [ ] Новый `unsafe` — только в `phoecord-loader`, с комментарием `// SAFETY:`
-- [ ] Код из Ashcord — с заголовком `Ported from Ashcord …`
-- [ ] `CHANGELOG.md` (раздел «Не выпущено») и чекбокс в `ROADMAP.md` обновлены
-- [ ] Затронуты CA, TLS, хранилища доверия или загрузчик — в Reviewers владельцы (`SECURITY.md`)
-- [ ] Нет токенов, `ca.key`, `ca.pem`, дампов трафика и бинарников клиента
+- [ ] Branch prefixed `feat/` `fix/` `refactor/` `chore/` `docs/`, commits in Conventional Commits format
+- [ ] Rebased on a fresh `main` (`git rebase origin/main`)
+- [ ] `scripts/check.sh` (or `check.ps1`) passes: fmt, clippy `-D warnings`, tests, `gen_tasks.py --check`, `gen_decisions.py --check`
+- [ ] Tests do not touch the network and need no Discord token
+- [ ] Plugin API change (`Event`, `Verdict`, `Host`, `Manifest`): labelled `api`, `API_VERSION` bumped if needed
+- [ ] New `unsafe` only in `phoecord-loader`, with a `// SAFETY:` comment
+- [ ] Living docs from the `AGENTS.md` table updated in this PR: `docs/CODE_MAP.md`, `docs/CHANGELOG.md` ("Unreleased"), `ROADMAP.md` box, plan task status + `python scripts/gen_tasks.py`
+- [ ] New user-facing strings are in English and ready for translation (Russian `.ftl` once 1.7 lands)
+- [ ] Touches the CA, TLS, trust stores or the loader: owners requested as reviewers (`SECURITY.md`)
+- [ ] No tokens, `ca.key`, `ca.pem`, traffic dumps or client binaries
 
-<!-- Review и слияние в main делают владельцы. -->
+<!-- Review and merging into main are done by the owners. -->

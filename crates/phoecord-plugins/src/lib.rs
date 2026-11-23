@@ -1,6 +1,6 @@
 //! Built-in plugins, native Rust, on the unified Plugin API.
 //!
-//! Porting from Ashcord (ROADMAP.md, milestone 1.2): `no_track` is done; `silent_typing`,
+//! Porting the v0 plugins (ROADMAP.md, milestone 1.2): `no_track` is done; `silent_typing`,
 //! `message_logger`, `fake_nitro`, `relationship_notifier`, `game_activity_toggle` and `unindent`
 //! follow. Once the WASM runtime is stable, each one moves to its own WASM package and this crate
 //! shrinks to the few plugins that must stay native.

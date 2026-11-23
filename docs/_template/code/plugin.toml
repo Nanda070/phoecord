@@ -1,0 +1,29 @@
+# Template for a WASM plugin manifest (milestone 1.3). Copy next to your plugin.wasm.
+
+id = "my_plugin"                 # snake_case, unique; also the [plugins.<id>] config section
+name = "MyPlugin"
+version = "0.1.0"
+api = 1                          # phoecord_core::plugin::API_VERSION the plugin was built for
+description = "What it does, in one English sentence"
+authors = ["Your Name"]
+vencord = "VencordName"          # optional: the Vencord plugin this mirrors
+layers = ["network"]             # network | theme | ui
+
+# Only these events reach the plugin. Format: <kind>:<method>:<route glob> or dispatch:<EVENT_NAME>.
+events = [
+    "rest_request:POST:/channels/*/messages",
+    "dispatch:MESSAGE_CREATE",
+]
+
+# Rights beyond events. Anything not listed is denied.
+rights = ["kv", "notify"]
+
+[settings.example_option]
+type = "bool"                    # bool | int | string | list
+default = true
+description = "Shown in the settings tab"
+
+# Optional translations (milestone 1.7). English strings above are the source.
+[i18n.ru]
+name = "MyPlugin"
+description = "<Russian translation goes in i18n/ru.ftl>"

@@ -1,29 +1,29 @@
-name: Фича
-description: Предложить возможность для ядра, прокси, загрузчика или инсталлера
+name: Feature
+description: Suggest something for the core, proxy, loader or installer
 title: "feat: "
 labels: [enhancement]
 body:
   - type: markdown
     attributes:
-      value: Новый плагин? Используйте шаблон «Плагин». Сначала загляните в [ROADMAP.md](https://github.com/nanda070/phoecord/blob/main/ROADMAP.md) — возможно, это уже в плане.
+      value: A new plugin? Use the "Plugin" template. Check [ROADMAP.md](https://github.com/nanda070/phoecord/blob/main/ROADMAP.md) first, it may already be planned.
   - type: textarea
     id: problem
     attributes:
-      label: Какую проблему решает
-      description: Что сейчас неудобно или невозможно.
+      label: Problem
+      description: What is inconvenient or impossible today.
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Предложение
-      description: Как это должно работать. Если меняется Plugin API — какие типы и почему.
+      label: Proposal
+      description: How it should work. If the Plugin API changes, which types and why.
     validations:
       required: true
   - type: dropdown
     id: area
     attributes:
-      label: Область
+      label: Area
       multiple: true
       options:
         - core (Plugin API)
@@ -32,18 +32,19 @@ body:
         - loader
         - installer
         - cli
-        - документация
+        - localization
+        - docs
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Альтернативы
-      description: Что ещё рассматривали.
+      label: Alternatives
+      description: What else you considered.
   - type: checkboxes
     id: checks
     attributes:
-      label: Проверки
+      label: Checks
       options:
-        - label: Поискал похожие issue и пункт в ROADMAP.md
+        - label: I searched for similar issues and for an item in ROADMAP.md
           required: true

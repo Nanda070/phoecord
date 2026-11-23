@@ -1,28 +1,28 @@
-# Архитектура PhoeCord
+# PhoeCord architecture
 
-Как устроен PhoeCord, почему он устроен именно так и что ломается, когда Discord выпускает обновление.
+How PhoeCord is built, why it is built this way, and what breaks when Discord ships an update.
 
 ---
 
-## Главная проблема
+## The core problem
 
-Vencord патчит JavaScript веб-клиента: код приходит текстом, его можно найти регуляркой и переписать. Project Phoenix — нативный бинарник на Rust + GPUI. В нём:
+Vencord patches the JavaScript of Discord's web client: the code arrives as text, so it can be found with a regex and rewritten. Project Phoenix is a native Rust + GPUI binary. It has:
 
-- нет JavaScript и нет исходников, которые можно патчить;
-- **нет стабильного ABI**: раскладка структур, имена символов, инлайнинг и порядок функций меняются от сборки к сборке, символы вырезаны;
-- обновления выходят часто, и любая привязка к адресам живёт до следующего патча.
+- no JavaScript and no source to patch;
+- **no stable ABI**: struct layout, symbol names, inlining and function order change from build to build, and symbols are stripped;
+- frequent updates, so anything tied to addresses lives until the next patch.
 
-Поэтому PhoeCord делит работу на два слоя по одному правилу: **всё, что можно сделать с данными, делается в сети; в процесс клиента лезем только ради того, что видно на экране.**
+So PhoeCord splits the work into two layers by one rule: **everything that can be done with data is done on the network; we go into the client process only for what is visible on screen.**
 
-| Слой | Что трогает | От чего зависит | Ломается при патче Discord |
+| Layer | What it touches | Depends on | Breaks on a Discord update |
 |:---|:---|:---|:---|
-| **Сеть** | REST API, Gateway (websocket) | Протокол Discord — публичный и стабильный, версионируется (`/api/v9`, `v=10`) | Почти никогда |
-| **Тема** | Палитра, шрифты, отступы GPUI | Структура темы клиента | Редко |
-| **UI** | Код клиента: вкладка настроек, отрисовка сообщений | Конкретная сборка бинарника | При каждом крупном патче, лечится обновлением сигнатур |
+| **Network** | REST API, Gateway (websocket) | Discord's protocol: public, stable, versioned (`/api/v9`, `v=10`) | Almost never |
+| **Theme** | GPUI palette, fonts, spacing | The client's theme structure | Rarely |
+| **UI** | The client's own code: settings tab, message rendering | One specific binary build | On every large update; fixed by updating signatures |
 
 ---
 
-## Крейты
+## Crates
 
 ```text
                          phoecord-cli ───────────────┐
@@ -33,62 +33,62 @@ Vencord патчит JavaScript веб-клиента: код приходит �
                   \         │         /                  │
                    └── phoecord-core ┘ ◄─────────────────┘
 
-   phoecord-loader (cdylib, в процессе клиента) ── IPC ──► phoecord-proxy
-   phoecord-plugin-sdk (wasm32, у авторов плагинов) — без зависимостей от хоста
+   phoecord-loader (cdylib, inside the client) ── IPC ──► phoecord-proxy
+   phoecord-plugin-sdk (wasm32, used by plugin authors) — no host dependencies
 ```
 
-| Крейт | Ответственность | Нельзя |
+| Crate | Responsibility | Must not |
 |:---|:---|:---|
-| `phoecord-core` | `Val`, ETF, маршруты, Plugin API | I/O, async, зависимости от наших крейтов |
-| `phoecord-proxy` | TCP/TLS, `CONNECT`, MITM, REST, Gateway, кодеки, CA, trust | Знать о конкретных плагинах |
-| `phoecord-plugin-runtime` | Цепочка плагинов, загрузка манифестов, WASM-хост, лимиты | Сетевой I/O |
-| `phoecord-plugin-sdk` | Биндинги WIT и макрос для гостей | Зависеть от `phoecord-core` и хостовых крейтов |
-| `phoecord-plugins` | Встроенные нативные плагины | Обходить `Host` |
-| `phoecord-loader` | Прокси-DLL, AOB, хуки, движок тем, IPC с прокси | Быть нужным сетевым плагинам |
-| `phoecord-installer` | Поиск клиентов, CA, установка/удаление DLL, импорт Vencord | Работать без явного действия пользователя |
-| `phoecord-cli` | Команды `phoecord …` | Содержать логику, которой нет в библиотеках |
+| `phoecord-core` | `Val`, ETF, routes, Plugin API | Do I/O or async, depend on our other crates |
+| `phoecord-proxy` | TCP/TLS, `CONNECT`, MITM, REST, Gateway, codecs, CA, trust | Know about specific plugins |
+| `phoecord-plugin-runtime` | Plugin chain, manifest loading, WASM host, limits | Do network I/O |
+| `phoecord-plugin-sdk` | WIT bindings and macro for guests | Depend on `phoecord-core` or host crates |
+| `phoecord-plugins` | Built-in native plugins | Bypass `Host` |
+| `phoecord-loader` | Proxy DLL, AOB, hooks, theme engine, IPC with the proxy | Be required by network plugins |
+| `phoecord-installer` | Client discovery, CA, DLL install/remove, Vencord import | Act without an explicit user action |
+| `phoecord-cli` | `phoecord …` commands | Hold logic that is not in a library |
 
 ---
 
-## Сетевой слой
+## Network layer
 
-Основа — прокси из Ashcord ([аудит](docs/ASHCORD_AUDIT.md)).
+The base is the v0 proxy, which already works with today's Discord; its migration is in the [Phase 1 plan](docs/phase-1/README.md).
 
-1. Клиент отправляет `CONNECT host:443` на `127.0.0.1:18463`. Подключения не с loopback отклоняются.
-2. Хост в списке `intercept` (`discord.com`, `*.discord.com`, `discordapp.com`, `gateway*.discord.gg`) → TLS завершается сертификатом локального CA, к Discord открывается своё TLS с проверкой по `webpki-roots`. Остальное — `copy_bidirectional` без расшифровки.
-3. **REST**: путь нормализуется (`/api/v9/x` → `/x`). Тело JSON декодируется, только если `Chain::wants(EventKind::RestRequest{..})`. `Verdict::Reply` отвечает локально (так работает `NoTrack`).
-4. **Gateway**: кодировка и сжатие берутся из query (`encoding=json|etf`, `compress=zlib-stream|zstd-stream`). Каждый кадр → `Val` → цепочка → обратно. Как только хоть один кадр изменён, всё последующее сжимается своим контекстом, чтобы поток у клиента оставался валидным.
-5. Если ни один активный плагин не хочет Gateway, кадры идут насквозь без декодирования.
+1. The client sends `CONNECT host:443` to `127.0.0.1:18463`. Non-loopback connections are refused.
+2. A host on the `intercept` list (`discord.com`, `*.discord.com`, `discordapp.com`, `gateway*.discord.gg`) → TLS is terminated with a certificate from the local CA, and a separate TLS connection to Discord is opened and verified against `webpki-roots`. Everything else is `copy_bidirectional` without decryption.
+3. **REST**: the path is normalized (`/api/v9/x` → `/x`). The JSON body is decoded only if `Chain::wants(EventKind::RestRequest{..})`. `Verdict::Reply` answers locally (that is how `NoTrack` works).
+4. **Gateway**: encoding and compression come from the query (`encoding=json|etf`, `compress=zlib-stream|zstd-stream`). Every frame → `Val` → chain → back. Once any frame has been changed, everything after it is compressed with PhoeCord's own context, so the client always sees a valid stream.
+5. If no active plugin wants the Gateway, frames pass through without decoding.
 
-| Плагин | События |
+| Plugin | Events |
 |:---|:---|
 | `NoTrack` | `RestRequest` `POST /science`, `/metrics`, `/error-reporting-proxy` → `Reply 204` |
 | `SilentTyping` | `RestRequest` `POST /channels/{id}/typing` → `Reply 204` |
-| `MessageLogger` | `Dispatch` `MESSAGE_DELETE` / `MESSAGE_UPDATE` + кэш `MESSAGE_CREATE`; удалённое — через подмену события, в Phase 2 — UI-хук |
-| `FakeNitro` | `RestRequest` `POST …/messages` (эмодзи → ссылки), `Dispatch` `READY` (флаги Nitro) |
-| `ClearURLs` | `RestRequest` `POST`/`PATCH …/messages`: чистка трекинговых параметров |
-| Слэш-команды | `RestRequest` `POST /interactions` для команд с префиксом PhoeCord → `Reply` локально; список команд — подмешивание в `GET …/application-commands` |
+| `MessageLogger` | `Dispatch` `MESSAGE_DELETE` / `MESSAGE_UPDATE` + a `MESSAGE_CREATE` cache; deleted messages shown by rewriting the event, in Phase 2 by a UI hook |
+| `FakeNitro` | `RestRequest` `POST …/messages` (emoji → links), `Dispatch` `READY` (Nitro flags) |
+| `ClearURLs` | `RestRequest` `POST`/`PATCH …/messages`: strip tracking parameters |
+| Slash commands | `RestRequest` `POST /interactions` for PhoeCord-prefixed commands → local `Reply`; the command list is merged into `GET …/application-commands` |
 
-### Phoenix и прокси
+### Phoenix and the proxy
 
-Electron-клиент слушается `--proxy-server` и доверяет системному хранилищу. Как поведёт себя Phoenix, пока неизвестно. Варианты по порядку предпочтения:
+The Electron client honours `--proxy-server` and trusts the system store. How Phoenix behaves is not known yet. Options, in order of preference:
 
-1. Phoenix уважает `HTTPS_PROXY` и системное хранилище — ничего не нужно, хватит `phoecord launch`.
-2. Не уважает прокси, но доверяет системе — загрузчик выставляет прокси при старте (хук на создание HTTP-клиента).
-3. Пиннинг или свой набор корней (`webpki-roots` вшит в бинарник) — загрузчик добавляет локальный CA в набор корней процесса. Ограничение name constraint остаётся.
+1. Phoenix honours `HTTPS_PROXY` and the system store: nothing is needed, `phoecord launch` is enough.
+2. It ignores the proxy but trusts the system: the loader sets the proxy at startup (a hook on HTTP client creation).
+3. Pinning or its own root set (`webpki-roots` built into the binary): the loader adds the local CA to the process's root set. The name constraint still applies.
 
-Выбор — по итогам исследования (ROADMAP, 2.1).
+The choice follows the research in ROADMAP 2.1.
 
 ---
 
 ## Plugin API v1
 
-Ashcord давал плагину trait из восьми хуков и прямой доступ к `Config` и `Account`. Это нельзя перенести через границу песочницы. PhoeCord сводит контракт к трём типам (`crates/phoecord-core/src/plugin.rs`):
+The v0 proxy gave each plugin a trait with eight hooks and direct access to `Config` and `Account`. That cannot cross a sandbox boundary. PhoeCord reduces the contract to three types (`crates/phoecord-core/src/plugin.rs`):
 
 ```rust
 pub trait Plugin: Send + Sync {
     fn manifest(&self) -> &Manifest;
-    fn wants(&self, event: &EventKind) -> bool;          // дешёвый фильтр: не декодировать лишнее
+    fn wants(&self, event: &EventKind) -> bool;          // cheap filter: do not decode what nobody needs
     fn on_event(&self, host: &mut dyn Host, event: Event<'_>) -> Verdict;
 }
 
@@ -97,11 +97,11 @@ pub enum Verdict     { Pass, Changed, Drop, Reply { status, body } }
 pub trait Host       { setting, kv_get, kv_set, self_id, notify, log }
 ```
 
-Правила цепочки (`phoecord-plugin-runtime::Chain`): плагины идут в порядке загрузки; первый `Drop` или `Reply` останавливает цепочку; `Changed` от любого плагина означает перекодирование.
+Chain rules (`phoecord-plugin-runtime::Chain`): plugins run in load order; the first `Drop` or `Reply` stops the chain; `Changed` from any plugin means re-encoding.
 
-Версионирование: `API_VERSION` в манифесте. Новый вариант `Event` или метод `Host` — minor (старые плагины работают). Изменение существующего — major; хост держит адаптер для предыдущей major-версии один цикл.
+Versioning: `API_VERSION` in the manifest. A new `Event` variant or `Host` method is minor (old plugins keep working). Changing an existing one is major; the host keeps an adapter for the previous major version for one cycle.
 
-### Манифест `plugin.toml`
+### The `plugin.toml` manifest
 
 ```toml
 id = "clear_urls"
@@ -110,83 +110,98 @@ version = "0.1.0"
 api = 1
 vencord = "ClearURLs"
 layers = ["network"]
-events = ["rest_request:POST:/channels/*/messages"]   # то, что хост пропустит в плагин
+events = ["rest_request:POST:/channels/*/messages"]   # what the host lets into the plugin
 
 [settings.extra_rules]
 type = "list"
 default = []
+
+[i18n]                                                 # optional, see "Localization"
+name.ru = "ClearURLs"
 ```
 
 ---
 
-## Динамические плагины: выбор рантайма
+## Dynamic plugins: choosing a runtime
 
 | | WASM (wasmtime, Component Model) | Lua (mlua) | QuickJS (rquickjs) |
 |:---|:---|:---|:---|
-| Песочница | Сильная: память изолирована, импорты только явные | Слабая: нужно вычищать stdlib | Средняя |
-| Языки авторов | Rust, Go, C, AssemblyScript, JS (через componentize-js) | Lua | JS/TS — привычно авторам Vencord |
-| Скорость на горячем пути (каждый кадр Gateway) | Близко к нативу | Хорошо | Хуже, GC-паузы |
-| Лимиты | Fuel и epoch interruption, лимит памяти из коробки | Хуки на инструкции | Лимит памяти и interrupt handler |
-| Типизированный контракт | WIT → генерируемые биндинги для хоста и гостя | Нет | Нет (только `.d.ts`) |
-| Размер | wasmtime ≈ 10–15 МБ | ≈ 0,5 МБ | ≈ 1 МБ |
+| Sandbox | Strong: isolated memory, only explicit imports | Weak: the stdlib must be scrubbed | Medium |
+| Author languages | Rust, Go, C, AssemblyScript, JS (via componentize-js) | Lua | JS/TS, familiar to Vencord authors |
+| Speed on the hot path (every Gateway frame) | Close to native | Good | Worse, GC pauses |
+| Limits | Fuel and epoch interruption, memory limits built in | Instruction hooks | Memory limit and interrupt handler |
+| Typed contract | WIT → generated bindings for host and guest | None | None (only `.d.ts`) |
+| Size | wasmtime ≈ 10–15 MB | ≈ 0.5 MB | ≈ 1 MB |
 
-**Решение:** основной рантайм — **WASM (wasmtime + WIT)**. Контракт описывается один раз в `wit/phoecord.wit` и зеркалит `phoecord-core::plugin`. JS-авторы пишут на TypeScript и собирают компонент через `componentize-js`, поэтому отдельный QuickJS не нужен. Lua не берём: слабая песочница для кода, который видит всю переписку.
+**Proposal (awaiting the owner's confirmation, Phase 1 open question):** the main runtime is **WASM (wasmtime + WIT)**. The contract is written once in `wit/phoecord.wit` and mirrors `phoecord-core::plugin`. JS authors write TypeScript and build a component with `componentize-js`, so a separate QuickJS is not needed. Lua is rejected: too weak a sandbox for code that sees every message.
 
-Ограничения гостя: нет WASI-файлов и сокетов; таймаут на событие (epoch, по умолчанию 5 мс); лимит памяти (по умолчанию 32 МБ); при панике или превышении плагин отключается до перезапуска, событие проходит как `Pass`.
+Guest limits: no WASI files or sockets; a per-event timeout (epoch, 5 ms by default); a memory limit (32 MB by default); on a panic or a limit hit the plugin is disabled until restart and the event passes as `Pass`.
 
-Встроенные плагины пока нативные (`phoecord-plugins`); после стабилизации WASM-рантайма они переезжают в WASM-пакеты, кроме тех, где важен каждый процент CPU.
+Built-in plugins stay native for now (`phoecord-plugins`); once the WASM runtime is stable they move to WASM packages, except those where every percent of CPU matters.
 
 ---
 
-## UI-слой: загрузчик
+## UI layer: the loader
 
-### Как попадаем в процесс (Windows)
+### Getting into the process (Windows)
 
-**DLL sideloading.** Windows ищет DLL сначала в папке приложения. `phoecord-loader` собирается как `version.dll` (или `winhttp.dll` — выбор по таблице импортов Phoenix) и кладётся рядом с exe клиента.
+**DLL sideloading.** Windows looks for DLLs in the application folder first. `phoecord-loader` is built as `version.dll` (or `winhttp.dll`, chosen from Phoenix's import table) and placed next to the client exe.
 
-1. `DllMain(DLL_PROCESS_ATTACH)` — ничего тяжёлого (loader lock): загружаем настоящую `version.dll` из `System32` по полному пути и запускаем рабочий поток.
-2. Все экспорты (`GetFileVersionInfoW` и т.д.) — форвард на системную DLL.
-3. Рабочий поток: проверка версии клиента → загрузка набора сигнатур → установка хуков → IPC с `phoecord-proxy` (named pipe).
-4. Updater Discord кладёт новую версию в новую папку `app-x.y.z` → инсталлер следит за этим и переустанавливает DLL (или ставит её на уровень лаунчера).
+1. `DllMain(DLL_PROCESS_ATTACH)`: nothing heavy (loader lock). Load the real `version.dll` from `System32` by full path and start a worker thread.
+2. All exports (`GetFileVersionInfoW` and so on) forward to the system DLL.
+3. Worker thread: check the client version → load the signature set → install hooks → IPC with `phoecord-proxy` (named pipe).
+4. Discord's updater puts a new version into a new `app-x.y.z` folder → the installer watches for it and reinstalls the DLL (or installs it at the launcher level).
 
-macOS и Linux — позже: `DYLD_INSERT_LIBRARIES` / `LD_PRELOAD` через лаунчер PhoeCord.
+macOS and Linux come later: `DYLD_INSERT_LIBRARIES` / `LD_PRELOAD` through the PhoeCord launcher.
 
-### Как находим функции
+### Finding functions
 
-**AOB-сигнатуры** (`crates/phoecord-loader/src/aob.rs`): маска байт с `??` на месте адресов и смещений. Сигнатура считается найденной, только если совпадение **единственное**.
+**AOB signatures** (`crates/phoecord-loader/src/aob.rs`): a byte mask with `??` for addresses and offsets. A signature counts as found only if the match is **unique**.
 
 ```toml
 # signatures/phoenix-canary.toml
-[build."0.0.123"]              # версия из ресурсов exe + хэш .text
+[build."0.0.123"]              # version from exe resources + .text hash
 theme_palette   = { aob = "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B D8", rip = 3 }
 settings_tabs   = { aob = "...", rip = 3 }
 message_render  = { aob = "..." }
 ```
 
-Процесс: Ghidra/IDA + открытые исходники GPUI (Zed) → находим функцию → делаем сигнатуру устойчивой (якоря на строках и вызовах крейтов GPUI, а не на инлайн-коде Discord) → тест на дампе `.text` двух соседних сборок. Сигнатуры лежат отдельно от кода и обновляются без пересборки загрузчика.
+Process: Ghidra/IDA + the open GPUI (Zed) sources → find the function → make the signature robust (anchor on strings and on calls into GPUI crates, not on Discord's inlined code) → test on a `.text` dump of two adjacent builds. Signatures live apart from the code and update without rebuilding the loader.
 
-### Хуки и темы
+### Hooks and themes
 
-- **Хуки**: inline detour (`retour` или собственный трамплин), устанавливаются при приостановленных потоках, снимаются при выгрузке.
-- **Темы**: GPUI рисует из палитры (`Hsla`-цвета в структуре темы). Хук на получение активной темы подменяет значения палитры из `theme.toml` пользователя. Если окажется, что Phoenix грузит темы как данные (как Zed — JSON), хуки не нужны: тема кладётся файлом.
-- **Вкладка настроек**: хук на построение списка вкладок добавляет «PhoeCord» с элементами GPUI; настройки читаются и пишутся через IPC в прокси.
-- **Удалённые сообщения**: `MessageLogger` в прокси помечает событие, UI-хук рисует его зачёркнутым вместо подмены текста.
+- **Hooks**: inline detours (`retour` or our own trampoline), installed with threads suspended, removed on unload.
+- **Themes**: GPUI draws from a palette (`Hsla` colours in the theme struct). A hook on fetching the active theme replaces palette values from the user's `theme.toml`. If Phoenix turns out to load themes as data (as Zed does with JSON), no hooks are needed: the theme is just a file.
+- **Settings tab**: a hook on building the tab list adds "PhoeCord" with GPUI elements; settings are read and written over IPC to the proxy.
+- **Deleted messages**: `MessageLogger` in the proxy marks the event, the UI hook renders it struck through instead of rewriting the text.
 
-### Деградация
+### Degradation
 
-| Что случилось | Что делает PhoeCord |
+| What happened | What PhoeCord does |
 |:---|:---|
-| Неизвестная сборка клиента | UI-слой не включается, сетевые плагины работают, уведомление «UI-плагины ждут обновления сигнатур» |
-| Сигнатура не найдена или неоднозначна | Отключается только зависящая от неё фича |
-| Паника в хуке | Хук снимается, ошибка в лог; клиент продолжает работу |
-| Прокси не запущен | Загрузчик не мешает клиенту и ничего не перехватывает |
+| Unknown client build | The UI layer stays off, network plugins work, a notice says "UI plugins are waiting for a signature update" |
+| A signature is missing or ambiguous | Only the feature that depends on it is disabled |
+| A panic in a hook | The hook is removed, the error is logged; the client keeps running |
+| The proxy is not running | The loader does not interfere with the client and intercepts nothing |
 
 ---
 
-## Модель безопасности
+## Localization
 
-- Локальный CA на установку, name constraint на домены Discord, ключ не покидает компьютер ([`SECURITY.md`](SECURITY.md)).
-- Прокси — только loopback; расшифровываются только хосты из `intercept`.
-- WASM-плагины — песочница и явные права в манифесте; нативные — только встроенные или установленные пользователем вручную.
-- Загрузчик подгружает DLL настоящей системной библиотеки только по полному пути из `System32`, чтобы сам не стал точкой DLL hijacking.
-- Никакой телеметрии; `NoTrack` включён по умолчанию.
+The app ships in **English** first; **Russian** is the first translation (ROADMAP 1.7). Docs and code comments stay English-only.
+
+- Format: [Fluent](https://projectfluent.org/) (`fluent-bundle`), one `.ftl` file per crate and language: `crates/<crate>/i18n/{en,ru}/main.ftl`.
+- Language choice: `language` in `config.toml`, defaulting to the OS language, falling back to English for any missing key.
+- What is translated: CLI output, installer GUI, notifications, the in-client settings tab, slash command descriptions. Log lines stay English.
+- Plugins: a plugin may ship its own `i18n/<lang>.ftl`; the host loads it next to `plugin.toml` and exposes `Host::t(key, args)` (API minor bump).
+- CI checks that every key in `en` exists in `ru` (missing keys fail the build once 1.7 lands).
+
+---
+
+## Security model
+
+- A local CA per install, name-constrained to Discord's domains; the key never leaves the computer ([`SECURITY.md`](SECURITY.md)).
+- The proxy is loopback-only; only hosts on `intercept` are decrypted.
+- WASM plugins run in a sandbox with explicit rights in the manifest; native plugins are only built-in ones or ones the user installed by hand.
+- The loader loads the real system DLL only by full path from `System32`, so it never becomes a DLL hijacking point itself.
+- No telemetry; `NoTrack` is on by default.

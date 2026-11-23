@@ -1,53 +1,53 @@
-# Безопасность
+# Security
 
-PhoeCord встаёт между вашим клиентом Discord и серверами Discord и расшифровывает этот трафик у вас на компьютере. Поэтому к безопасности здесь требования строже обычного. Поддерживается одна версия — последний релиз и ветка `main`.
+PhoeCord sits between your Discord client and Discord's servers and decrypts that traffic on your computer. That is why the security bar here is higher than usual. One version is supported: the latest release and the `main` branch.
 
-## Локальный CA-сертификат
+## The local CA certificate
 
-Чтобы читать трафик API и Gateway, PhoeCord завершает TLS сам и предъявляет клиенту сертификат от собственного центра сертификации (CA). Как это устроено:
+To read API and Gateway traffic, PhoeCord terminates TLS itself and shows the client a certificate from its own certificate authority (CA). How it works:
 
 | | |
 |:---|:---|
-| **Где создаётся** | На вашем компьютере, при первом запуске (`phoecord setup`). Готовых ключей в репозитории и релизах нет |
-| **Куда отправляется** | Никуда. Ни ключ, ни сертификат не уходят в сеть, в телеметрию и разработчикам. Телеметрии в PhoeCord нет |
-| **Уникальность** | У каждой установки свой CA. Утечка одного не затрагивает остальных |
-| **Что может подписать** | Только `discord.com`, `discordapp.com`, `discord.gg` и их поддомены — X.509 name constraint. Даже утёкший ключ не позволит подделать ваш банк, почту или любой другой сайт |
-| **Где лежит** | `ca.pem` и `ca.key` в папке данных PhoeCord. `ca.key` пишется с правами только для владельца |
-| **Срок** | 10 лет; удаление и пересоздание — в любой момент |
-| **Как убрать** | `phoecord untrust` удаляет CA из хранилищ доверия, затем удалите папку данных |
+| **Where it is created** | On your computer, on first run (`phoecord setup`). There are no prebuilt keys in the repository or in releases |
+| **Where it is sent** | Nowhere. Neither the key nor the certificate ever leaves your machine: no network, no telemetry, no developers. PhoeCord has no telemetry |
+| **Uniqueness** | Every install has its own CA. A leak of one affects no one else |
+| **What it can sign** | Only `discord.com`, `discordapp.com`, `discord.gg` and their subdomains, enforced by an X.509 name constraint. Even a leaked key cannot impersonate your bank, your mail or any other site |
+| **Where it lives** | `ca.pem` and `ca.key` in PhoeCord's data folder. `ca.key` is written readable by its owner only |
+| **Lifetime** | 10 years; delete and recreate it at any time |
+| **How to remove it** | `phoecord untrust` removes the CA from the trust stores, then delete the data folder |
 
-Остальной трафик (CDN, медиа, голос, другие сайты) идёт прозрачным туннелем: PhoeCord его не расшифровывает. Прокси принимает подключения только с `127.0.0.1` и отклоняет остальные.
+All other traffic (CDN, media, voice, other sites) goes through a plain tunnel: PhoeCord does not decrypt it. The proxy accepts connections from `127.0.0.1` only and refuses everything else.
 
-## Загрузчик (UI-слой)
+## The loader (UI layer)
 
-Статус: в разработке (ROADMAP, 1.5). Требования, которым загрузчик обязан соответствовать: `phoecord-loader` кладётся рядом с клиентом как прокси-DLL; он подгружает только подписанные плагины из папки PhoeCord, не скачивает код из сети и не имеет функций для чтения токена. Инсталлер ставит DLL только по явной команде пользователя и умеет её удалить.
+Status: in development (ROADMAP, 1.5). Requirements the loader must meet: `phoecord-loader` is placed next to the client as a proxy DLL; it loads only signed plugins from PhoeCord's folder, never downloads code from the network and has no function that reads the token. The installer puts the DLL in place only on an explicit user command and can remove it.
 
-## Сторонние плагины
+## Third-party plugins
 
-Статус: WASM-рантайм в разработке (ROADMAP, 1.3). Так он должен работать: WASM-плагины исполняются в песочнице: без доступа к файлам, сети и процессу, только через API хоста. Плагин видит лишь те события, на которые подписан в манифесте. Нативные плагины — это код с полными правами: ставьте только из источников, которым доверяете.
+Status: the WASM runtime is in development (ROADMAP, 1.3). How it must work: WASM plugins run in a sandbox with no access to files, network or the process, only through the host API. A plugin sees only the events its manifest subscribes to. Native plugins are code with full rights: install them only from sources you trust.
 
-## Как сообщить об уязвимости
+## Reporting a vulnerability
 
-**Не открывайте публичный issue и не пишите об уязвимости в общих каналах.**
+**Do not open a public issue and do not post about a vulnerability in public channels.**
 
-Используйте [GitHub Security Advisories](https://github.com/nanda070/phoecord/security/advisories/new) или напишите лично:
+Use [GitHub Security Advisories](https://github.com/nanda070/phoecord/security/advisories/new) or write privately:
 
-| Кто | Discord | Telegram |
+| Who | Discord | Telegram |
 |:---|:---|:---|
-| Nanda — руководитель проекта | `nandak070` | [@nanda070](https://t.me/nanda070) |
+| Nanda, project lead | `nandak070` | [@nanda070](https://t.me/nanda070) |
 
-Опишите, что нашли, как повторить и на что это влияет. Ответим в течение 72 часов, сроки исправления согласуем отдельно. Пока уязвимость не закрыта, не раскрывайте её.
+Describe what you found, how to reproduce it and what it affects. We reply within 72 hours and agree on a fix timeline separately. Until it is fixed, do not disclose it.
 
-## Что считается уязвимостью
+## What counts as a vulnerability
 
-- CA подписывает что-то за пределами доменов Discord, или name constraint можно обойти.
-- Ключ CA, токен Discord или содержимое трафика уходят за пределы компьютера или читаются другими пользователями системы.
-- Прокси принимает подключения не с `127.0.0.1` или расшифровывает хосты вне списка `intercept`.
-- WASM-плагин выходит из песочницы или получает события, на которые не подписан.
-- Загрузчик подгружает код, который пользователь не устанавливал (DLL hijacking через PhoeCord).
+- The CA signs anything outside Discord's domains, or the name constraint can be bypassed.
+- The CA key, a Discord token or traffic contents leave the computer or are readable by other users of the system.
+- The proxy accepts connections from anywhere but `127.0.0.1`, or decrypts hosts outside the `intercept` list.
+- A WASM plugin escapes the sandbox or receives events it did not subscribe to.
+- The loader loads code the user did not install (DLL hijacking through PhoeCord).
 
-## Правила для команды
+## Team rules
 
-- Никогда не коммитить токены, `ca.key`, `ca.pem`, дампы трафика и файлы `.env`.
-- Изменения в `crates/phoecord-proxy/src/ca.rs`, `trust.rs`, в прокси и в `phoecord-loader` проходят review владельцев.
-- Утёк секрет — сразу сообщите Nanda.
+- Never commit tokens, `ca.key`, `ca.pem`, traffic dumps or `.env` files. Where secrets live: [`docs/SECRETS.md`](docs/SECRETS.md).
+- Changes to `crates/phoecord-proxy/src/ca.rs`, `trust.rs`, the proxy and `phoecord-loader` are reviewed by the owners.
+- A secret leaked? Tell Nanda right away.

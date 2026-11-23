@@ -1,6 +1,3 @@
-// Ported from Ashcord (https://github.com/Tjabooo/ashcord), MIT, Copyright (c) 2026 Tjabooo.
-// See LICENSE and the Credits section of README.md.
-
 //! Add the local CA to the certificate stores Discord reads (and remove it again).
 
 use crate::ca::CA_NAME;

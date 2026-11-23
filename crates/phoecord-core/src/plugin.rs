@@ -1,6 +1,6 @@
 //! The unified Plugin API (v1).
 //!
-//! Ashcord gave each plugin a trait with eight hook methods and compiled every plugin into the binary.
+//! The v0 proxy gave each plugin a trait with eight hook methods and compiled every plugin into the binary.
 //! PhoeCord replaces that with **one entry point, one event enum and one verdict**, so the same
 //! contract can be implemented by a native Rust plugin today and by a sandboxed WASM plugin through
 //! `phoecord-plugin-runtime` (a single exported `on_event` function), without a stable Rust ABI.

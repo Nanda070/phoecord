@@ -1,6 +1,3 @@
-// Ported from Ashcord (https://github.com/Tjabooo/ashcord), MIT, Copyright (c) 2026 Tjabooo.
-// See LICENSE and the Credits section of README.md.
-
 //! REST route helpers shared by the proxy and plugins.
 
 /// `/api/v9/channels/1/messages` → `/channels/1/messages`; other paths stay as they are.

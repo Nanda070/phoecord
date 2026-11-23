@@ -12,13 +12,13 @@ repository = "https://github.com/nanda070/phoecord"
 authors = ["Cheterin Group"]
 
 [workspace.dependencies]
-# Внутренние крейты
+# Internal crates
 phoecord-core = { path = "crates/phoecord-core" }
 phoecord-proxy = { path = "crates/phoecord-proxy" }
 phoecord-plugin-runtime = { path = "crates/phoecord-plugin-runtime" }
 phoecord-plugins = { path = "crates/phoecord-plugins" }
 
-# Внешние зависимости (версии как в Ashcord 0.1.0)
+# External dependencies
 anyhow = "1"
 dirs = "7"
 flate2 = "1"

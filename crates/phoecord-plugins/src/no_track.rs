@@ -1,6 +1,3 @@
-// Ported from Ashcord (https://github.com/Tjabooo/ashcord), MIT, Copyright (c) 2026 Tjabooo.
-// See LICENSE and the Credits section of README.md.
-
 //! Blocks Discord's analytics and crash reporting (Vencord: NoTrack).
 
 use phoecord_core::plugin::API_VERSION;
@@ -18,7 +15,7 @@ impl NoTrack {
                 name: "NoTrack".into(),
                 version: env!("CARGO_PKG_VERSION").into(),
                 description: "Block Discord's analytics and crash reports".into(),
-                authors: vec!["Tjabooo (Ashcord)".into(), "Cheterin Group".into()],
+                authors: vec!["Cheterin Group".into()],
                 vencord: Some("NoTrack".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,

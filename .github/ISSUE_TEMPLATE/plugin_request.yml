@@ -1,53 +1,53 @@
-name: Плагин
-description: Предложить плагин (порт из Vencord или новый)
+name: Plugin
+description: Suggest a plugin (a Vencord port or a new one)
 title: "plugin: "
 labels: [plugin]
 body:
   - type: input
     id: name
     attributes:
-      label: Название
+      label: Name
       placeholder: ClearURLs
     validations:
       required: true
   - type: input
     id: vencord
     attributes:
-      label: Аналог в Vencord
-      description: Ссылка на плагин Vencord, если это порт.
+      label: Vencord equivalent
+      description: A link to the Vencord plugin, if this is a port.
       placeholder: https://vencord.dev/plugins/ClearURLs
   - type: textarea
     id: what
     attributes:
-      label: Что делает
-      description: Поведение с точки зрения пользователя.
+      label: What it does
+      description: The behaviour from the user's point of view.
     validations:
       required: true
   - type: dropdown
     id: layer
     attributes:
-      label: Слой
-      description: "Сеть — если хватает REST и Gateway (предпочтительно). UI — если нужно рисовать в клиенте. См. ARCHITECTURE.md."
+      label: Layer
+      description: "Network if REST and Gateway are enough (preferred). UI if it has to draw inside the client. See ARCHITECTURE.md."
       options:
-        - Сеть (REST / Gateway)
-        - Тема (палитра, шрифты)
-        - UI (хуки в клиенте)
-        - Не знаю
+        - Network (REST / Gateway)
+        - Theme (palette, fonts)
+        - UI (hooks in the client)
+        - Not sure
     validations:
       required: true
   - type: textarea
     id: events
     attributes:
-      label: Какие события нужны
-      description: Маршруты REST, события Gateway или op'ы, которые плагин читает или меняет.
-      placeholder: "POST /channels/{id}/messages — переписать content\nMESSAGE_CREATE — ..."
+      label: Events it needs
+      description: REST routes, Gateway events or ops the plugin reads or changes.
+      placeholder: "POST /channels/{id}/messages: rewrite content\nMESSAGE_CREATE: ..."
   - type: checkboxes
     id: checks
     attributes:
-      label: Проверки
+      label: Checks
       options:
-        - label: Плагина нет в таблице ROADMAP.md
+        - label: The plugin is not in the ROADMAP.md table
           required: true
-        - label: Плагин не для спама, самоботов, обхода банов или слежки за другими людьми
+        - label: The plugin is not for spam, self-bots, evading bans or spying on other people
           required: true
-        - label: Готов(а) написать плагин сам(а)
+        - label: I am willing to write it myself

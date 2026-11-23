@@ -407,6 +407,7 @@ name = "phoecord-plugins"
 version = "0.1.0"
 dependencies = [
  "phoecord-core",
+ "phoecord-plugin-runtime",
 ]
 
 [[package]]

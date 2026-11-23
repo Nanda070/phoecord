@@ -28,6 +28,17 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all --check
 
+  docs:
+    name: generated docs are fresh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/gen_tasks.py --check
+      - run: python scripts/gen_decisions.py --check
+
   check:
     name: check / clippy / test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -53,6 +64,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.88
+      # Pinned through `toolchain:` rather than `@1.88` so Dependabot does not "bump" the MSRV.
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.88"
       - uses: Swatinem/rust-cache@v2
       - run: cargo check --workspace

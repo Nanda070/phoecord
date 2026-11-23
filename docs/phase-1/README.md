@@ -1,0 +1,142 @@
+# Phase 1. Before the Phoenix Canary public beta: plan for people
+
+The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request. Goal: PhoeCord fully works on today's Discord through the network layer, plugins install without a rebuild, the app speaks English and Russian, and the installer, the loader and our knowledge of GPUI are ready for the day Phoenix Canary comes out.
+
+> This is the plan for people. The spec, the step-by-step tasks and the ledger are in [`ai/`](ai/). If this file and [`ai/spec.md`](ai/spec.md) disagree, the spec wins.
+
+## Status
+
+23.11.2026, `main` `6b3a7f5`. Phase 0 is closed: workspace of 8 crates, Plugin API v1, plugin chain, AOB scanner; the Gateway codecs, the local CA, certificate trust and `no_track` are ported; CI is green on Linux, Windows and macOS. This plan lives on the `docs/phase-1-plan` branch. Next: task 1.0.1 (merge this plan), then stage 1.1.
+
+## What we get
+
+- **A user** installs PhoeCord with one button, starts Discord and gets NoTrack, SilentTyping, MessageLogger, FakeNitro, ClearURLs and four more plugins, on today's client, without Vencord, in English or Russian. Uninstalling is one button too and leaves nothing behind.
+- **A plugin author** writes a plugin in Rust or TypeScript, builds a `.wasm`, drops it into the `plugins/` folder, and it runs without rebuilding PhoeCord, in a sandbox, with the rights its manifest asks for.
+- **The team**, when Phoenix Canary ships, has: a working loader (`version.dll`) proven on today's client; a signature format; a GPUI reference build for reverse engineering; a report on which GPUI functions to look for.
+
+## Decisions
+
+- Remove every mention of the original upstream project from the repository; the copyright lines and the MIT text in `LICENSE` stay because the license requires them (Nanda 23.11.2026: "remove all mentions of [the upstream project]", translated).
+- The repository is public, `nanda070/phoecord` (Nanda 23.11.2026: "Public", translated).
+- The copyright holder is Cheterin Group (Nanda 23.11.2026: "Copyright in LICENSE", translated).
+- Hybrid architecture: the network is the base, the UI layer is targeted; dynamic plugins through an external runtime (Nanda 23.11.2026, project brief).
+- Docs, plans and templates follow the VALORANT repository's structure (Nanda 23.11.2026: "like VALORANT", translated).
+- All documentation is English-only; the app must support Russian later (Nanda 23.11.2026: "translate all docs to English, no Russian at all, though the program should support Russian in the future", translated). Localization becomes stage 1.7.
+
+**Not doing in Phase 1:** reverse engineering Phoenix and its signatures (no binary yet, that is Phase 2); UI hooks on today's Electron client (Vencord covers its UI; on Electron the loader only proves the mechanics); the loader on macOS and Linux; a third-party plugin catalogue; languages other than English and Russian.
+
+## Open questions
+
+- **Plugin runtime: WASM (wasmtime + WIT)?** [`ARCHITECTURE.md`](../../ARCHITECTURE.md) proposes WASM over Lua and QuickJS (strong sandbox, typed contract, TypeScript via `componentize-js`). Needs Nanda's confirmation before stage 1.3.
+- **Installer GUI on GPUI or something lighter (egui / native Win32)?** GPUI is practice for Phase 2 but heavier and less mature on Windows. Decide before 1.4.3.
+- **Code signing.** Without a code signing certificate, Windows SmartScreen will warn users, and an unsigned `version.dll` may trip antivirus. Whether to buy one and in whose name: Nanda, before 1.4.5.
+- **Git history.** The first commit `6b3a7f5` in the public history mentions the upstream project in its message. Rewrite the history (force-push to `main`) or keep it: Nanda.
+- **Dependabot PR #1** bumps `dtolnay/rust-toolchain@1.88` to `@1.120`, which would silently drop the MSRV check. This branch pins the toolchain via `toolchain:` instead; close PR #1 (task 1.0.2).
+
+## Who does what
+
+| | Nanda | Contributors |
+|:---|:---|:---|
+| Area | core, Plugin API, proxy, CA and trust, loader, installer, runtime, releases, review and merging | plugins, SDK examples, tests and fixtures, translations, docs, research |
+| Tasks | 1.0, 1.1 (except 1.1.9), 1.2.5, 1.2.6, 1.2.8, 1.3 (except 1.3.6, 1.3.7), 1.4, 1.5, 1.6.1, 1.6.3, 1.6.5, 1.7.1, 1.7.2, 1.7.4 | 1.1.9, 1.2.1–1.2.4, 1.2.7, 1.2.9, 1.3.6, 1.3.7, 1.6.2, 1.6.4, 1.7.3, 1.7.5 |
+
+Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor plugins are written against an API that is already merged.
+
+## Tasks
+
+Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is collected into the root [`TASKS.md`](../../TASKS.md): after editing run `python scripts/gen_tasks.py`.
+
+| Task | What | Who | Status |
+|:--|:--|:--|:--|
+| **1.0.1** 🔴 | Merge the Phase 1 plan, the docs structure and the English-only docs | Nanda | 🔄 branch `docs/phase-1-plan` |
+| **1.0.2** 🟡 | Dependabot: close #1, merge #2 and #3 after green CI | Nanda | ⏳ |
+| **1.1.1** 🔴 | Proxy `Host`: settings, KV, `self_id`, `notify` | Nanda | ⏳ |
+| **1.1.2** 🔴 | `config.toml` with `[plugins.<id>]` sections and live reload | Nanda | ⏳ |
+| **1.1.3** 🔴 | Account state behind `Host` | Nanda | ⏳ |
+| **1.1.4** 🔴 | Proxy: `CONNECT`, loopback only, MITM by `intercept` | Nanda | ⏳ |
+| **1.1.5** 🔴 | REST through `Chain` | Nanda | ⏳ |
+| **1.1.6** 🔴 | Gateway through `Chain` | Nanda | ⏳ |
+| **1.1.7** 🔴 | CLI: `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `paths` | Nanda | ⏳ |
+| **1.1.8** 🟡 | `selftest` against the real Discord | Nanda | ⏳ |
+| **1.1.9** 🟡 | Gateway fixtures without personal data | anyone | ⏳ |
+| **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ⏳ |
+| **1.2.1** 🔴 | `silent_typing` | anyone | ⏳ |
+| **1.2.2** 🟡 | `unindent` | anyone | ⏳ |
+| **1.2.3** 🟡 | `game_activity_toggle` | anyone | ⏳ |
+| **1.2.4** 🟡 | `relationship_notifier` | anyone | ⏳ |
+| **1.2.5** 🔴 | `fake_nitro` (emoji) | Nanda | ⏳ |
+| **1.2.6** 🔴 | `message_logger` and `phoecord log` | Nanda | ⏳ |
+| **1.2.7** 🔴 | `clear_urls` (new) | anyone | ⏳ |
+| **1.2.8** 🟡 | `/phoecord` slash commands (new) | Nanda | ⏳ |
+| **1.2.9** 🟢 | `phoecord import-vencord` | anyone | ⏳ |
+| **1.3.1** 🔴 | `wit/phoecord.wit` | Nanda | ⏳ |
+| **1.3.2** 🔴 | WASM backend for `Chain` on wasmtime | Nanda | ⏳ |
+| **1.3.3** 🔴 | Limits: time, memory, disable on panic | Nanda | ⏳ |
+| **1.3.4** 🔴 | Packages `plugin.toml` + `plugin.wasm`, hot loading | Nanda | ⏳ |
+| **1.3.5** 🔴 | Rights from the manifest | Nanda | ⏳ |
+| **1.3.6** 🟡 | SDK: bindings, macro, `examples/hello-plugin` | anyone | ⏳ |
+| **1.3.7** 🟡 | TypeScript plugin template | anyone | ⏳ |
+| **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ⏳ |
+| **1.4.1** 🔴 | Client discovery on 3 OSes | Nanda | ⏳ |
+| **1.4.2** 🔴 | CA and proxy autostart | Nanda | ⏳ |
+| **1.4.3** 🟡 | Installer GUI | Nanda | ⏳ |
+| **1.4.4** 🔴 | Full rollback | Nanda | ⏳ |
+| **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, signing | Nanda | ⏳ |
+| **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ⏳ |
+| **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ⏳ |
+| **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ⏳ |
+| **1.5.4** 🔴 | Inline detours and hook removal | Nanda | ⏳ |
+| **1.5.5** 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
+| **1.5.6** 🟡 | Reinstall after a Discord update | Nanda | ⏳ |
+| **1.5.7** 🔴 | Verify on 3 client versions | Nanda | ⏳ |
+| **1.6.1** 🔴 | A map of GPUI | Nanda | ⏳ |
+| **1.6.2** 🔴 | GPUI reference build | anyone | ⏳ |
+| **1.6.3** 🟡 | What of GPUI is visible in a release binary | Nanda | ⏳ |
+| **1.6.4** 🟡 | Themes in Zed and what to expect from Phoenix | anyone | ⏳ |
+| **1.6.5** 🔴 | Report `docs/research/gpui.md` | Nanda | ⏳ |
+| **1.7.1** 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ⏳ |
+| **1.7.2** 🔴 | `language` setting, OS default | Nanda | ⏳ |
+| **1.7.3** 🔴 | Russian translation of CLI, notifications, installer | anyone | ⏳ |
+| **1.7.4** 🟡 | `Host::t()` and per-plugin `.ftl` | Nanda | ⏳ |
+| **1.7.5** 🟡 | CI check: every `en` key exists in `ru` | anyone | ⏳ |
+
+Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do not depend on the network and run in parallel with 1.2–1.4. Stage 1.7 starts after 1.1.7 (once there are CLI strings to translate) and must land before 1.4.3.
+
+## Risks
+
+- **Phoenix Canary ships before the phase ends.** Drop 1.4.3 and 1.2.9, bring 1.5 and 1.6 to a minimum, and start Phase 2 (2.1 reconnaissance) in parallel.
+- **Phoenix ignores the proxy or pins certificates.** The network layer then depends on the loader (ARCHITECTURE.md, "Phoenix and the proxy", option 3); 1.5 becomes required for every plugin, not just UI ones.
+- **Antivirus flags `version.dll` as malware.** Code signing (question above), open source, submitting samples to Microsoft and major vendors before release.
+- **Discord changes the Gateway protocol.** Caught by `selftest` (1.1.8) and fixtures; the fix goes into `phoecord-proxy::codec`, plugins stay untouched.
+- **WASM is slow on the hot path.** Run the 1.1.10 benchmark on a WASM chain too; if p99 > 1 ms, `message_logger` and `fake_nitro` stay native.
+- **Account bans.** Client modification breaks Discord's Terms. Plugins do nothing the server would see as bot activity (mass requests, self-bots); this rule applies to every PR review.
+- **Russian translation drifts behind English.** The 1.7.5 CI check fails on missing keys; a string without a translation falls back to English rather than showing a key.
+
+## Living docs and publications
+
+- [`ROADMAP.md`](../../ROADMAP.md): tick the 1.1–1.7 boxes in each task's PR.
+- [`docs/CHANGELOG.md`](../CHANGELOG.md): an "Unreleased" line in every PR; versions `0.2`–`0.6` at the end of stages.
+- [`ARCHITECTURE.md`](../../ARCHITECTURE.md): on Plugin API changes, the runtime decision and how we reach Phoenix.
+- [`docs/CODE_MAP.md`](../CODE_MAP.md): every new file, config key and env variable.
+- [`docs/PROJECT_MAP.md`](../PROJECT_MAP.md): every plugin's status.
+- README: the "Development status" table at the end of each stage.
+- GitHub Releases: one per stage starting at `0.2`, using [`_template/release.md`](../_template/release.md).
+
+## How to start
+
+Read [`AGENTS.md`](AGENTS.md), then [`ai/spec.md`](ai/spec.md) and your task in [`ai/plan.md`](ai/plan.md). Branch from a fresh `main` with a prefix from [`CONTRIBUTING.md`](../../CONTRIBUTING.md). Nanda's first task is 1.0.1 (merge this plan), then 1.1.1. A contributor's first task is 1.2.1 `silent_typing`, once 1.1.5 is merged; until then 1.1.9 (fixtures) and 1.6.2 (GPUI reference build) are open.
+
+## Where things are
+
+| What | Where |
+|:--|:--|
+| Plugin API | `crates/phoecord-core/src/plugin.rs` |
+| Plugin chain | `crates/phoecord-plugin-runtime/src/lib.rs` |
+| Gateway codecs | `crates/phoecord-proxy/src/codec.rs` |
+| Local CA | `crates/phoecord-proxy/src/ca.rs` |
+| Certificate trust | `crates/phoecord-proxy/src/trust.rs` |
+| Built-in plugins | `crates/phoecord-plugins/src/` |
+| Plugin template | `docs/_template/code/plugin.rs`, `docs/_template/code/plugin.toml` |
+| AOB scanner | `crates/phoecord-loader/src/aob.rs` |
+| Installer | `crates/phoecord-installer/src/lib.rs` |
+| CLI | `crates/phoecord-cli/src/main.rs` |

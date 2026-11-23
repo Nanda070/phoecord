@@ -1,21 +1,21 @@
-# Правила поведения
+# Code of Conduct
 
-Эти правила действуют для всех, кто участвует в PhoeCord: в репозитории, в issue, в обсуждениях и в каналах проекта.
+These rules apply to everyone who takes part in PhoeCord: in the repository, in issues, in discussions and in the project's channels.
 
-## Чего мы ждём
+## What we expect
 
-- Уважительного общения, даже в споре. Критикуем код и решения, а не людей.
-- Открытости: если не успеваете, не понимаете задачу или ошиблись — говорите сразу.
-- Помощи новичкам: объяснить, показать, ответить на вопрос.
-- Бережного отношения к пользователям: PhoeCord видит их переписку, поэтому приватность — не опция.
+- Respectful communication, even in an argument. We criticize code and decisions, not people.
+- Openness: if you are running late, do not understand the task or made a mistake, say so right away.
+- Helping newcomers: explain, show, answer the question.
+- Care for users: PhoeCord sees their conversations, so privacy is not optional.
 
-## Что недопустимо
+## What is not acceptable
 
-- Оскорбления, травля, угрозы, дискриминация по любому признаку.
-- Публикация чужих личных данных, токенов, логов переписки без согласия.
-- Плагины и PR для слежки за людьми, рассылки спама, обхода банов и модерации.
-- Намеренная порча кода, релизов или инфраструктуры проекта.
+- Insults, harassment, threats, discrimination of any kind.
+- Publishing other people's personal data, tokens or chat logs without consent.
+- Plugins and PRs for spying on people, spam, or evading bans and moderation.
+- Deliberately damaging the code, releases or the project's infrastructure.
 
-## Если что-то пошло не так
+## If something goes wrong
 
-Напишите **Nanda** (Discord `nandak070`, Telegram [@nanda070](https://t.me/nanda070)). Обращение рассматривается конфиденциально. Последствия — от предупреждения до блокировки в репозитории; решение принимают владельцы.
+Write to **Nanda** (Discord `nandak070`, Telegram [@nanda070](https://t.me/nanda070)). Reports are handled confidentially. Consequences range from a warning to a ban from the repository; the owners decide (see [`docs/GOVERNANCE.md`](docs/GOVERNANCE.md)).

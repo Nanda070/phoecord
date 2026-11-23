@@ -1,12 +1,12 @@
-# Как вносить изменения
+# Contributing
 
-Работаем по GitHub Flow: каждое изменение — отдельная ветка и Pull Request. Как устроен проект — [`ARCHITECTURE.md`](ARCHITECTURE.md), что делаем сейчас — [`ROADMAP.md`](ROADMAP.md).
+We use GitHub Flow: every change is its own branch and Pull Request. The rules (branch prefixes, commits, who merges, checks, living docs) live in the root [`AGENTS.md`](AGENTS.md), the single source of truth; this page only lists the steps for a human. Which document to read for which task: [`docs/README.md`](docs/README.md).
 
-Префиксы веток: `feat/`, `fix/`, `refactor/`, `chore/`, `docs/` (пример: `feat/proxy-gateway`). Коммиты — [Conventional Commits](https://www.conventionalcommits.org/ru/), область — имя крейта без `phoecord-`: `feat(proxy): wire gateway into plugin chain`, `fix(loader): reject ambiguous AOB matches`.
+Branch prefixes: `feat/`, `fix/`, `refactor/`, `chore/`, `docs/` (example: `feat/proxy-gateway`). Commits follow [Conventional Commits](https://www.conventionalcommits.org/); the scope is the crate name without `phoecord-`: `feat(proxy): wire gateway into plugin chain`, `fix(loader): reject ambiguous AOB matches`.
 
-## Цикл задачи
+## Task cycle
 
-1. **Ветка от свежего `main`.** После этого `git branch` должен показывать новую ветку с префиксом.
+1. **Branch from a fresh `main`.** Afterwards `git branch` shows the new prefixed branch.
 
    ```bash
    git checkout main
@@ -14,61 +14,55 @@
    git checkout -b feat/my-feature
    ```
 
-2. **Разработка и атомарные коммиты.** Один коммит — одно законченное изменение, которое собирается и проходит тесты.
+2. **Develop in atomic commits.** One commit is one finished change that builds and passes tests.
 
    ```bash
-   git add <файлы>
+   git add <files>
    git commit -m "feat(plugins): port silent_typing to Plugin API v1"
    ```
 
-3. **Синхронизация с `main` перед отправкой.**
+3. **Sync with `main` before pushing.**
 
    ```bash
    git fetch origin main
    git rebase origin/main
    ```
 
-   При конфликтах: исправьте файлы, `git add <файлы>`, затем `git rebase --continue`. После rebase проверки должны проходить снова.
+   On conflicts: fix the files, `git add <files>`, then `git rebase --continue`. After the rebase the checks must pass again.
 
-4. **Пуш и Pull Request.**
+4. **Push and open a Pull Request.**
 
    ```bash
    git push -u origin feat/my-feature
    ```
 
-   На GitHub: **Compare & pull request** → заполните шаблон → в **Reviewers** укажите владельцев.
+   On GitHub: **Compare & pull request** → fill in the template → add the owners under **Reviewers**.
 
-5. **Review и слияние — владельцы.** Они смотрят **Files changed**, оставляют комментарии и нажимают **Approve**, затем **Squash and merge**; ветка удаляется.
+5. **Review and merge are done by the owners.** They read **Files changed**, leave comments and **Approve**, then **Squash and merge**; the branch is deleted.
 
-## Перед Pull Request
+## Before a Pull Request
 
-CI запускает те же проверки на Linux, Windows и macOS. Локально:
+CI runs the same checks on Linux, Windows and macOS. Locally, in one command:
 
 ```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+bash scripts/check.sh            # Windows: powershell -File scripts/check.ps1
 ```
 
-## Правила кода
+It runs `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and checks that `TASKS.md` and `docs/DECISIONS.md` are up to date.
 
-- **Границы крейтов.** `phoecord-core` не зависит ни от одного нашего крейта и не делает I/O. Плагины не открывают сокеты и файлы — только через `Host`. Загрузчик (`phoecord-loader`) не нужен сетевым плагинам и не должен становиться их зависимостью.
-- **Код из Ashcord.** Файл, перенесённый из [Ashcord](https://github.com/Tjabooo/ashcord), начинается с заголовка:
+## Code rules
 
-  ```rust
-  // Ported from Ashcord (https://github.com/Tjabooo/ashcord), MIT, Copyright (c) 2026 Tjabooo.
-  // See LICENSE and the Credits section of README.md.
-  ```
+- **Crate boundaries.** `phoecord-core` depends on none of our crates and does no I/O. Plugins never open sockets or files, only through `Host`. The loader (`phoecord-loader`) is not needed by network plugins and must never become their dependency.
+- **Plugin API.** A change to `Event`, `Verdict`, `Host` or `Manifest` is its own PR, labelled `api`, with an entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). A new variant is a minor change; changing an existing one bumps `API_VERSION`.
+- **`unsafe`.** Allowed only in `phoecord-loader`, with a `// SAFETY:` comment above every block.
+- **Tests without network.** Tests never call Discord and never need a token. Gateway tests use recorded payloads with personal data removed.
+- **Plugins.** Every plugin has a unique `snake_case` id, tests next to its code, and a row in the plugin table of [`ROADMAP.md`](ROADMAP.md).
+- **User-facing text.** Strings the app shows go through the localization layer once it exists (ROADMAP 1.7); until then keep them in one place per crate so they are easy to extract. English is the source language, Russian is the first translation.
+- **License.** Never remove or edit the copyright lines in [`LICENSE`](LICENSE).
 
-  Заголовок не удаляется, даже если файл сильно переписан. Миграция модулей — [`docs/ASHCORD_AUDIT.md`](docs/ASHCORD_AUDIT.md).
-- **Plugin API.** Изменение `Event`, `Verdict`, `Host` или `Manifest` — отдельный PR с пометкой `api` и записью в [`CHANGELOG.md`](CHANGELOG.md). Новый вариант — minor, изменение существующего — bump `API_VERSION`.
-- **`unsafe`.** Допускается только в `phoecord-loader` и только с комментарием `// SAFETY:` над каждым блоком.
-- **Тесты без сети.** Тесты не ходят в Discord и не требуют токена. Для Gateway — записанные payload'ы без личных данных.
-- **Плагины.** Каждый плагин — свой `id` в `snake_case`, тесты рядом с кодом, строка в таблице плагинов в [`ROADMAP.md`](ROADMAP.md).
+## What not to send
 
-## Чего не присылать
+- Discord tokens, `ca.key`, `ca.pem`, traffic dumps with personal data, Discord client binaries or disassembled pieces of them.
+- Features for mass messaging, self-bots, ban or moderation evasion, or collecting other people's data. Such PRs are closed without review.
 
-- Токены Discord, `ca.key`, `ca.pem`, дампы трафика с личными данными, бинарники клиента Discord и их дизассемблированные куски.
-- Функции для массовых рассылок, самоботов, обхода банов и модерации, сбора чужих данных. Такие PR закрываются без review.
-
-Уязвимости — не в issue, а лично: [`SECURITY.md`](SECURITY.md).
+Vulnerabilities go privately, not into an issue: [`SECURITY.md`](SECURITY.md).

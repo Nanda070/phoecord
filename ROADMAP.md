@@ -1,150 +1,159 @@
-# Роадмап PhoeCord
+# PhoeCord roadmap
 
-План от форка Ashcord до релиза v1.0 на Project Phoenix. Как всё устроено — [`ARCHITECTURE.md`](ARCHITECTURE.md). Отмечайте чекбокс в том же PR, где сделана работа.
+The plan from rebuilding the v0 codebase to a v1.0 release on Project Phoenix. How it all fits together: [`ARCHITECTURE.md`](ARCHITECTURE.md). Tick a box in the same PR that does the work. Task-level detail for the current phase: [`docs/phase-1/`](docs/phase-1/README.md).
 
-| Фаза | Когда | Цель | Версии |
+| Phase | When | Goal | Versions |
 |:---|:---|:---|:---|
-| **0. Форк** | ноябрь 2026 | Workspace, документация, CI | ✅ |
-| **1. До публичной беты Phoenix Canary** | до выхода Canary | Сетевой слой работает на текущем Discord, динамические плагины, прототипы инсталлера и загрузчика | `0.2` – `0.6` |
-| **2. Релиз Phoenix Canary** | после выхода Canary | Реверс, сигнатуры, UI-хуки и темы, v1.0 | `0.7` – `1.0` |
+| **0. Foundation** | November 2026 | Workspace, docs, CI | ✅ |
+| **1. Before the Phoenix Canary public beta** | until Canary ships | Network layer works on today's Discord, dynamic plugins, installer and loader prototypes, localization | `0.2` – `0.6` |
+| **2. Phoenix Canary release** | after Canary ships | Reverse engineering, signatures, UI hooks and themes, v1.0 | `0.7` – `1.0` |
 
-Дат у Фазы 2 нет: она начинается, когда Discord выпускает Phoenix Canary. Пока его нет, всё, что можно, делаем на текущем клиенте.
+Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then we do everything we can on today's client.
 
 ---
 
-## Фаза 0. Форк ✅
+## Phase 0. Foundation ✅
 
-- [x] Аудит Ashcord 0.1.0 — [`docs/ASHCORD_AUDIT.md`](docs/ASHCORD_AUDIT.md)
+- [x] Audit of the v0 codebase and migration map: [`docs/phase-1/ai/spec.md`](docs/phase-1/ai/spec.md)
 - [x] Cargo workspace: `core`, `proxy`, `plugin-runtime`, `plugin-sdk`, `plugins`, `loader`, `installer`, `cli`
-- [x] Перенос `val`, `etf`, маршрутов, `codec`, `ca`, `trust` с сохранением copyright
-- [x] Plugin API v1 (`Manifest`, `Event`, `Verdict`, `Host`) и `Chain`
-- [x] AOB-сканер с тестами
-- [x] README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, шаблоны issue и PR, CI на 3 ОС
+- [x] Ported `val`, `etf`, routes, `codec`, `ca`, `trust`, keeping the copyright
+- [x] Plugin API v1 (`Manifest`, `Event`, `Verdict`, `Host`) and `Chain`
+- [x] AOB scanner with tests
+- [x] README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue and PR templates, CI on 3 OSes
 
 ---
 
-## Фаза 1. До публичной беты Phoenix Canary
+## Phase 1. Before the Phoenix Canary public beta
 
-### 1.1 Рефакторинг ядра: прокси на новом API · `0.2`
+### 1.1 Core refactor: the proxy on the new API · `0.2`
 
-- [ ] Перенести `proxy.rs`, `rest.rs`, `gateway.rs` в `phoecord-proxy`, заменить `App::on_*` на `Chain`
-- [ ] `Host` для прокси: настройки из `config.toml`, KV в папке данных, `self_id` из READY, `notify` с rate limit
-- [ ] `config.toml`: свободные секции `[plugins.<id>]` вместо поля на каждый плагин; live-reload сохранить
-- [ ] Перенести `state.rs` (знания об аккаунте) за `Host`, убрать глобальный `Mutex` на всю цепочку
+- [ ] Move `proxy.rs`, `rest.rs`, `gateway.rs` into `phoecord-proxy`, replace `App::on_*` with `Chain`
+- [ ] A proxy `Host`: settings from `config.toml`, KV in the data folder, `self_id` from READY, rate-limited `notify`
+- [ ] `config.toml`: free-form `[plugins.<id>]` sections instead of a field per plugin; keep live reload
+- [ ] Move `state.rs` (account knowledge) behind `Host`, drop the global `Mutex` held for the whole chain
 - [ ] CLI: `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `paths`
-- [ ] `selftest`: REST + Gateway (JSON/zlib, ETF/zstd) против настоящего Discord без логина
-- [ ] Записанные payload'ы Gateway без личных данных для тестов (`tests/fixtures/`)
-- [ ] Бенчмарк: задержка кадра Gateway через цепочку ≤ 1 мс p99 на READY 5 МБ
+- [ ] `selftest`: REST + Gateway (JSON/zlib, ETF/zstd) against the real Discord without logging in
+- [ ] Recorded Gateway payloads without personal data for tests (`tests/fixtures/`)
+- [ ] Benchmark: Gateway frame latency through the chain ≤ 1 ms p99 on a 5 MB READY
 
-### 1.2 Встроенные плагины на Plugin API · `0.3`
+### 1.2 Built-in plugins on the Plugin API · `0.3`
 
 - [x] `no_track`
 - [ ] `silent_typing`
 - [ ] `unindent`
 - [ ] `game_activity_toggle`
 - [ ] `relationship_notifier`
-- [ ] `fake_nitro` (эмодзи; стикеры и качество стрима — отдельно)
-- [ ] `message_logger` (кэш, удалённые и изменённые, `phoecord log`)
-- [ ] Новый: `clear_urls` — чистка трекинговых параметров в исходящих сообщениях
-- [ ] Новый: слэш-команды PhoeCord (`/phoecord plugins`, `/phoecord toggle`) — локальный ответ на `POST /interactions`
-- [ ] `phoecord import-vencord` через поле `vencord` в манифестах
+- [ ] `fake_nitro` (emoji; stickers and stream quality separately)
+- [ ] `message_logger` (cache, deleted and edited, `phoecord log`)
+- [ ] New: `clear_urls`, strip tracking parameters from outgoing messages
+- [ ] New: PhoeCord slash commands (`/phoecord plugins`, `/phoecord toggle`), a local reply to `POST /interactions`
+- [ ] `phoecord import-vencord` via the `vencord` field in manifests
 
-### 1.3 Динамический движок плагинов (WASM) · `0.4`
+### 1.3 Dynamic plugin engine (WASM) · `0.4`
 
-- [ ] `wit/phoecord.wit`: мир `plugin` (экспорт `on-event`, `wants`, `manifest`) и интерфейс `host`
-- [ ] Бэкенд `wasmtime` в `phoecord-plugin-runtime` за тем же `Chain`
-- [ ] Лимиты: epoch-таймаут на событие, лимит памяти, отключение плагина при панике
-- [ ] Формат пакета: `plugin.toml` + `plugin.wasm`, папка `plugins/` в данных PhoeCord, горячая загрузка
-- [ ] Права в манифесте (`events`, `notify`, `kv`): хост не передаёт плагину то, на что он не подписан
-- [ ] `phoecord-plugin-sdk`: биндинги + макрос `#[phoecord::plugin]`, пример `examples/hello-plugin`
-- [ ] Шаблон плагина на TypeScript через `componentize-js`
-- [ ] `clear_urls` собран как WASM-плагин — доказательство, что внешний плагин работает без пересборки PhoeCord
+- [ ] `wit/phoecord.wit`: the `plugin` world (exports `on-event`, `wants`, `manifest`) and the `host` interface
+- [ ] A `wasmtime` backend in `phoecord-plugin-runtime` behind the same `Chain`
+- [ ] Limits: per-event epoch timeout, memory limit, disabling a plugin on panic
+- [ ] Package format: `plugin.toml` + `plugin.wasm`, a `plugins/` folder in PhoeCord's data, hot loading
+- [ ] Rights from the manifest (`events`, `notify`, `kv`): the host never passes a plugin what it did not subscribe to
+- [ ] `phoecord-plugin-sdk`: bindings + the `#[phoecord::plugin]` macro, example `examples/hello-plugin`
+- [ ] A TypeScript plugin template via `componentize-js`
+- [ ] `clear_urls` built as a WASM plugin: proof that an external plugin works without rebuilding PhoeCord
 
-### 1.4 Прототип GUI-инсталлера · `0.5`
+### 1.4 GUI installer prototype · `0.5`
 
-- [ ] `phoecord-installer`: поиск Stable / PTB / Canary на Windows, macOS, Linux (Flatpak, Snap)
-- [ ] Установка и удаление CA, автозапуск прокси (служба / LaunchAgent / systemd user unit)
-- [ ] GUI на GPUI: список клиентов, кнопки «Установить», «Удалить», «Починить» — заодно практика с GPUI перед Фазой 2
-- [ ] Полный откат: CA, DLL, автозапуск, папки — одной кнопкой
-- [ ] Подписанные релизы и `SHA256SUMS` в GitHub Releases
+- [ ] `phoecord-installer`: find Stable / PTB / Canary on Windows, macOS, Linux (Flatpak, Snap)
+- [ ] Install and remove the CA, autostart the proxy (service / LaunchAgent / systemd user unit)
+- [ ] GUI: a client list and "Install", "Uninstall", "Repair" buttons
+- [ ] Full rollback: CA, DLL, autostart, folders, one button
+- [ ] Signed releases and `SHA256SUMS` on GitHub Releases
 
-### 1.5 Прототип DLL sideloading · `0.6`
+### 1.5 DLL sideloading prototype · `0.6`
 
-- [ ] `phoecord-loader` как `version.dll`: форвард всех экспортов на `System32\version.dll` по полному пути
-- [ ] `DllMain` без работы под loader lock, рабочий поток, логирование в файл
-- [ ] Определение версии клиента (ресурсы exe + хэш `.text`), формат `signatures/*.toml`
-- [ ] Inline detour + снятие хуков при выгрузке
-- [ ] IPC загрузчик ↔ прокси (named pipe): статус, настройки, события для UI
-- [ ] Переустановка после обновления Discord (`app-x.y.z`)
-- [ ] Проверка на текущем клиенте: загрузчик стартует и выключается без единого крэша на 3 версиях подряд
+- [ ] `phoecord-loader` as `version.dll`: forward every export to `System32\version.dll` by full path
+- [ ] `DllMain` with no work under the loader lock, a worker thread, logging to a file
+- [ ] Client version detection (exe resources + `.text` hash), the `signatures/*.toml` format
+- [ ] Inline detours + hook removal on unload
+- [ ] Loader ↔ proxy IPC (named pipe): status, settings, events for the UI
+- [ ] Reinstall after a Discord update (`app-x.y.z`)
+- [ ] Check on today's client: the loader starts and shuts down without a single crash on 3 consecutive versions
 
-### 1.6 Исследование GPUI (Zed)
+### 1.6 GPUI (Zed) research
 
-- [ ] Карта GPUI: `App`, `Window`, элементы, как строится кадр, где живёт палитра темы
-- [ ] Тестовое приложение на GPUI, собранное как Phoenix (release, LTO, strip) — эталон для сигнатур
-- [ ] Какие функции GPUI переживают LTO и узнаются в бинарнике (строки, паники, `type_name`)
-- [ ] Как Zed грузит темы (JSON) и можно ли ожидать того же от Phoenix
-- [ ] Отчёт `docs/research/gpui.md` с кандидатами на хуки: палитра, список вкладок настроек, рендер сообщения
+- [ ] A map of GPUI: `App`, `Window`, elements, how a frame is built, where the theme palette lives
+- [ ] A test GPUI app built like Phoenix (release, LTO, strip) as a signature reference
+- [ ] Which GPUI functions survive LTO and are recognisable in the binary (strings, panics, `type_name`)
+- [ ] How Zed loads themes (JSON) and whether to expect the same from Phoenix
+- [ ] Report `docs/research/gpui.md` with hook candidates: palette, settings tab list, message render
 
-**Готовность к Фазе 2:** сетевой слой стабилен на текущем Discord, ≥ 8 плагинов, WASM-плагин ставится без пересборки, загрузчик проверен на текущем клиенте, отчёт по GPUI готов.
+### 1.7 Localization: English and Russian · `0.6`
+
+- [ ] `phoecord-i18n` helper on Fluent: per-crate `i18n/{en,ru}/main.ftl`, fallback to English
+- [ ] `language` in `config.toml`, defaulting to the OS language
+- [ ] CLI, notifications and installer strings moved into `.ftl`; Russian translation complete
+- [ ] `Host::t()` and per-plugin `.ftl` files (Plugin API minor bump)
+- [ ] CI check: every `en` key exists in `ru`
+
+**Ready for Phase 2 when:** the network layer is stable on today's Discord, ≥ 8 plugins, a WASM plugin installs without a rebuild, the loader is proven on today's client, the GPUI report is done, the app speaks English and Russian.
 
 ---
 
-## Фаза 2. Релиз Phoenix Canary
+## Phase 2. Phoenix Canary release
 
-### 2.1 Разведка Phoenix · `0.7`
+### 2.1 Phoenix reconnaissance · `0.7`
 
-- [ ] Слушается ли Phoenix `HTTPS_PROXY` / системного прокси; доверяет ли системному хранилищу; есть ли пиннинг
-- [ ] Кодировка и сжатие Gateway в Phoenix (ETF? zstd?), новые события и поля
-- [ ] Выбор способа подключения к прокси (ARCHITECTURE.md, «Phoenix и прокси») и его реализация
-- [ ] Таблица импортов: `version.dll` или `winhttp.dll` для sideloading; путь установки и схема обновлений
-- [ ] `phoecord launch` и инсталлер находят Phoenix
+- [ ] Does Phoenix honour `HTTPS_PROXY` / the system proxy; does it trust the system store; does it pin
+- [ ] Gateway encoding and compression in Phoenix (ETF? zstd?), new events and fields
+- [ ] Choose how to reach the proxy (ARCHITECTURE.md, "Phoenix and the proxy") and implement it
+- [ ] Import table: `version.dll` or `winhttp.dll` for sideloading; install path and update scheme
+- [ ] `phoecord launch` and the installer find Phoenix
 
-### 2.2 Реверс и AOB-сигнатуры · `0.8`
+### 2.2 Reverse engineering and AOB signatures · `0.8`
 
-- [ ] Проект Ghidra (и IDA) на Phoenix Canary: импорт символов GPUI из эталонной сборки (1.6)
-- [ ] Сигнатуры: палитра темы, список вкладок настроек, рендер сообщения, создание HTTP-клиента (если нужно для 2.1)
-- [ ] Каждая сигнатура уникальна и проверена на двух соседних сборках
-- [ ] CI-проверка сигнатур на дампах `.text` (дампы хранятся вне репозитория)
-- [ ] Обновление сигнатур без пересборки загрузчика; регламент «новая сборка Canary → сигнатуры за 48 часов»
+- [ ] A Ghidra (and IDA) project on Phoenix Canary: GPUI symbols imported from the reference build (1.6)
+- [ ] Signatures: theme palette, settings tab list, message render, HTTP client creation (if 2.1 needs it)
+- [ ] Every signature is unique and verified on two adjacent builds
+- [ ] CI check of signatures on `.text` dumps (dumps kept outside the repository)
+- [ ] Signature updates without rebuilding the loader; the rule "new Canary build → signatures within 48 hours"
 
-### 2.3 UI-хуки и движок тем · `0.9`
+### 2.3 UI hooks and theme engine · `0.9`
 
-- [ ] Движок тем: `theme.toml` → палитра GPUI, живое переключение
-- [ ] 3 встроенные темы + импорт тем Vencord там, где это переводится в палитру
-- [ ] Вкладка «PhoeCord» в настройках клиента: включение плагинов и их настройки
-- [ ] `MessageLogger` в UI: удалённые сообщения зачёркнуты, история правок по наведению
-- [ ] Деградация проверена: неизвестная сборка → только сеть, без крэшей
+- [ ] Theme engine: `theme.toml` → GPUI palette, live switching
+- [ ] 3 built-in themes + import of Vencord themes where they translate to a palette
+- [ ] A "PhoeCord" tab in the client's settings: enable plugins and edit their settings (English and Russian)
+- [ ] `MessageLogger` in the UI: deleted messages struck through, edit history on hover
+- [ ] Degradation verified: unknown build → network only, no crashes
 
-### 2.4 Релиз v1.0 · `1.0`
+### 2.4 Release v1.0 · `1.0`
 
-Топ-10 плагинов Vencord по популярности (наша оценка) — все должны работать:
+The top 10 Vencord plugins by popularity (our estimate); all of them must work:
 
-| # | Плагин | Слой | Статус |
+| # | Plugin | Layer | Status |
 |---:|:---|:---|:---|
-| 1 | MessageLogger | Сеть + UI | ⏳ |
-| 2 | FakeNitro | Сеть | ⏳ |
-| 3 | NoTrack | Сеть | ✅ |
-| 4 | ClearURLs | Сеть | ⏳ |
-| 5 | SilentTyping | Сеть | ⏳ |
-| 6 | ShowHiddenChannels | Сеть + UI | ⏳ |
-| 7 | Translate | Сеть | ⏳ |
-| 8 | PlatformIndicators | Сеть + UI | ⏳ |
+| 1 | MessageLogger | Network + UI | ⏳ |
+| 2 | FakeNitro | Network | ⏳ |
+| 3 | NoTrack | Network | ✅ |
+| 4 | ClearURLs | Network | ⏳ |
+| 5 | SilentTyping | Network | ⏳ |
+| 6 | ShowHiddenChannels | Network + UI | ⏳ |
+| 7 | Translate | Network | ⏳ |
+| 8 | PlatformIndicators | Network + UI | ⏳ |
 | 9 | PermissionsViewer | UI | ⏳ |
 | 10 | ViewIcons | UI | ⏳ |
 
-- [ ] Все 10 плагинов выше работают на Phoenix Canary и на текущем клиенте (сетевые)
-- [ ] Документация для сторонних разработчиков: `docs/plugins/` — быстрый старт (Rust и TypeScript), справочник событий, права, публикация
-- [ ] Стабилизация Plugin API: `API_VERSION = 1` замораживается, изменения — только через minor
-- [ ] Инсталлер 1.0 для Windows; macOS и Linux — с сетевым слоем
-- [ ] Аудит безопасности CA, прокси и загрузчика перед релизом
-- [ ] Релиз в GitHub Releases с подписанными бинарниками и `CHANGELOG.md`
+- [ ] All 10 plugins above work on Phoenix Canary, and the network ones on today's client too
+- [ ] Docs for third-party developers in `docs/plugins/`: quick start (Rust and TypeScript), event reference, rights, publishing, localizing a plugin
+- [ ] Plugin API stabilization: `API_VERSION = 1` is frozen, changes are minor-only
+- [ ] Installer 1.0 for Windows; macOS and Linux with the network layer
+- [ ] Security audit of the CA, the proxy and the loader before release
+- [ ] A GitHub release with signed binaries and `docs/CHANGELOG.md`
 
 ---
 
-## Дальше (после 1.0)
+## Later (after 1.0)
 
-- Каталог сторонних плагинов с проверкой прав и подписей.
-- UI-плагины через WASM: декларативные элементы, которые загрузчик превращает в GPUI.
-- macOS и Linux для UI-слоя.
-- Остальные плагины из [списка Ashcord](https://github.com/Tjabooo/ashcord/blob/main/docs/PLUGINS.md): FixYoutubeEmbeds, MessageLinkEmbeds, ServerInfo, MemberCount и другие.
+- A third-party plugin catalogue with rights and signature checks.
+- UI plugins through WASM: declarative elements the loader turns into GPUI.
+- The UI layer on macOS and Linux.
+- More languages after English and Russian.
+- The remaining network and UI plugins: FixYoutubeEmbeds, MessageLinkEmbeds, ServerInfo, MemberCount and others.

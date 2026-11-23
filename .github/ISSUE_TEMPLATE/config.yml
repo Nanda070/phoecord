@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Уязвимость
+  - name: Vulnerability
     url: https://github.com/nanda070/phoecord/security/advisories/new
-    about: Только приватно. Не открывайте публичный issue.
-  - name: Архитектура и роадмап
+    about: Privately only. Do not open a public issue.
+  - name: Architecture and roadmap
     url: https://github.com/nanda070/phoecord/blob/main/ROADMAP.md
-    about: Проверьте, нет ли идеи уже в плане.
+    about: Check whether the idea is already planned.

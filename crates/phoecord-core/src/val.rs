@@ -1,6 +1,3 @@
-// Ported from Ashcord (https://github.com/Tjabooo/ashcord), MIT, Copyright (c) 2026 Tjabooo.
-// See LICENSE and the Credits section of README.md.
-
 //! One value type for both gateway encodings (JSON and Erlang ETF), so plugins are written once.
 //!
 //! ETF keeps details JSON doesn't have (atoms vs binaries, 64-bit integers instead of string snowflakes).

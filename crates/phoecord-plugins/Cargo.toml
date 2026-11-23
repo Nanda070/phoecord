@@ -1,6 +1,6 @@
 [package]
 name = "phoecord-plugins"
-description = "PhoeCord built-in plugins (native, ported from Ashcord)"
+description = "PhoeCord built-in plugins (native)"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -14,3 +14,6 @@ phoecord-core.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+phoecord-plugin-runtime.workspace = true
