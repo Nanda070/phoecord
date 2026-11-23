@@ -323,7 +323,7 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Done when:** `phoecord setup` installs CA trust and autostart through the logged steps (tests over a fake `System` on all 3 OSes); the reboot check on real machines is 1.4.6.
 
-### 1.4.3. Installer GUI (Nanda)
+### 1.4.3. Installer GUI (Kennurken)
 
 **Files:** `crates/phoecord-installer-gui/**`
 

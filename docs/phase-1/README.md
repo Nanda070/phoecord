@@ -41,7 +41,7 @@ none
 | | Nanda | Contributors |
 |:---|:---|:---|
 | Area | core, Plugin API, proxy, CA and trust, loader, installer, runtime, releases, review and merging | plugins, SDK examples, tests and fixtures, translations, docs, research |
-| Tasks | 1.0, 1.1 (except 1.1.9), 1.2.3–1.2.6, 1.2.8, 1.3 (except 1.3.6, 1.3.7), 1.4, 1.5, 1.6, 1.7.1, 1.7.2, 1.7.4, 1.7.5 | 1.1.9, 1.2.1 (matvee, done), 1.2.2 and 1.2.7 (matvee), 1.2.9, 1.3.6, 1.3.7, 1.7.3 |
+| Tasks | 1.0, 1.1 (except 1.1.9), 1.2.3–1.2.6, 1.2.8, 1.3 (except 1.3.6, 1.3.7), 1.4 (except 1.4.3), 1.5, 1.6, 1.7.1, 1.7.2, 1.7.4, 1.7.5 | 1.1.9, 1.2.1 (matvee, done), 1.2.2 and 1.2.7 (matvee), 1.4.3 (Kennurken), 1.2.9, 1.3.6, 1.3.7, 1.7.3 |
 
 Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor plugins are written against an API that is already merged.
 
@@ -92,7 +92,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ⏳ |
 | **1.4.1** 🔴 | Client discovery on 3 OSes | Nanda | ✅ 23.11, PR #23 (library; real machines not checked) |
 | **1.4.2** 🔴 | CA and proxy autostart | Nanda | ✅ 23.11, PR #23; `phoecord setup` uses it since PR #33 |
-| **1.4.3** 🟡 | Installer GUI: dark red theme, tabs, motion, as easy as BetterDiscord/Vencord; terms screen; Plugins tab (install from file or link, rights shown first, on/off, remove) | Nanda | ⏳ |
+| **1.4.3** 🟡 | Installer GUI: dark red theme, tabs, motion, as easy as BetterDiscord/Vencord; terms screen; Plugins tab (install from file or link, rights shown first, on/off, remove) | Kennurken | ⏳ |
 | **1.4.4** 🔴 | Full rollback | Nanda | ✅ 23.11, PR #23; `phoecord uninstall` since PR #33 |
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
 | **1.4.6** 🔴 | Manual check on real Windows, macOS and Linux machines: `setup` → reboot → proxy runs and Discord connects; `uninstall` leaves no file, trust entry or autostart entry | Nanda | ⏳ |
