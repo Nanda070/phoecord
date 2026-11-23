@@ -51,6 +51,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+          # The WASM runtime tests build a guest component for this target.
+          targets: wasm32-wasip2
       - uses: Swatinem/rust-cache@v2
       - name: cargo check
         run: cargo check --workspace --all-targets

@@ -1,3 +1,4 @@
+#![allow(dead_code)] // each test binary uses a different part
 //! Shared setup for the WASM tests: builds the guest in `tests/guest` once per test binary.
 
 use std::path::PathBuf;

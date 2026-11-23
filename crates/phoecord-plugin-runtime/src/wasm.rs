@@ -273,6 +273,9 @@ struct State {
     started: Instant,
     host_wait: Duration,
     timeout: Duration,
+    rights: Vec<Right>,
+    /// Rights a call was refused for, so each is logged once.
+    refused: Vec<Right>,
 }
 
 impl State {
@@ -288,6 +291,22 @@ impl State {
             Ok(Down::Reply(r)) => Ok(r),
             _ => Err(GONE.into()),
         }
+    }
+
+    /// Check a right. A refusal is an error for the guest and a log line (once per right).
+    fn allow(&mut self, right: Right) -> Result<(), String> {
+        if self.rights.contains(&right) {
+            return Ok(());
+        }
+        let msg = format!(
+            "this plugin has no `{}` right (add it to `rights` in plugin.toml)",
+            right.name()
+        );
+        if !self.refused.contains(&right) {
+            self.refused.push(right);
+            let _ = self.call_unit(HostCall::Log(msg.clone()));
+        }
+        Err(msg)
     }
 
     fn call_val(&mut self, call: HostCall) -> Option<Val> {
@@ -321,12 +340,14 @@ impl wit_host::Host for State {
             .map(val_to_tree)
     }
     fn kv_get(&mut self, key: String) -> Result<Option<wit::Tree>, String> {
+        self.allow(Right::Kv)?;
         Ok(self
             .call_val(HostCall::KvGet(key))
             .as_ref()
             .map(val_to_tree))
     }
     fn kv_set(&mut self, key: String, value: wit::Tree) -> Result<(), String> {
+        self.allow(Right::Kv)?;
         self.call_unit(HostCall::KvSet(key, tree_to_val(&value)?))
     }
     fn self_id(&mut self) -> Option<u64> {
@@ -336,21 +357,25 @@ impl wit_host::Host for State {
         }
     }
     fn notify(&mut self, title: String, body: String) -> Result<(), String> {
+        self.allow(Right::Notify)?;
         self.call_unit(HostCall::Notify(title, body))
     }
     fn log(&mut self, message: String) {
         let _ = self.call_unit(HostCall::Log(message));
     }
     fn emit_send(&mut self, op: i64, payload: wit::Tree) -> Result<(), String> {
+        self.allow(Right::EmitSend)?;
         self.call_unit(HostCall::EmitSend(op, tree_to_val(&payload)?))
     }
     fn guild_emojis(&mut self, guild_id: u64) -> Result<Vec<u64>, String> {
+        self.allow(Right::Guilds)?;
         match self.call(HostCall::GuildEmojis(guild_id))? {
             HostReply::Ids(ids) => Ok(ids),
             _ => Ok(Vec::new()),
         }
     }
     fn channel_guild(&mut self, channel_id: u64) -> Result<Option<u64>, String> {
+        self.allow(Right::Guilds)?;
         match self.call(HostCall::ChannelGuild(channel_id))? {
             HostReply::Id(id) => Ok(id),
             _ => Ok(None),
@@ -362,6 +387,7 @@ impl wit_host::Host for State {
         url: String,
         body: Option<wit::Tree>,
     ) -> Result<wit::HostResponse, String> {
+        self.allow(Right::Fetch)?;
         let body = body.as_ref().map(tree_to_val).transpose()?;
         self.call_response(HostCall::Fetch(method, url, body))
     }
@@ -371,6 +397,7 @@ impl wit_host::Host for State {
         route: String,
         body: Option<wit::Tree>,
     ) -> Result<wit::HostResponse, String> {
+        self.allow(Right::Rest)?;
         let body = body.as_ref().map(tree_to_val).transpose()?;
         self.call_response(HostCall::Rest(method, route, body))
     }
@@ -511,6 +538,51 @@ impl Worker {
     }
 }
 
+/// A group of `Host` methods a plugin must be granted in its `plugin.toml` (`rights = [...]`).
+/// `setting`, `self_id` and `log` need no right.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Right {
+    /// `kv_get`, `kv_set`.
+    Kv,
+    /// `notify`.
+    Notify,
+    /// `emit_send`.
+    EmitSend,
+    /// `guild_emojis`, `channel_guild`.
+    Guilds,
+    /// `fetch`.
+    Fetch,
+    /// `rest`.
+    Rest,
+}
+
+impl Right {
+    pub const ALL: [Right; 6] = [
+        Right::Kv,
+        Right::Notify,
+        Right::EmitSend,
+        Right::Guilds,
+        Right::Fetch,
+        Right::Rest,
+    ];
+
+    /// The name used in `plugin.toml`.
+    pub fn name(self) -> &'static str {
+        match self {
+            Right::Kv => "kv",
+            Right::Notify => "notify",
+            Right::EmitSend => "emit_send",
+            Right::Guilds => "guilds",
+            Right::Fetch => "fetch",
+            Right::Rest => "rest",
+        }
+    }
+
+    pub fn parse(name: &str) -> Option<Right> {
+        Right::ALL.into_iter().find(|r| r.name() == name)
+    }
+}
+
 /// What a plugin is allowed and expected to be, beyond the component itself.
 #[derive(Clone, Debug)]
 pub struct Setup {
@@ -518,23 +590,37 @@ pub struct Setup {
     pub manifest: Option<Manifest>,
     /// Events delivered to the plugin; the rest never reach it.
     pub events: EventFilter,
+    /// `Host` methods the plugin may call.
+    pub rights: Vec<Right>,
 }
 
 impl Default for Setup {
-    /// The guest's own manifest and every event.
+    /// The guest's own manifest, every event and every right.
     fn default() -> Self {
         Setup {
             manifest: None,
             events: EventFilter::all(),
+            rights: Right::ALL.to_vec(),
         }
     }
 }
 
 impl Setup {
     pub fn from_package(package: PackageManifest) -> Result<Setup, String> {
+        let rights = package
+            .rights
+            .iter()
+            .map(|name| {
+                Right::parse(name).ok_or_else(|| {
+                    let known: Vec<_> = Right::ALL.iter().map(|r| r.name()).collect();
+                    format!("unknown right {name:?} (known: {})", known.join(", "))
+                })
+            })
+            .collect::<Result<_, _>>()?;
         Ok(Setup {
             manifest: Some(package.manifest),
             events: package.events,
+            rights,
         })
     }
 }
@@ -567,6 +653,7 @@ impl WasmPlugin {
         let pre = bindings::PluginPre::new(linker.instantiate_pre(&component)?)?;
         let engine = runtime.engine.clone();
         let limits = runtime.limits;
+        let rights = setup.rights.clone();
 
         let (down_tx, down_rx) = channel();
         let (up_tx, up_rx) = channel();
@@ -586,6 +673,8 @@ impl WasmPlugin {
                         started: Instant::now(),
                         host_wait: Duration::ZERO,
                         timeout: limits.event_timeout,
+                        rights,
+                        refused: Vec::new(),
                     },
                 );
                 store.limiter(|s| &mut s.limits);
