@@ -11,6 +11,7 @@ use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
 use phoecord_i18n::{Args, Localizer, Resolved, resolve_language};
 use phoecord_installer::launch::Occupant;
 use phoecord_installer::log::Step;
+use phoecord_installer::shortcut::Outcome;
 use phoecord_installer::uninstall::Kept;
 use phoecord_plugin_runtime::Chain;
 use phoecord_plugin_runtime::package::PackageSet;
@@ -76,6 +77,8 @@ enum Cmd {
     Setup {
         #[arg(long)]
         accept_terms: bool,
+        #[arg(long, value_enum, hide_possible_values = true)]
+        channel: Option<ChannelArg>,
     },
     Uninstall,
     Trust,
@@ -193,7 +196,16 @@ fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Re
             };
             runtime()?.block_on(run(paths, Some(launch), l10n))
         }
-        Cmd::Setup { accept_terms } => setup(&paths, l10n, &resolved.lang, accept_terms),
+        Cmd::Setup {
+            accept_terms,
+            channel,
+        } => setup(
+            &paths,
+            l10n,
+            &resolved.lang,
+            accept_terms,
+            channel.map(Into::into),
+        ),
         Cmd::Uninstall => uninstall(l10n),
         Cmd::Trust => {
             let ca = ca::Authority::load_or_create(&paths.data)?;
@@ -382,14 +394,42 @@ fn ask_terms(l10n: &Localizer, lang: &str, flag: bool) -> Result<()> {
     terms::accept(&env, terms::TERMS_VERSION)
 }
 
-fn setup(paths: &Paths, l10n: &Localizer, lang: &str, accept_terms: bool) -> Result<()> {
+fn setup(
+    paths: &Paths,
+    l10n: &Localizer,
+    lang: &str,
+    accept_terms: bool,
+    want: Option<phoecord_installer::Channel>,
+) -> Result<()> {
+    // Same rules as `launch`: `--channel` must be installed (checked before anything changes); with
+    // no flag the only installed client gets the shortcut, and with none or several setup goes on
+    // without one and says so, instead of refusing to install the proxy.
+    let clients = phoecord_installer::discover::discover();
+    let channel = match phoecord_installer::launch::choose(&clients, want) {
+        Ok(c) => Some(c.channel),
+        Err(e) if want.is_some() => return Err(e),
+        Err(e) => {
+            println!(
+                "{}",
+                tf(
+                    l10n,
+                    "cli-shortcut-skipped",
+                    &[("why", &describe_error(&e, l10n))]
+                )
+            );
+            None
+        }
+    };
     ask_terms(l10n, lang, accept_terms)?;
     Config::load_or_init(&paths.config)?;
     println!("{}", config_line(l10n, paths));
     // CA, trust and autostart, each step recorded in `install.log` so `uninstall` can undo it.
     let env = phoecord_installer::system::Env::system()?;
-    let report =
-        phoecord_installer::install::install(&env, &phoecord_installer::system::RealSystem)?;
+    let report = phoecord_installer::install::install_with(
+        &env,
+        &phoecord_installer::system::RealSystem,
+        channel,
+    )?;
     println!(
         "{}",
         tf(
@@ -401,6 +441,25 @@ fn setup(paths: &Paths, l10n: &Localizer, lang: &str, accept_terms: bool) -> Res
             ]
         )
     );
+    match &report.shortcut {
+        Outcome::Created { name, path } => println!(
+            "{}",
+            tf(
+                l10n,
+                "cli-shortcut-created",
+                &[("name", name), ("path", &path.display().to_string())]
+            )
+        ),
+        Outcome::Unsupported(_) => println!(
+            "{}",
+            tf(
+                l10n,
+                "cli-shortcut-unsupported",
+                &[("channel", channel.map_or("", |c| c.name()))]
+            )
+        ),
+        Outcome::NotRequested => {}
+    }
     let mut a = Args::new();
     a.set("count", report.added);
     println!("{}", l10n.t_args("cli-setup-steps", &a));

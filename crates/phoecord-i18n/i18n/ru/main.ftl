@@ -157,3 +157,7 @@ cli-err-several-clients = установлено несколько клиент
     { $list }
 cli-proxy-reused = Прокси PhoeCord (версия { $version }) уже работает на { $listen }; запускаю Discord через него.
 cli-err-port-taken = Адрес { $listen } занят другой программой, не PhoeCord. Закройте её или измените `listen` в config.toml.
+cli-arg-setup-channel = Добавить ярлык в меню «Пуск», который запускает этот Discord через PhoeCord: stable, ptb или canary (по умолчанию: единственный установленный)
+cli-shortcut-created = ярлык «{ $name }» добавлен: { $path }
+cli-shortcut-unsupported = В этой системе ярлык не создаётся; запускайте Discord командой `phoecord launch --channel { $channel }`.
+cli-shortcut-skipped = Ярлык не добавлен: { $why }

@@ -152,3 +152,7 @@ cli-err-several-clients = several Discord clients are installed, so none is pick
     { $list }
 cli-proxy-reused = A PhoeCord proxy (version { $version }) already runs on { $listen }; starting Discord through it.
 cli-err-port-taken = { $listen } is used by another program, not by PhoeCord. Close it or change `listen` in config.toml.
+cli-arg-setup-channel = Add a Start-menu shortcut that starts this Discord through PhoeCord: stable, ptb or canary (default: the only one installed)
+cli-shortcut-created = shortcut "{ $name }" added: { $path }
+cli-shortcut-unsupported = No shortcut on this system; start Discord with `phoecord launch --channel { $channel }`.
+cli-shortcut-skipped = No shortcut added: { $why }

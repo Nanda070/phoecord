@@ -32,6 +32,7 @@ pub mod discover;
 pub mod install;
 pub mod launch;
 pub mod log;
+pub mod shortcut;
 pub mod system;
 pub mod terms;
 pub mod uninstall;

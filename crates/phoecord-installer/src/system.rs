@@ -38,6 +38,10 @@ pub struct Env {
     pub config_home: PathBuf,
     /// The `phoecord` binary that autostart runs as `phoecord run`.
     pub proxy_exe: PathBuf,
+    /// Windows: the user's Start Menu `Programs` folder.
+    pub start_menu: PathBuf,
+    /// Linux: the user's `applications` folder (`$XDG_DATA_HOME/applications`).
+    pub applications_dir: PathBuf,
 }
 
 impl Env {
@@ -47,8 +51,14 @@ impl Env {
             os: Os::current(),
             data_dir: phoecord_proxy::config::Paths::resolve().data,
             config_home: dirs::config_dir().unwrap_or_else(|| home.join(".config")),
-            home,
             proxy_exe: std::env::current_exe().context("cannot find the phoecord binary")?,
+            start_menu: dirs::data_dir()
+                .unwrap_or_else(|| home.join("AppData/Roaming"))
+                .join("Microsoft/Windows/Start Menu/Programs"),
+            applications_dir: dirs::data_dir()
+                .unwrap_or_else(|| home.join(".local/share"))
+                .join("applications"),
+            home,
         })
     }
 }
@@ -70,6 +80,14 @@ pub trait System {
     /// Stop the PhoeCord proxy processes (`<exe> run` or `<exe> launch ...`) of the binaries in
     /// `exes`, except the calling process. Returns the process ids stopped; none running is `Ok([])`.
     fn stop_proxies(&self, exes: &[PathBuf]) -> Result<Vec<u32>>;
+    /// Windows: create (or overwrite) the shortcut `lnk` that runs `target` with `args`.
+    fn shortcut_create(
+        &self,
+        lnk: &Path,
+        target: &Path,
+        args: &str,
+        description: &str,
+    ) -> Result<()>;
 }
 
 /// The process ids in `listing` (lines of pid, a tab or space, command line) that run one of `exes` as a proxy:
@@ -178,6 +196,20 @@ impl System for RealSystem {
         run(Command::new("systemctl").args(["--user", "disable", "--now", unit]))
     }
 
+    fn shortcut_create(
+        &self,
+        lnk: &Path,
+        target: &Path,
+        args: &str,
+        description: &str,
+    ) -> Result<()> {
+        run(Command::new("powershell").args([
+            "-NoProfile",
+            "-Command",
+            &crate::shortcut::lnk_script(lnk, target, args, description),
+        ]))
+    }
+
     fn stop_proxies(&self, exes: &[PathBuf]) -> Result<Vec<u32>> {
         let os = Os::current();
         let out = if os == Os::Windows {
@@ -258,6 +290,22 @@ pub mod fake {
         fn systemd_disable(&self, unit: &str) -> Result<()> {
             self.hit(format!("systemd_disable {unit}"))
         }
+        fn shortcut_create(
+            &self,
+            lnk: &Path,
+            target: &Path,
+            args: &str,
+            _description: &str,
+        ) -> Result<()> {
+            self.hit(format!(
+                "shortcut_create {} {} {args}",
+                lnk.display(),
+                target.display()
+            ))?;
+            // Stand-in for the .lnk the real system makes, so that uninstall has a file to remove.
+            std::fs::write(lnk, b"lnk")?;
+            Ok(())
+        }
         fn stop_proxies(&self, exes: &[PathBuf]) -> Result<Vec<u32>> {
             let list: Vec<_> = exes.iter().map(|e| e.display().to_string()).collect();
             self.hit(format!("stop_proxies {}", list.join(",")))?;
@@ -273,6 +321,8 @@ pub mod fake {
             home: root.join("home"),
             config_home: root.join("home/.config"),
             proxy_exe: root.join("bin/phoecord"),
+            start_menu: root.join("appdata/Start Menu/Programs"),
+            applications_dir: root.join("home/.local/share/applications"),
         }
     }
 

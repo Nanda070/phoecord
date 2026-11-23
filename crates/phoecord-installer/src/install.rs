@@ -4,9 +4,11 @@
 //! Installing the loader DLL into a client (stage 1.5) will add its own steps here, taking the
 //! [`crate::discover::Client`] to patch.
 
+use crate::Channel;
 use crate::autostart::install_autostart;
 use crate::ca::ensure_ca;
 use crate::log::{Entry, InstallLog};
+use crate::shortcut::{Outcome, install_shortcut};
 use crate::system::{Env, System};
 use anyhow::Result;
 use std::path::PathBuf;
@@ -18,19 +20,35 @@ pub struct InstallReport {
     pub log: Vec<Entry>,
     /// Number of log lines this run added; 0 means everything was already in place.
     pub added: usize,
+    /// What happened to the menu shortcut.
+    pub shortcut: Outcome,
 }
 
 /// Create and trust the CA and register autostart. Stops at the first failing step; what was done
 /// before it stays logged, so `uninstall_all` still undoes it.
 pub fn install(env: &Env, sys: &dyn System) -> Result<InstallReport> {
+    install_with(env, sys, None)
+}
+
+/// [`install`], and with a `channel` also a menu shortcut that starts that client through the proxy.
+pub fn install_with(
+    env: &Env,
+    sys: &dyn System,
+    channel: Option<Channel>,
+) -> Result<InstallReport> {
     let log = InstallLog::in_dir(&env.data_dir);
     let before = log.read()?.len();
     let ca_pem = ensure_ca(env, sys, &log)?;
     install_autostart(env, sys, &log)?;
+    let shortcut = match channel {
+        Some(c) => install_shortcut(env, sys, &log, c)?,
+        None => Outcome::NotRequested,
+    };
     let entries = log.read()?;
     Ok(InstallReport {
         ca_pem,
         added: entries.len() - before,
+        shortcut,
         log: entries,
     })
 }
