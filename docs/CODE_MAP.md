@@ -163,7 +163,8 @@ Planned in 1.1; the table is filled as each item lands.
 |:---|:---|:---|:---|
 | `listen` | `config.toml` | `127.0.0.1:18463` | proxy |
 | `intercept` | `config.toml` | Discord API and Gateway hosts | proxy |
-| `language` | `config.toml` | OS language, fallback `en` | all user-facing text (1.7) |
+| `language` | `config.toml` | OS language, fallback `en` | all user-facing text; order: `--lang` flag, then this key, then the OS language, then `en` (`phoecord_i18n::resolve_language`); `phoecord paths` shows the result and its source |
+| `--lang <code>` | CLI flag | unset | overrides `language` for one command |
 | `[plugins.<id>]` | `config.toml` | per plugin | `Host::setting` |
 | `PHOECORD_CONFIG`, `PHOECORD_DATA` | env | OS config/data dirs | paths |
 | `PHOECORD_LOG` | env | `phoecord=info` | logging |

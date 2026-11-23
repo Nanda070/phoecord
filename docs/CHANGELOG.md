@@ -33,6 +33,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - WASM plugins: a slow event costs a strike (3 in a minute disable the plugin) instead of disabling it at 5 ms; new rights `emit_dispatch`, `plugins`, `data`; plugin packages copied into or removed from `plugins/` load and unload without a restart, and `phoecord run` now loads them (stage 1.3.4).
 - Issues are the place for every problem; leaks of personal data or secrets go privately to `nandak070` on Discord (`SECURITY.md`). The README shows contributors automatically.
 - `phoecord setup` now runs the installer library (CA, trust and autostart, logged in `install.log`), and `phoecord uninstall` undoes it (stages 1.4.2, 1.4.4).
+- Language setting: `phoecord --lang ru`, `language` in `config.toml`, or the OS language; `setup`, `uninstall` and `paths` already speak Russian, the rest of the CLI follows in 1.7.3 (stage 1.7.2).
 
 ### Removed
 

@@ -109,7 +109,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.6.4** 🟡 | Themes in Zed and what to expect from Phoenix | Nanda | ✅ 23.11, PR #12 |
 | **1.6.5** 🔴 | Report `docs/research/gpui.md` | Nanda | ✅ 23.11, PR #12 |
 | **1.7.1** 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ✅ 23.11, PR #9 |
-| **1.7.2** 🔴 | `language` setting, OS default | Nanda | ⏳ |
+| **1.7.2** 🔴 | `language` setting, OS default | Nanda | ✅ 23.11, PR #34 |
 | **1.7.3** 🔴 | Russian translation of CLI, notifications, installer | anyone | ⏳ |
 | **1.7.4** 🟡 | `Host::t()` and per-plugin `.ftl` | Nanda | ⏳ |
 | **1.7.5** 🟡 | CI check: every `en` key exists in `ru` | Nanda | ✅ 23.11, PR #9 |
