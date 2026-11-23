@@ -16,7 +16,7 @@ Copyright holder: **Cheterin Group** (see [`NOTICE`](../NOTICE)). License: GPL-3
 - **Contributors** work through branches and Pull Requests ([`CONTRIBUTING.md`](../CONTRIBUTING.md)); plugins, tests, fixtures, docs and research are open to everyone.
 - Disputed technical questions are decided by Nanda, recorded as a `Ruling:` line in the plan's ledger ([`_template/ruling.md`](_template/ruling.md)) and collected in [`DECISIONS.md`](DECISIONS.md).
 - Changes to the CA, TLS, trust stores, the proxy and the loader always need the owner's review ([`SECURITY.md`](../SECURITY.md)).
-- Bugs and plugin ideas: the issue forms. Vulnerabilities: privately, per [`SECURITY.md`](../SECURITY.md).
+- Every problem, bug and plugin idea: [Issues](https://github.com/Nanda070/phoecord/issues). Leaks of personal data or secrets, and vulnerabilities: privately, [DM `nandak070` on Discord](https://discord.com/users/1219803151180370021) (user ID `1219803151180370021`), per [`SECURITY.md`](../SECURITY.md).
 
 ## Secrets
 

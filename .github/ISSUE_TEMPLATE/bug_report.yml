@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        A vulnerability? **Do not open an issue**, see [SECURITY.md](https://github.com/nanda070/phoecord/blob/main/SECURITY.md).
+        A leak of personal data or secrets, or a vulnerability? **Do not open an issue**: DM `nandak070` on Discord (user ID 1219803151180370021), see [SECURITY.md](https://github.com/Nanda070/phoecord/blob/main/SECURITY.md).
         Never paste Discord tokens, `ca.key` or private messages into logs.
   - type: textarea
     id: what

@@ -20,6 +20,7 @@
   <a href="docs/ROADMAP.md">Roadmap</a> ·
   <a href="docs/README.md">Docs</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="https://github.com/Nanda070/phoecord/issues">Issues</a> ·
   <a href="SECURITY.md">Security</a>
 </p>
 
@@ -69,5 +70,5 @@ Thanks to [Vencord](https://github.com/Vendicated/Vencord) for the plugin ideas 
 ---
 
 <p align="center">
-  <sub>© 2026 Cheterin Group · <a href="LICENSE">GPL-3.0</a> · <a href="SECURITY.md">report a vulnerability</a></sub>
+  <sub>© 2026 Cheterin Group · <a href="LICENSE">GPL-3.0</a> · <a href="SECURITY.md">report a leak privately</a></sub>
 </p>

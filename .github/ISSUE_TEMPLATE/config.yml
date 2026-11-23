@@ -1,8 +1,8 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
-  - name: Vulnerability
-    url: https://github.com/nanda070/phoecord/security/advisories/new
-    about: Privately only. Do not open a public issue.
-  - name: Architecture and roadmap
-    url: https://github.com/nanda070/phoecord/blob/main/ROADMAP.md
+  - name: Leak of personal data or secrets, or a vulnerability
+    url: https://discord.com/users/1219803151180370021
+    about: Never in a public issue. Send a direct message on Discord to nandak070 (user ID 1219803151180370021).
+  - name: Roadmap
+    url: https://github.com/Nanda070/phoecord/blob/main/docs/ROADMAP.md
     about: Check whether the idea is already planned.

@@ -64,4 +64,4 @@ It runs `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and check
 
 - Discord tokens, `ca.key`, `ca.pem`, traffic dumps with personal data, Discord client binaries or disassembled pieces of them.
 
-Vulnerabilities go privately, not into an issue: [`SECURITY.md`](SECURITY.md).
+Problems go into [Issues](https://github.com/Nanda070/phoecord/issues). Leaks of personal data or secrets, and vulnerabilities, go privately, never into an issue: [DM `nandak070` on Discord](https://discord.com/users/1219803151180370021) (user ID `1219803151180370021`), see [`SECURITY.md`](SECURITY.md).

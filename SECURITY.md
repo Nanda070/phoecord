@@ -26,17 +26,16 @@ Status: in development (ROADMAP, 1.5). Requirements the loader must meet: `phoec
 
 Status: the WASM runtime is in development (ROADMAP, 1.3). How it must work: WASM plugins run in a sandbox with no access to files, network or the process, only through the host API. A plugin sees only the events its manifest subscribes to. Native plugins are code with full rights: install them only from sources you trust.
 
-## Reporting a vulnerability
+## Where to report
 
-**Do not open a public issue and do not post about a vulnerability in public channels.**
+| What | Where |
+|:---|:---|
+| Any problem: a bug, a crash, a broken plugin, a question, an idea | [Issues](https://github.com/Nanda070/phoecord/issues) of this repository |
+| A **leak of personal data or other secret information** (tokens, `ca.key`, messages, IDs, traffic), or a vulnerability that could cause one | **Privately only:** [DM `nandak070` on Discord](https://discord.com/users/1219803151180370021) (user ID `1219803151180370021`) |
 
-Use [GitHub Security Advisories](https://github.com/nanda070/phoecord/security/advisories/new) or write privately:
+**Never put a leak or a vulnerability into a public issue, a pull request or a public channel.** If you already did, tell Nanda in a DM at once so it can be removed and the secret rotated.
 
-| Who | Discord | Telegram |
-|:---|:---|:---|
-| Nanda, project lead | `nandak070` | [@nanda070](https://t.me/nanda070) |
-
-Describe what you found, how to reproduce it and what it affects. We reply within 72 hours and agree on a fix timeline separately. Until it is fixed, do not disclose it.
+In a private report, describe what you found, how to reproduce it and what it affects. We reply within 72 hours and agree on a fix timeline separately. Until it is fixed, do not disclose it.
 
 ## What counts as a vulnerability
 
