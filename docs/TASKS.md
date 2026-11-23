@@ -20,13 +20,13 @@ Tasks: 61, plans with tasks: 1.
 | [phase-1](phase-1/README.md) | 1.1.8 🟡 | `selftest` against the real Discord | Nanda | ✅ |
 | [phase-1](phase-1/README.md) | 1.1.9 🟡 | Gateway fixtures without personal data | anyone | ⏳ |
 | [phase-1](phase-1/README.md) | 1.1.10 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.2.1 🔴 | `silent_typing` | anyone | ⏳ |
-| [phase-1](phase-1/README.md) | 1.2.2 🟡 | `unindent` | anyone | ⏳ |
+| [phase-1](phase-1/README.md) | 1.2.1 🔴 | `silent_typing` | matvee | ⏳ |
+| [phase-1](phase-1/README.md) | 1.2.2 🟡 | `unindent` | matvee | ⏳ |
 | [phase-1](phase-1/README.md) | 1.2.3 🟡 | `game_activity_toggle` | anyone | ⏳ |
 | [phase-1](phase-1/README.md) | 1.2.4 🟡 | `relationship_notifier` | anyone | ⏳ |
 | [phase-1](phase-1/README.md) | 1.2.5 🔴 | `fake_nitro` (emoji) | Nanda | ⏳ |
 | [phase-1](phase-1/README.md) | 1.2.6 🔴 | `message_logger` and `phoecord log` | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.2.7 🔴 | `clear_urls` (new) | anyone | ⏳ |
+| [phase-1](phase-1/README.md) | 1.2.7 🔴 | `clear_urls` (new) | matvee | ⏳ |
 | [phase-1](phase-1/README.md) | 1.2.8 🟡 | `/phoecord` slash commands (new) | Nanda | ⏳ |
 | [phase-1](phase-1/README.md) | 1.2.9 🟢 | `phoecord import-vencord` | anyone | ⏳ |
 | [phase-1](phase-1/README.md) | 1.2.10 🟡 | Message filters: iLoveSpam, ImageLink, NoBlockedMessages, NoPendingCount, NoReplyMention | anyone | ⏳ |
@@ -121,11 +121,8 @@ Tasks: 61, plans with tasks: 1.
 | Plan | Task | What | Status |
 |:--|:--|:--|:--|
 | phase-1 | 1.1.9 🟡 | Gateway fixtures without personal data | ⏳ |
-| phase-1 | 1.2.1 🔴 | `silent_typing` | ⏳ |
-| phase-1 | 1.2.2 🟡 | `unindent` | ⏳ |
 | phase-1 | 1.2.3 🟡 | `game_activity_toggle` | ⏳ |
 | phase-1 | 1.2.4 🟡 | `relationship_notifier` | ⏳ |
-| phase-1 | 1.2.7 🔴 | `clear_urls` (new) | ⏳ |
 | phase-1 | 1.2.9 🟢 | `phoecord import-vencord` | ⏳ |
 | phase-1 | 1.2.10 🟡 | Message filters: iLoveSpam, ImageLink, NoBlockedMessages, NoPendingCount, NoReplyMention | ⏳ |
 | phase-1 | 1.2.11 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, BetterGifAltText, SilentMessageToggle (`/silent`) | ⏳ |
@@ -140,3 +137,11 @@ Tasks: 61, plans with tasks: 1.
 | phase-1 | 1.6.4 🟡 | Themes in Zed and what to expect from Phoenix | ⏳ |
 | phase-1 | 1.7.3 🔴 | Russian translation of CLI, notifications, installer | ⏳ |
 | phase-1 | 1.7.5 🟡 | CI check: every `en` key exists in `ru` | ✅ 23.11, PR #9 |
+
+## matvee
+
+| Plan | Task | What | Status |
+|:--|:--|:--|:--|
+| phase-1 | 1.2.1 🔴 | `silent_typing` | ⏳ |
+| phase-1 | 1.2.2 🟡 | `unindent` | ⏳ |
+| phase-1 | 1.2.7 🔴 | `clear_urls` (new) | ⏳ |
