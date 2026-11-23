@@ -52,10 +52,10 @@ Tasks: 61, plans with tasks: 1.
 | [phase-1](phase-1/README.md) | 1.4.3 🟡 | Installer GUI | Nanda | ⏳ |
 | [phase-1](phase-1/README.md) | 1.4.4 🔴 | Full rollback | Nanda | ⏳ |
 | [phase-1](phase-1/README.md) | 1.4.5 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.5.1 🔴 | `version.dll`: export forwarding | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.5.2 🔴 | `DllMain` and the worker thread | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.5.3 🔴 | Client version detection and `signatures/*.toml` | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.5.4 🔴 | Inline detours and hook removal | Nanda | ⏳ |
+| [phase-1](phase-1/README.md) | 1.5.1 🔴 | `version.dll`: export forwarding | Nanda | ✅ 23.11, PR #10 |
+| [phase-1](phase-1/README.md) | 1.5.2 🔴 | `DllMain` and the worker thread | Nanda | ✅ 23.11, PR #10 |
+| [phase-1](phase-1/README.md) | 1.5.3 🔴 | Client version detection and `signatures/*.toml` | Nanda | ✅ 23.11, PR #10 |
+| [phase-1](phase-1/README.md) | 1.5.4 🔴 | Inline detours and hook removal | Nanda | ✅ 23.11, PR #10 |
 | [phase-1](phase-1/README.md) | 1.5.5 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
 | [phase-1](phase-1/README.md) | 1.5.6 🟡 | Reinstall after a Discord update | Nanda | ⏳ |
 | [phase-1](phase-1/README.md) | 1.5.7 🔴 | Verify on 3 client versions | Nanda | ⏳ |
@@ -102,10 +102,10 @@ Tasks: 61, plans with tasks: 1.
 | phase-1 | 1.4.3 🟡 | Installer GUI | ⏳ |
 | phase-1 | 1.4.4 🔴 | Full rollback | ⏳ |
 | phase-1 | 1.4.5 🟡 | Releases: builds, `SHA256SUMS`, no signing | ⏳ |
-| phase-1 | 1.5.1 🔴 | `version.dll`: export forwarding | ⏳ |
-| phase-1 | 1.5.2 🔴 | `DllMain` and the worker thread | ⏳ |
-| phase-1 | 1.5.3 🔴 | Client version detection and `signatures/*.toml` | ⏳ |
-| phase-1 | 1.5.4 🔴 | Inline detours and hook removal | ⏳ |
+| phase-1 | 1.5.1 🔴 | `version.dll`: export forwarding | ✅ 23.11, PR #10 |
+| phase-1 | 1.5.2 🔴 | `DllMain` and the worker thread | ✅ 23.11, PR #10 |
+| phase-1 | 1.5.3 🔴 | Client version detection and `signatures/*.toml` | ✅ 23.11, PR #10 |
+| phase-1 | 1.5.4 🔴 | Inline detours and hook removal | ✅ 23.11, PR #10 |
 | phase-1 | 1.5.5 🟡 | Loader ↔ proxy IPC | ⏳ |
 | phase-1 | 1.5.6 🟡 | Reinstall after a Discord update | ⏳ |
 | phase-1 | 1.5.7 🔴 | Verify on 3 client versions | ⏳ |
