@@ -98,6 +98,7 @@ plugin-desc-relationship_notifier = Сообщает, когда вас убра
 plugin-desc-silent_typing = Индикатор набора текста никогда не отправляется
 plugin-desc-clear_urls = Убирает параметры отслеживания из ссылок, которые вы отправляете
 plugin-desc-commands = Слэш-команда /phoecord: plugins, toggle
+plugin-desc-i_love_spam = Не скрывает сообщения «вероятных спамеров»
 
 # CLI: log
 cli-log-empty = пока ничего не записано ({ $path })
