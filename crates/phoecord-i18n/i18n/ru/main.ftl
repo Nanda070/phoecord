@@ -113,6 +113,7 @@ plugin-desc-no_track = Блокирует аналитику и отчёты о 
 plugin-desc-relationship_notifier = Сообщает, когда вас убрали из друзей, с сервера или из группы
 plugin-desc-silent_typing = Индикатор набора текста никогда не отправляется
 plugin-desc-clear_urls = Убирает параметры отслеживания из ссылок, которые вы отправляете
+plugin-desc-unindent = Убирает общий отступ в блоках кода, которые вы отправляете
 plugin-desc-commands = Слэш-команда /phoecord: plugins, toggle
 plugin-desc-i_love_spam = Не скрывает сообщения «вероятных спамеров»
 plugin-desc-no_blocked_messages = Полностью скрывает сообщения заблокированных и игнорируемых пользователей

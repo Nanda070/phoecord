@@ -1,8 +1,8 @@
 //! Built-in plugins, native Rust, on the unified Plugin API.
 //!
 //! Porting the v0 plugins (docs/ROADMAP.md, milestone 1.2): `no_track`, `silent_typing`,
-//! `message_logger`, `fake_nitro` (emoji), `relationship_notifier`, `game_activity_toggle` and the
-//! new `clear_urls` are done; `unindent` follows. Once the WASM runtime is stable, each one moves
+//! `message_logger`, `fake_nitro` (emoji), `relationship_notifier`, `game_activity_toggle`,
+//! `unindent` and the new `clear_urls` are done. Once the WASM runtime is stable, each one moves
 //! to its own WASM package and this crate shrinks to the few plugins that must stay native.
 
 use phoecord_core::Plugin;
@@ -46,6 +46,7 @@ pub mod silent_typing;
 pub mod state;
 pub mod text_replace;
 pub mod typing_indicator;
+pub mod unindent;
 pub mod user_voice_show;
 pub mod valid_reply;
 pub mod valid_user;
@@ -201,6 +202,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(no_track::NoTrack::new()),
         Box::new(silent_typing::SilentTyping::new()),
         Box::new(clear_urls::ClearUrls::new()),
+        Box::new(unindent::Unindent::new()),
         Box::new(game_activity_toggle::GameActivityToggle::new()),
         Box::new(relationship_notifier::RelationshipNotifier::new()),
         Box::new(fake_nitro::FakeNitro::new()),

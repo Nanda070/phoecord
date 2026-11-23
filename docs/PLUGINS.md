@@ -171,7 +171,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | Translate | Translate messages | 🌐 + 🎨 | 1.2.17 / 2 |
 | TypingIndicator | Who is typing, per channel | 🌐 + 🎨 | done: data — `/phoecord typing` / 2 (dots and avatars) |
 | TypingTweaks | Avatars and role colours in typing | 🎨 UI | 2 |
-| Unindent | Trim indentation in code blocks | 🌐 Network | 1.2.2 |
+| Unindent | Trim indentation in code blocks | 🌐 Network | done |
 | UnlockedAvatarZoom | More zoom when cropping avatars | 🎨 UI | 2 |
 | UnsuppressEmbeds | Unsuppress embeds | 🌐 + 🎨 | 1.2.12 / 2 |
 | UserMessagesPronouns | Pronouns in chat | 🎨 UI | 2 |
