@@ -44,10 +44,10 @@ impl Seen {
         };
         if self.authors.insert(id, author).is_none() {
             self.order.push_back(id);
-            if self.order.len() > CACHE {
-                if let Some(old) = self.order.pop_front() {
-                    self.authors.remove(&old);
-                }
+            if self.order.len() > CACHE
+                && let Some(old) = self.order.pop_front()
+            {
+                self.authors.remove(&old);
             }
         }
         if let Some(roles) = msg.at(&["member", "roles"]) {

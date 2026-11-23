@@ -140,12 +140,11 @@ impl Plugin for ILoveSpam {
             Event::RestResponse {
                 method,
                 route,
-                body,
+                body: Val::List(list),
                 ..
-            } if is_history(method, route) => match body {
-                Val::List(list) => list.iter_mut().fold(false, |c, m| clean_message(m) | c),
-                _ => false,
-            },
+            } if is_history(method, route) => {
+                list.iter_mut().fold(false, |c, m| clean_message(m) | c)
+            }
             _ => false,
         };
         if changed {
