@@ -29,6 +29,7 @@ Related: [`ARCHITECTURE.md`](../ARCHITECTURE.md) explains how the layers work; [
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR form with the living-docs checklist |
 | `.github/dependabot.yml` | Weekly cargo updates (grouped), monthly GitHub Actions updates; Dependabot opens the `dependabot/*` branches |
 | `.editorconfig`, `.gitattributes`, `.gitignore` | LF everywhere, 4-space Rust, 2-space YAML/TOML; secrets and dumps ignored |
+| `signatures/` | AOB signature tables per client build (`README.md` documents the format; no Discord signatures yet) |
 | `scripts/` | §4 |
 | `docs/` | §5 |
 
@@ -94,6 +95,14 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 |:---|:---|:---|
 | `src/lib.rs` | Module list and design notes | |
 | `src/aob.rs` | `Pattern`: parse `48 8B ?? …`, `find_all`, `find_unique` (ambiguous = miss) | All-wildcard patterns are rejected on purpose |
+| `build.rs`, `exports.txt` | Generates one assembly forwarding stub per `version.dll` export and `/EXPORT` link args (MSVC x86_64) | A Windows test checks `exports.txt` against the real DLL |
+| `src/proxy_dll.rs` | `FORWARD_TABLE`, `resolve_export`: loads the real DLL from `GetSystemDirectoryW` on first call | Never load by name: it would resolve to this DLL |
+| `src/entry.rs` | `DllMain` (only `DisableThreadLibraryCalls` + `CreateThread`), the worker: log, detect build, load signatures | No work under the loader lock; panics are caught |
+| `src/log.rs` | Loader log in `%LOCALAPPDATA%\PhoeCord\loader.log` | |
+| `src/pe.rs`, `src/version.rs` | PE parsing, file version resource, `.text` SHA-256 | Pure, tested on every OS |
+| `src/signatures.rs` | `SignatureSet::load_dir`, `select`, `resolve_all` (`find_unique` + `rip`) | Format documented in `signatures/README.md` |
+| `src/hook.rs` | Inline detours (`retour`), installed with other threads suspended, `uninstall_all` | Hooks must be removed before `FreeLibrary` |
+| `examples/host.rs` | Throwaway exe that loads `version.dll` from its folder for manual checks | |
 
 ### `phoecord-installer`
 

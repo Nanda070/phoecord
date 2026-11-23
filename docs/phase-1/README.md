@@ -94,10 +94,10 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is coll
 | **1.4.3** 🟡 | Installer GUI | Nanda | ⏳ |
 | **1.4.4** 🔴 | Full rollback | Nanda | ⏳ |
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
-| **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ⏳ |
-| **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ⏳ |
-| **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ⏳ |
-| **1.5.4** 🔴 | Inline detours and hook removal | Nanda | ⏳ |
+| **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ✅ 23.11, PR #10 |
+| **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ✅ 23.11, PR #10 |
+| **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ✅ 23.11, PR #10 |
+| **1.5.4** 🔴 | Inline detours and hook removal | Nanda | ✅ 23.11, PR #10 |
 | **1.5.5** 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
 | **1.5.6** 🟡 | Reinstall after a Discord update | Nanda | ⏳ |
 | **1.5.7** 🔴 | Verify on 3 client versions | Nanda | ⏳ |

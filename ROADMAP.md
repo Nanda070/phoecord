@@ -71,10 +71,10 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ### 1.5 DLL sideloading prototype · `0.6`
 
-- [ ] `phoecord-loader` as `version.dll`: forward every export to `System32\version.dll` by full path
-- [ ] `DllMain` with no work under the loader lock, a worker thread, logging to a file
-- [ ] Client version detection (exe resources + `.text` hash), the `signatures/*.toml` format
-- [ ] Inline detours + hook removal on unload
+- [x] `phoecord-loader` as `version.dll`: forward every export to `System32\version.dll` by full path
+- [x] `DllMain` with no work under the loader lock, a worker thread, logging to a file
+- [x] Client version detection (exe resources + `.text` hash), the `signatures/*.toml` format
+- [x] Inline detours + hook removal on unload
 - [ ] Loader ↔ proxy IPC (named pipe): status, settings, events for the UI
 - [ ] Reinstall after a Discord update (`app-x.y.z`)
 - [ ] Check on today's client: the loader starts and shuts down without a single crash on 3 consecutive versions
