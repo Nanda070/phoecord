@@ -65,3 +65,15 @@ pub fn write_package(root: &Path, id: &str, api: u32, extra: &str) -> PathBuf {
     std::fs::write(dir.join("plugin.wasm"), guest_wasm()).unwrap();
     dir
 }
+
+/// A runtime for tests that are not about the timeout. The production limit (5 ms of wall time)
+/// is too tight for a loaded CI runner, where the OS can stall the worker thread that long.
+pub fn runtime() -> std::sync::Arc<phoecord_plugin_runtime::wasm::WasmRuntime> {
+    phoecord_plugin_runtime::wasm::WasmRuntime::with_limits(
+        phoecord_plugin_runtime::wasm::WasmLimits {
+            event_timeout: std::time::Duration::from_secs(2),
+            ..Default::default()
+        },
+    )
+    .unwrap()
+}

@@ -10,7 +10,7 @@ fn chain_of(plugin: WasmPlugin) -> Chain {
 }
 
 fn guest() -> WasmPlugin {
-    let rt = WasmRuntime::new().unwrap();
+    let rt = common::runtime();
     WasmPlugin::from_bytes(&rt, guest_wasm()).unwrap()
 }
 
@@ -104,7 +104,7 @@ mod limits {
     /// The guest faults on `event` (default limits: 5 ms, 32 MiB). It is switched off, logged once
     /// and the event passes; the native plugin behind it still runs, now and on later events.
     fn assert_disabled_and_chain_alive(event: &str) {
-        let rt = WasmRuntime::new().unwrap();
+        let rt = common::runtime();
         let guest = WasmPlugin::from_bytes(&rt, guest_wasm()).unwrap();
         let chain = Chain::new(vec![Box::new(guest) as Box<dyn Plugin>, native()]);
         let mut host = NullHost::default();

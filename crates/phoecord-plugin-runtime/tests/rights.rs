@@ -3,13 +3,12 @@ mod common;
 use common::{TempDir, write_package};
 use phoecord_core::{Event, Plugin, Val, Verdict};
 use phoecord_plugin_runtime::package::PackagePlugin;
-use phoecord_plugin_runtime::wasm::WasmRuntime;
 use phoecord_plugin_runtime::{Chain, NullHost, Outcome};
 
 fn load(extra: &str) -> (TempDir, PackagePlugin) {
     let root = TempDir::new();
     let dir = write_package(&root.0, "gated", 1, extra);
-    let rt = WasmRuntime::new().unwrap();
+    let rt = common::runtime();
     let plugin = PackagePlugin::load(&rt, &dir).unwrap();
     (root, plugin)
 }
@@ -61,7 +60,7 @@ fn a_granted_right_goes_through() {
 fn unknown_rights_are_refused() {
     let root = TempDir::new();
     let dir = write_package(&root.0, "greedy", 1, "rights = [\"root\"]");
-    let rt = WasmRuntime::new().unwrap();
+    let rt = common::runtime();
     let err = PackagePlugin::load(&rt, &dir).err().unwrap();
     assert!(err.contains("unknown right"), "{err}");
 }

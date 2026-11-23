@@ -3,7 +3,6 @@ mod common;
 use common::{TempDir, write_package};
 use phoecord_core::{EventKind, Plugin, Val};
 use phoecord_plugin_runtime::package::{PackagePlugin, load_dir};
-use phoecord_plugin_runtime::wasm::WasmRuntime;
 use phoecord_plugin_runtime::{Chain, NullHost, Outcome};
 use std::time::Duration;
 
@@ -28,7 +27,7 @@ fn packages_load_validate_and_filter_events() {
     let moved = write_package(&root.0, "moved", 1, "");
     std::fs::rename(&moved, root.0.join("elsewhere")).unwrap();
 
-    let rt = WasmRuntime::new().unwrap();
+    let rt = common::runtime();
     let loaded = load_dir(&rt, &root.0);
     assert_eq!(loaded.plugins.len(), 1);
     assert_eq!(loaded.errors.len(), 2, "{:?}", loaded.errors);
@@ -70,7 +69,7 @@ fn packages_load_validate_and_filter_events() {
 fn a_changed_package_is_reloaded_between_events() {
     let root = TempDir::new();
     let dir = write_package(&root.0, "hot", 1, "events = [\"dispatch:MESSAGE_*\"]");
-    let rt = WasmRuntime::new().unwrap();
+    let rt = common::runtime();
     let plugin = PackagePlugin::load(&rt, &dir).unwrap();
     plugin.set_check_interval(Duration::ZERO);
     let chain = Chain::new(vec![Box::new(plugin) as Box<dyn Plugin>]);
@@ -112,7 +111,7 @@ fn a_changed_package_is_reloaded_between_events() {
 fn a_reload_brings_back_a_faulted_plugin() {
     let root = TempDir::new();
     let dir = write_package(&root.0, "flaky", 1, "events = [\"dispatch\"]");
-    let rt = WasmRuntime::new().unwrap();
+    let rt = common::runtime();
     let plugin = PackagePlugin::load(&rt, &dir).unwrap();
     plugin.set_check_interval(Duration::ZERO);
     let mut host = NullHost::default();
