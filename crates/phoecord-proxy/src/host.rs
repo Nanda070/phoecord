@@ -111,6 +111,7 @@ type Notifier = Box<dyn Fn(&str, &str) + Send + Sync>;
 pub struct Shared {
     pub account: Mutex<Account>,
     kv: Mutex<KvStore>,
+    plugins_dir: PathBuf,
     notify_limit: Mutex<RateLimiter>,
     rest_limit: Mutex<RateLimiter>,
     notifier: Notifier,
@@ -124,7 +125,8 @@ impl Shared {
     pub fn with_notifier(plugins_dir: PathBuf, notifier: Notifier) -> Shared {
         Shared {
             account: Mutex::new(Account::default()),
-            kv: Mutex::new(KvStore::new(plugins_dir)),
+            kv: Mutex::new(KvStore::new(plugins_dir.clone())),
+            plugins_dir,
             // 5 notifications a minute per plugin.
             notify_limit: Mutex::new(RateLimiter::new(5, Duration::from_secs(60))),
             // 1 Discord API call a second per plugin.
@@ -228,6 +230,23 @@ impl Host for ProxyHost<'_> {
             .copied()
     }
 
+    fn append_data(&mut self, file: &str, line: &str) -> Result<(), String> {
+        use std::io::Write;
+        if self.plugin.is_empty() || file.is_empty() || file.contains(['/', '\\']) || file == ".." {
+            return Err(format!("invalid data file name {file:?}"));
+        }
+        let path = self.shared.plugins_dir.join(&self.plugin).join(file);
+        let write = || -> std::io::Result<()> {
+            std::fs::create_dir_all(path.parent().unwrap())?;
+            let mut f = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&path)?;
+            writeln!(f, "{line}")
+        };
+        write().map_err(|e| e.to_string())
+    }
+
     fn rest(
         &mut self,
         method: &str,
@@ -278,6 +297,24 @@ mod tests {
         assert_eq!(h2.kv_get("n"), Some(Val::Int(7)));
         assert!(dir.join("a").join("kv.json").exists());
         assert!(!dir.join("a").join("kv.json.tmp").exists());
+    }
+
+    #[test]
+    fn append_data_adds_lines_inside_the_plugin_dir() {
+        let dir = temp("append");
+        let shared = Shared::new(dir.clone());
+        let cfg = Config::default();
+        let mut h = ProxyHost::new(&shared, &cfg);
+        h.begin_plugin("p");
+        h.append_data("log.jsonl", "{\"a\":1}").unwrap();
+        h.append_data("log.jsonl", "{\"a\":2}").unwrap();
+        let text = std::fs::read_to_string(dir.join("p").join("log.jsonl")).unwrap();
+        assert_eq!(
+            text.lines().collect::<Vec<_>>(),
+            vec!["{\"a\":1}", "{\"a\":2}"]
+        );
+        assert!(h.append_data("../x", "l").is_err());
+        assert!(h.append_data(r"a\b", "l").is_err());
     }
 
     #[test]

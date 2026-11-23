@@ -13,6 +13,7 @@ pub const CMD_PLUGINS: &str = "List plugins and whether they are on";
 pub const CMD_ENABLE: &str = "Switch a plugin on";
 pub const CMD_DISABLE: &str = "Switch a plugin off";
 pub const CMD_TOGGLE: &str = "Flip a plugin (e.g. `phoecord toggle game_activity_toggle`)";
+pub const CMD_LOG: &str = "Show the newest deleted and edited messages kept by message_logger";
 pub const CMD_SELFTEST: &str = "Check everything works against the real Discord (no login needed)";
 pub const CMD_PATHS: &str = "Print where config, CA and plugin data live";
 
@@ -45,4 +46,13 @@ pub fn ca_line(path: &str, hosts: &str) -> String {
 pub const SETUP_DONE: &str = "\nDone. Quit Discord fully, then start it with `phoecord launch`.";
 pub fn paths_line(label: &str, path: &str) -> String {
     format!("{label:<8}{path}")
+}
+pub fn log_empty(path: &str) -> String {
+    format!("nothing logged yet ({path})")
+}
+pub fn log_channel(id: &str) -> String {
+    format!("channel {id}")
+}
+pub fn log_guild(guild: &str, channel: &str) -> String {
+    format!("guild {guild}, channel {channel}")
 }

@@ -129,6 +129,11 @@ pub trait Host {
         let _ = (method, route, body);
         Err("Host::rest is not available in this host".into())
     }
+    /// Append one line to `data/plugins/<id>/<file>` (JSON lines logs). `file` is a bare file name.
+    fn append_data(&mut self, file: &str, line: &str) -> Result<(), String> {
+        let _ = (file, line);
+        Err("Host::append_data is not available in this host".into())
+    }
     /// Called by the plugin chain before each plugin runs, so the host can scope `setting`,
     /// `kv_*`, `log` and rate limits to it. Plugins never call this.
     fn begin_plugin(&mut self, id: &str) {

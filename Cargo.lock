@@ -1245,6 +1245,7 @@ dependencies = [
  "phoecord-plugins",
  "phoecord-proxy",
  "rustls",
+ "serde_json",
  "tokio",
  "tokio-rustls",
  "tokio-tungstenite",

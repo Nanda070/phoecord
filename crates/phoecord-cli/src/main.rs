@@ -1,5 +1,6 @@
 //! `phoecord`: command line front end. Thin: every command calls library code.
 
+mod log;
 mod selftest;
 mod text;
 
@@ -40,6 +41,12 @@ enum Cmd {
     Disable { name: String },
     #[command(about = text::CMD_TOGGLE)]
     Toggle { name: String },
+    #[command(about = text::CMD_LOG)]
+    Log {
+        /// How many entries to show
+        #[arg(short, default_value_t = 20)]
+        n: usize,
+    },
     #[command(about = text::CMD_SELFTEST)]
     Selftest,
     #[command(about = text::CMD_PATHS)]
@@ -73,6 +80,7 @@ fn main() -> Result<()> {
         Cmd::Enable { name } => switch(&paths, &name, Some(true)),
         Cmd::Disable { name } => switch(&paths, &name, Some(false)),
         Cmd::Toggle { name } => switch(&paths, &name, None),
+        Cmd::Log { n } => log::run(&paths, n),
         Cmd::Selftest => runtime()?.block_on(selftest::run(paths)),
         Cmd::Paths => {
             for (label, p) in [
