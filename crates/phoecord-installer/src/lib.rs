@@ -33,3 +33,4 @@ pub mod install;
 pub mod launch;
 pub mod log;
 pub mod system;
+pub mod uninstall;
