@@ -11,8 +11,14 @@ publish = false
 
 [dependencies]
 phoecord-core.workspace = true
+phoecord-proxy.workspace = true
 anyhow.workspace = true
 dirs.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+tempfile = "3"

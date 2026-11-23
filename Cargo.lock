@@ -1278,6 +1278,10 @@ dependencies = [
  "anyhow",
  "dirs",
  "phoecord-core",
+ "phoecord-proxy",
+ "serde",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]
