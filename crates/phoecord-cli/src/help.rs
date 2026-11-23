@@ -54,6 +54,8 @@ pub fn localize(mut cmd: Command, l: &Localizer) -> Command {
                     };
                     if id == "n" {
                         a.help(l.t("cli-arg-log-n")).hide_default_value(true)
+                    } else if id == "accept_terms" {
+                        a.help(l.t("cli-arg-accept-terms"))
                     } else {
                         a
                     }

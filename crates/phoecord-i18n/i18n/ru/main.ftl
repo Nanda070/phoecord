@@ -134,3 +134,8 @@ cli-selftest-err-http = HTTP { $status }: { $body }
 cli-selftest-err-handshake = рукопожатие
 cli-selftest-err-closed-before-hello = соединение закрыто до HELLO
 cli-selftest-err-expected-hello = ожидался HELLO, получен op { $op }
+
+# Условия использования (TERMS.ru.md)
+terms-prompt = Введите `да` (или `yes`), чтобы принять условия и установить; всё остальное отменяет:
+terms-declined = Условия не приняты; ничего не установлено.
+cli-arg-accept-terms = Не спрашивать про условия: вы прочитали TERMS.ru.md и принимаете их

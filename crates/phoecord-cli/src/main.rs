@@ -41,7 +41,10 @@ enum Cmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         command: Vec<String>,
     },
-    Setup,
+    Setup {
+        #[arg(long)]
+        accept_terms: bool,
+    },
     Uninstall,
     Trust,
     Untrust,
@@ -125,7 +128,7 @@ fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Re
     match cli.cmd.unwrap_or(Cmd::Run) {
         Cmd::Run => runtime()?.block_on(run(paths, None, l10n)),
         Cmd::Launch { command } => runtime()?.block_on(run(paths, Some(command), l10n)),
-        Cmd::Setup => setup(&paths, l10n),
+        Cmd::Setup { accept_terms } => setup(&paths, l10n, &resolved.lang, accept_terms),
         Cmd::Uninstall => uninstall(l10n),
         Cmd::Trust => {
             let ca = ca::Authority::load_or_create(&paths.data)?;
@@ -252,7 +255,29 @@ fn config_line(l10n: &Localizer, paths: &Paths) -> String {
     )
 }
 
-fn setup(paths: &Paths, l10n: &Localizer) -> Result<()> {
+/// Show the terms and ask for `yes` (also `да` in Russian) unless this version was accepted already.
+fn ask_terms(l10n: &Localizer, lang: &str, flag: bool) -> Result<()> {
+    use phoecord_installer::terms;
+    let env = phoecord_installer::system::Env::system()?;
+    if !terms::needs_acceptance(&env) {
+        return Ok(());
+    }
+    if !flag {
+        println!("{}\n", terms::text(lang));
+        print!("{} ", l10n.t("terms-prompt"));
+        std::io::Write::flush(&mut std::io::stdout())?;
+        let mut answer = String::new();
+        std::io::stdin().read_line(&mut answer)?;
+        let a = answer.trim().to_lowercase();
+        if !(a == "yes" || (lang == "ru" && a == "да")) {
+            anyhow::bail!(l10n.t("terms-declined"));
+        }
+    }
+    terms::accept(&env, terms::TERMS_VERSION)
+}
+
+fn setup(paths: &Paths, l10n: &Localizer, lang: &str, accept_terms: bool) -> Result<()> {
+    ask_terms(l10n, lang, accept_terms)?;
     Config::load_or_init(&paths.config)?;
     println!("{}", config_line(l10n, paths));
     // CA, trust and autostart, each step recorded in `install.log` so `uninstall` can undo it.

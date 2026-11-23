@@ -129,3 +129,8 @@ cli-selftest-err-http = HTTP { $status }: { $body }
 cli-selftest-err-handshake = handshake
 cli-selftest-err-closed-before-hello = closed before HELLO
 cli-selftest-err-expected-hello = expected HELLO, got op { $op }
+
+# Terms of use (TERMS.md)
+terms-prompt = Type `yes` to accept these terms and install; anything else cancels:
+terms-declined = Terms not accepted; nothing was installed.
+cli-arg-accept-terms = Skip the terms prompt: you have read TERMS.md and accept it
