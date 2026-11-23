@@ -1,0 +1,19 @@
+[package]
+name = "phoecord-i18n"
+description = "PhoeCord localization: Fluent bundles, English and Russian"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+fluent-bundle = "0.16.0"
+unic-langid = "0.9.6"
+sys-locale = "0.3.2"
+tracing.workspace = true
+
+[lints]
+workspace = true

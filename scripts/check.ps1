@@ -18,6 +18,7 @@ Invoke-Step 'cargo clippy --workspace --all-targets -- -D warnings' { cargo clip
 Invoke-Step 'cargo test --workspace' { cargo test --workspace }
 Invoke-Step 'gen_tasks.py --check' { & $py scripts/gen_tasks.py --check }
 Invoke-Step 'gen_decisions.py --check' { & $py scripts/gen_decisions.py --check }
+Invoke-Step 'check_i18n.py' { & $py -I scripts/check_i18n.py }
 
 Write-Host ""
 Write-Host 'all checks passed'

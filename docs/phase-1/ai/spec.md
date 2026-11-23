@@ -134,4 +134,4 @@ Known v0 defects fixed while porting: an unused `PathBuf` import broke `-D warni
 - `docs/PROJECT_MAP.md`: plugin statuses.
 - `docs/RUNBOOK.md`: remove the *(1.1)* markers as commands land; add WASM and loader failure rows.
 - `docs/SECRETS.md`: any new repository secret (none planned; releases are unsigned).
-- `ROADMAP.md`, `docs/CHANGELOG.md`, `TASKS.md` (generated) in every task PR.
+- `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/TASKS.md` (generated) in every task PR.

@@ -2,7 +2,7 @@
 
 Checked against code: `6b3a7f5`, 23.11.2026.
 
-What the product can do, for people rather than for the code. Where each piece lives in the repository: [`CODE_MAP.md`](CODE_MAP.md). How it works: [`ARCHITECTURE.md`](../ARCHITECTURE.md).
+What the product can do, for people rather than for the code. Where each piece lives in the repository: [`CODE_MAP.md`](CODE_MAP.md). How it works: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 Statuses: ✅ works · 🔄 in progress · ⏳ planned.
 

@@ -21,5 +21,7 @@ step "gen_tasks.py --check"
 "$PY" scripts/gen_tasks.py --check
 step "gen_decisions.py --check"
 "$PY" scripts/gen_decisions.py --check
+step "check_i18n.py"
+"$PY" -I scripts/check_i18n.py
 
 printf '\nall checks passed\n'

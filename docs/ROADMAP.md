@@ -1,6 +1,6 @@
 # PhoeCord roadmap
 
-The plan from rebuilding the v0 codebase to a v1.0 release on Project Phoenix. How it all fits together: [`ARCHITECTURE.md`](ARCHITECTURE.md). Tick a box in the same PR that does the work. Task-level detail for the current phase: [`docs/phase-1/`](docs/phase-1/README.md).
+The plan from rebuilding the v0 codebase to a v1.0 release on Project Phoenix. How it all fits together: [`ARCHITECTURE.md`](ARCHITECTURE.md). Tick a box in the same PR that does the work. Task-level detail for the current phase: [`docs/phase-1/`](phase-1/README.md).
 
 | Phase | When | Goal | Versions |
 |:---|:---|:---|:---|
@@ -14,7 +14,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ## Phase 0. Foundation ✅
 
-- [x] Audit of the v0 codebase and migration map: [`docs/phase-1/ai/spec.md`](docs/phase-1/ai/spec.md)
+- [x] Audit of the v0 codebase and migration map: [`docs/phase-1/ai/spec.md`](phase-1/ai/spec.md)
 - [x] Cargo workspace: `core`, `proxy`, `plugin-runtime`, `plugin-sdk`, `plugins`, `loader`, `installer`, `cli`
 - [x] Ported `val`, `etf`, routes, `codec`, `ca`, `trust`, keeping the copyright
 - [x] Plugin API v1 (`Manifest`, `Event`, `Verdict`, `Host`) and `Chain`
@@ -27,12 +27,12 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ### 1.1 Core refactor: the proxy on the new API · `0.2`
 
-- [ ] Move `proxy.rs`, `rest.rs`, `gateway.rs` into `phoecord-proxy`, replace `App::on_*` with `Chain`
-- [ ] A proxy `Host`: settings from `config.toml`, KV in the data folder, `self_id` from READY, rate-limited `notify`
-- [ ] `config.toml`: free-form `[plugins.<id>]` sections instead of a field per plugin; keep live reload
-- [ ] Move `state.rs` (account knowledge) behind `Host`, drop the global `Mutex` held for the whole chain
-- [ ] CLI: `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `paths`
-- [ ] `selftest`: REST + Gateway (JSON/zlib, ETF/zstd) against the real Discord without logging in
+- [x] Move `proxy.rs`, `rest.rs`, `gateway.rs` into `phoecord-proxy`, replace `App::on_*` with `Chain`
+- [x] A proxy `Host`: settings from `config.toml`, KV in the data folder, `self_id` from READY, rate-limited `notify`
+- [x] `config.toml`: free-form `[plugins.<id>]` sections instead of a field per plugin; keep live reload
+- [x] Move `state.rs` (account knowledge) behind `Host`, drop the global `Mutex` held for the whole chain
+- [x] CLI: `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `toggle`, `paths`
+- [x] `selftest`: REST + Gateway (JSON/zlib, ETF/zstd) against the real Discord without logging in
 - [ ] Recorded Gateway payloads without personal data for tests (`tests/fixtures/`)
 - [ ] Benchmark: Gateway frame latency through the chain ≤ 1 ms p99 on a 5 MB READY
 
@@ -48,7 +48,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 - [ ] New: `clear_urls`, strip tracking parameters from outgoing messages
 - [ ] New: PhoeCord slash commands (`/phoecord plugins`, `/phoecord toggle`), a local reply to `POST /interactions`
 - [ ] `phoecord import-vencord` via the `vencord` field in manifests
-- [ ] Vencord parity, network parts: every 🌐 plugin and the data part of every 🌐 + 🎨 plugin in [`docs/PLUGINS.md`](docs/PLUGINS.md), including the owner's userplugins (tasks 1.2.10–1.2.19)
+- [ ] Vencord parity, network parts: every 🌐 plugin and the data part of every 🌐 + 🎨 plugin in [`docs/PLUGINS.md`](PLUGINS.md), including the owner's userplugins (tasks 1.2.10–1.2.19)
 
 ### 1.3 Dynamic plugin engine (WASM) · `0.4`
 
@@ -71,10 +71,10 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ### 1.5 DLL sideloading prototype · `0.6`
 
-- [ ] `phoecord-loader` as `version.dll`: forward every export to `System32\version.dll` by full path
-- [ ] `DllMain` with no work under the loader lock, a worker thread, logging to a file
-- [ ] Client version detection (exe resources + `.text` hash), the `signatures/*.toml` format
-- [ ] Inline detours + hook removal on unload
+- [x] `phoecord-loader` as `version.dll`: forward every export to `System32\version.dll` by full path
+- [x] `DllMain` with no work under the loader lock, a worker thread, logging to a file
+- [x] Client version detection (exe resources + `.text` hash), the `signatures/*.toml` format
+- [x] Inline detours + hook removal on unload
 - [ ] Loader ↔ proxy IPC (named pipe): status, settings, events for the UI
 - [ ] Reinstall after a Discord update (`app-x.y.z`)
 - [ ] Check on today's client: the loader starts and shuts down without a single crash on 3 consecutive versions
@@ -89,11 +89,11 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ### 1.7 Localization: English and Russian · `0.6`
 
-- [ ] `phoecord-i18n` helper on Fluent: per-crate `i18n/{en,ru}/main.ftl`, fallback to English
+- [x] `phoecord-i18n` helper on Fluent: per-crate `i18n/{en,ru}/main.ftl`, fallback to English
 - [ ] `language` in `config.toml`, defaulting to the OS language
 - [ ] CLI, notifications and installer strings moved into `.ftl`; Russian translation complete
 - [ ] `Host::t()` and per-plugin `.ftl` files (Plugin API minor bump)
-- [ ] CI check: every `en` key exists in `ru`
+- [x] CI check: every `en` key exists in `ru`
 
 **Ready for Phase 2 when:** the network layer is stable on today's Discord, ≥ 8 plugins, a WASM plugin installs without a rebuild, the loader is proven on today's client, the GPUI report is done, the app speaks English and Russian.
 
@@ -127,7 +127,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ### 2.4 Release v1.0 · `1.0`
 
-Scope: every 🌐 and 🌐 + 🎨 plugin of [`docs/PLUGINS.md`](docs/PLUGINS.md) complete (network and on-screen parts), the theme engine, and the 30 most-used 🎨 plugins. The remaining 🎨 plugins follow in 1.x releases until full Vencord parity. The top 10, which must work first:
+Scope: every 🌐 and 🌐 + 🎨 plugin of [`docs/PLUGINS.md`](PLUGINS.md) complete (network and on-screen parts), the theme engine, and the 30 most-used 🎨 plugins. The remaining 🎨 plugins follow in 1.x releases until full Vencord parity. The top 10, which must work first:
 
 | # | Plugin | Layer | Status |
 |---:|:---|:---|:---|

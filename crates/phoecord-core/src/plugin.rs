@@ -15,7 +15,7 @@ use crate::Val;
 /// Version of this contract. Plugins declare the version they were built for in their manifest.
 pub const API_VERSION: u32 = 1;
 
-/// Where a plugin works. Decides when it can run and what breaks it (see ARCHITECTURE.md).
+/// Where a plugin works. Decides when it can run and what breaks it (see docs/ARCHITECTURE.md).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Layer {
     /// REST and gateway traffic. Independent of the client binary.
@@ -102,6 +102,46 @@ pub trait Host {
     /// Desktop notification (rate-limited by the host).
     fn notify(&mut self, title: &str, body: &str);
     fn log(&mut self, message: &str);
+    /// Queue a client → server gateway payload (for example a re-sent presence). The proxy sends
+    /// the queue after the frame being handled, through the plugin chain's `Send` event.
+    fn emit_send(&mut self, op: i64, payload: Val);
+    /// Custom emoji ids of a guild the user is in (empty when unknown).
+    fn guild_emojis(&self, guild_id: u64) -> Vec<u64>;
+    /// The guild a channel belongs to (`None` for DMs and unknown channels).
+    fn channel_guild(&self, channel_id: u64) -> Option<u64>;
+    /// HTTPS to an external service. Only hosts listed in the plugin's manifest are allowed.
+    fn fetch(
+        &mut self,
+        method: &str,
+        url: &str,
+        body: Option<&Val>,
+    ) -> Result<HostResponse, String> {
+        let _ = (method, url, body);
+        Err("Host::fetch is not available in this host".into())
+    }
+    /// A Discord API call on the user's behalf, through the host's shared rate limiter.
+    fn rest(
+        &mut self,
+        method: &str,
+        route: &str,
+        body: Option<&Val>,
+    ) -> Result<HostResponse, String> {
+        let _ = (method, route, body);
+        Err("Host::rest is not available in this host".into())
+    }
+    /// Called by the plugin chain before each plugin runs, so the host can scope `setting`,
+    /// `kv_*`, `log` and rate limits to it. Plugins never call this.
+    fn begin_plugin(&mut self, id: &str) {
+        let _ = id;
+    }
+}
+
+/// An answer to [`Host::fetch`] or [`Host::rest`].
+#[derive(Clone, Debug, PartialEq)]
+pub struct HostResponse {
+    pub status: u16,
+    /// The JSON body, if there was one and it parsed.
+    pub body: Option<Val>,
 }
 
 /// A plugin, native or behind the WASM runtime.
@@ -109,5 +149,10 @@ pub trait Plugin: Send + Sync {
     fn manifest(&self) -> &Manifest;
     /// Cheap pre-filter so the proxy can skip decoding traffic nobody wants.
     fn wants(&self, event: &EventKind) -> bool;
+    /// Whether the plugin may want any gateway event. The proxy decodes the gateway only when some
+    /// enabled plugin says yes; `wants` then filters each frame. Default: no.
+    fn wants_gateway(&self) -> bool {
+        false
+    }
     fn on_event(&self, host: &mut dyn Host, event: Event<'_>) -> Verdict;
 }

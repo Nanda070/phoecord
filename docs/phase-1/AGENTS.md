@@ -17,7 +17,7 @@ If unsure, stop and ask the human to check `docs/phase-1/README.md`.
 
 ## Step 1: read
 
-1. The root `AGENTS.md`, `CONTRIBUTING.md` and `SECURITY.md`.
+1. `docs/AGENTS.md`, `CONTRIBUTING.md` and `SECURITY.md`.
 2. `ARCHITECTURE.md` (layers, Plugin API, runtime choice, loader, localization).
 3. The last 30 lines of `docs/phase-1/ai/ledger.md`.
 4. `docs/phase-1/ai/spec.md`, the source of truth.

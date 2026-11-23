@@ -22,4 +22,4 @@
 
 ## 5. Docs
 
-<Which living docs from the root `AGENTS.md` change and how.>
+<Which living docs from `docs/AGENTS.md` change and how.>

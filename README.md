@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-3da639?style=for-the-badge" alt="MIT" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-3da639?style=for-the-badge" alt="GPL-3.0" /></a>
   <a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-2024-dea584?style=for-the-badge&logo=rust&logoColor=white" alt="Rust 2024" /></a>
-  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/status-pre--alpha-ff8a1f?style=for-the-badge" alt="pre-alpha" /></a>
+  <a href="docs/ROADMAP.md"><img src="https://img.shields.io/badge/status-pre--alpha-ff8a1f?style=for-the-badge" alt="pre-alpha" /></a>
 </p>
 
 <p align="center">
-  <a href="ARCHITECTURE.md">Architecture</a> ·
-  <a href="ROADMAP.md">Roadmap</a> ·
+  <a href="docs/ARCHITECTURE.md">Architecture</a> ·
+  <a href="docs/ROADMAP.md">Roadmap</a> ·
   <a href="docs/README.md">Docs</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="SECURITY.md">Security</a>
@@ -57,7 +57,7 @@ cargo run                       # Rust 1.88+
 bash scripts/check.sh           # all checks (Windows: powershell -File scripts/check.ps1)
 ```
 
-Branches, commits and PRs: [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for people and AI agents: [`AGENTS.md`](AGENTS.md). Where every file lives: [`docs/CODE_MAP.md`](docs/CODE_MAP.md).
+Branches, commits and PRs: [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for people and AI agents: [`AGENTS.md`](docs/AGENTS.md). Where every file lives: [`docs/CODE_MAP.md`](docs/CODE_MAP.md). Porting a plugin: [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md).
 
 ## Team
 
@@ -68,5 +68,5 @@ Thanks to [Vencord](https://github.com/Vendicated/Vencord) for the plugin ideas 
 ---
 
 <p align="center">
-  <sub>© 2026 Cheterin Group · <a href="LICENSE">MIT</a> · <a href="SECURITY.md">report a vulnerability</a></sub>
+  <sub>© 2026 Cheterin Group · <a href="LICENSE">GPL-3.0</a> · <a href="SECURITY.md">report a vulnerability</a></sub>
 </p>

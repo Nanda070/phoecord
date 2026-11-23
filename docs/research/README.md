@@ -4,5 +4,5 @@ Research notes that feed decisions: GPUI internals (Phase 1, 1.6), Phoenix recon
 
 | Note | Milestone | Status |
 |:---|:---|:---|
-| `gpui.md` | 1.6.5 | ⏳ |
+| [`gpui.md`](gpui.md) | 1.6.5 | ✅ written, owner review pending |
 | `phoenix-recon.md` | 2.1 | ⏳ |
