@@ -125,6 +125,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/discover.rs` | `discover()`: Stable/PTB/Canary on Windows, macOS, Linux (PATH, Flatpak, Snap); `discover_in(&Roots)` for tests |
 | `src/system.rs` | `Os`, `Env`, the `System` trait (trust store, Run key, launchctl, systemd); `RealSystem` is the only code that touches the machine |
 | `src/ca.rs`, `src/autostart.rs` | Install steps: local CA + trust; Run key / LaunchAgent / systemd user unit |
+| `src/terms.rs` | `TERMS_VERSION`, both terms texts (`include_str!` of `TERMS.md` / `TERMS.ru.md`), `needs_acceptance`, `accept` (stored in the data folder and logged so `uninstall` removes it) | Bump `TERMS_VERSION` whenever the text changes, so users are asked again |
 | `src/install.rs`, `src/uninstall.rs` | `install()` (idempotent) and `uninstall_all()` (undoes the log newest-first, `UninstallReport`) |
 | `src/log.rs` | `install.log` (JSON lines in the data folder): every step the installer made, so rollback removes only what it created |
 
@@ -139,8 +140,8 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 
 | File | What | Easy to break |
 |:---|:---|:---|
-| `src/main.rs` | Commands: `run`, `launch`, `setup` (installer `install()`), `uninstall` (installer `uninstall_all()`), `trust`, `untrust`, `plugins`, `enable`, `disable`, `toggle`, `log`, `selftest`, `paths`; `run` loads WASM packages | `plugins`/`enable` know built-ins only, not WASM packages |
-| `src/text.rs` | Every user-facing CLI string (moves to `.ftl` in 1.7.2–1.7.3) | |
+| `src/main.rs` | Commands: `run`, `launch`, `setup` (installer `install()`), `uninstall` (installer `uninstall_all()`), `trust`, `untrust`, `plugins`, `enable`, `disable`, `toggle`, `log`, `selftest`, `paths`; `run` loads WASM packages | `plugins`/`enable` know built-ins only, not WASM packages; every user-facing string comes from `crates/phoecord-i18n/i18n/{en,ru}/main.ftl`; `setup` asks to accept `TERMS.md` first (`--accept-terms` skips the prompt) |
+| `src/help.rs` | `--help` built at runtime from the `Localizer` (clap needs static strings, so the help is rebuilt per language); `lang_from_args` reads `--lang` before clap runs | A new subcommand or flag needs `cmd-*` / `cli-arg-*` keys in both `.ftl` files |
 | `src/log.rs`, `src/selftest.rs` | `phoecord log` output, `phoecord selftest` | |
 
 ## 4. Scripts

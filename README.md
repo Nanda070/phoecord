@@ -20,6 +20,7 @@
   <a href="docs/ROADMAP.md">Roadmap</a> ·
   <a href="docs/README.md">Docs</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="TERMS.md">Terms</a> ·
   <a href="https://github.com/Nanda070/phoecord/issues">Issues</a> ·
   <a href="SECURITY.md">Security</a>
 </p>
