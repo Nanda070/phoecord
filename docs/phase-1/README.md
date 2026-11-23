@@ -41,7 +41,7 @@ none
 | | Nanda | Contributors |
 |:---|:---|:---|
 | Area | core, Plugin API, proxy, CA and trust, loader, installer, runtime, releases, review and merging | plugins, SDK examples, tests and fixtures, translations, docs, research |
-| Tasks | 1.0, 1.1 (except 1.1.9), 1.2.5, 1.2.6, 1.2.8, 1.3 (except 1.3.6, 1.3.7), 1.4, 1.5, 1.6.1, 1.6.3, 1.6.5, 1.7.1, 1.7.2, 1.7.4 | 1.1.9, 1.2.1–1.2.4, 1.2.7, 1.2.9, 1.3.6, 1.3.7, 1.6.2, 1.6.4, 1.7.3, 1.7.5 |
+| Tasks | 1.0, 1.1 (except 1.1.9), 1.2.3–1.2.6, 1.2.8, 1.3 (except 1.3.6, 1.3.7), 1.4, 1.5, 1.6, 1.7.1, 1.7.2, 1.7.4, 1.7.5 | 1.1.9, 1.2.1 (matvee, done), 1.2.2 and 1.2.7 (matvee), 1.2.9, 1.3.6, 1.3.7, 1.7.3 |
 
 Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor plugins are written against an API that is already merged.
 
@@ -65,8 +65,8 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ⏳ |
 | **1.2.1** 🔴 | `silent_typing` | matvee | ✅ |
 | **1.2.2** 🟡 | `unindent` | matvee | ⏳ |
-| **1.2.3** 🟡 | `game_activity_toggle` | anyone | ✅ 23.11, PR #21 |
-| **1.2.4** 🟡 | `relationship_notifier` | anyone | ✅ 23.11, PR #21 |
+| **1.2.3** 🟡 | `game_activity_toggle` | Nanda | ✅ 23.11, PR #21 |
+| **1.2.4** 🟡 | `relationship_notifier` | Nanda | ✅ 23.11, PR #21 |
 | **1.2.5** 🔴 | `fake_nitro` (emoji) | Nanda | ✅ 23.11, PR #21 |
 | **1.2.6** 🔴 | `message_logger` and `phoecord log` | Nanda | ✅ 23.11, PR #22 |
 | **1.2.7** 🔴 | `clear_urls` (new) | matvee | ⏳ |
@@ -103,15 +103,15 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.5.6** 🟡 | Reinstall after a Discord update | Nanda | ⏳ |
 | **1.5.7** 🔴 | Verify on 3 client versions | Nanda | ⏳ |
 | **1.6.1** 🔴 | A map of GPUI | Nanda | ✅ 23.11, PR #12 |
-| **1.6.2** 🔴 | GPUI reference build | anyone | ✅ 23.11, PR #12 |
+| **1.6.2** 🔴 | GPUI reference build | Nanda | ✅ 23.11, PR #12 |
 | **1.6.3** 🟡 | What of GPUI is visible in a release binary | Nanda | ✅ 23.11, PR #12 |
-| **1.6.4** 🟡 | Themes in Zed and what to expect from Phoenix | anyone | ✅ 23.11, PR #12 |
+| **1.6.4** 🟡 | Themes in Zed and what to expect from Phoenix | Nanda | ✅ 23.11, PR #12 |
 | **1.6.5** 🔴 | Report `docs/research/gpui.md` | Nanda | ✅ 23.11, PR #12 |
 | **1.7.1** 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ✅ 23.11, PR #9 |
 | **1.7.2** 🔴 | `language` setting, OS default | Nanda | ⏳ |
 | **1.7.3** 🔴 | Russian translation of CLI, notifications, installer | anyone | ⏳ |
 | **1.7.4** 🟡 | `Host::t()` and per-plugin `.ftl` | Nanda | ⏳ |
-| **1.7.5** 🟡 | CI check: every `en` key exists in `ru` | anyone | ✅ 23.11, PR #9 |
+| **1.7.5** 🟡 | CI check: every `en` key exists in `ru` | Nanda | ✅ 23.11, PR #9 |
 
 Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do not depend on the network and run in parallel with 1.2–1.4. Stage 1.7 starts after 1.1.7 (once there are CLI strings to translate) and must land before 1.4.3.
 
