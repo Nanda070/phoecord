@@ -43,6 +43,7 @@ Related: [`ARCHITECTURE.md`](../ARCHITECTURE.md) explains how the layers work; [
 | `phoecord-loader` | `crates/phoecord-loader/` | cdylib + rlib | none |
 | `phoecord-installer` | `crates/phoecord-installer/` | lib | core |
 | `phoecord-cli` | `crates/phoecord-cli/` | bin `phoecord` | core, proxy, plugin-runtime, plugins |
+| `phoecord-i18n` | `crates/phoecord-i18n/` | lib | none |
 
 ## 3. Files by crate
 
@@ -99,6 +100,13 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 |:---|:---|
 | `src/lib.rs` | `Channel` (Stable, PTB, Canary, Phoenix); logic comes in 1.4 |
 
+### `phoecord-i18n`
+
+| File | What | Easy to break |
+|:---|:---|:---|
+| `src/lib.rs` | `Localizer` (`new`, `t`, `t_args`, `language`), `normalize`, `detect_os_language`, `SUPPORTED` | Bundles are `include_str!`-ed: a new language needs a `source()` arm |
+| `i18n/en/main.ftl`, `i18n/ru/main.ftl` | Shared strings; English is the source | Every `en` key needs a `ru` twin with the same variables (`check_i18n.py`) |
+
 ### `phoecord-cli`
 
 | File | What |
@@ -111,6 +119,7 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 |:---|:---|
 | `scripts/check.sh`, `scripts/check.ps1` | All checks in order, stop at first failure (see `AGENTS.md`) |
 | `scripts/gen_tasks.py` | Builds `TASKS.md` from the "Tasks" tables of `docs/<plan>/README.md`; `--check` exits 1 if stale |
+| `scripts/check_i18n.py` | Every key of `crates/*/i18n/en/*.ftl` exists in the `ru` file with the same variables; exit 1 otherwise |
 | `scripts/gen_decisions.py` | Builds `docs/DECISIONS.md` from `Ruling:` lines of `docs/<plan>/ai/ledger.md`; `--check` exits 1 if stale |
 
 ## 5. Docs

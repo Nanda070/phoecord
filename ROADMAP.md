@@ -89,11 +89,11 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ### 1.7 Localization: English and Russian · `0.6`
 
-- [ ] `phoecord-i18n` helper on Fluent: per-crate `i18n/{en,ru}/main.ftl`, fallback to English
+- [x] `phoecord-i18n` helper on Fluent: per-crate `i18n/{en,ru}/main.ftl`, fallback to English
 - [ ] `language` in `config.toml`, defaulting to the OS language
 - [ ] CLI, notifications and installer strings moved into `.ftl`; Russian translation complete
 - [ ] `Host::t()` and per-plugin `.ftl` files (Plugin API minor bump)
-- [ ] CI check: every `en` key exists in `ru`
+- [x] CI check: every `en` key exists in `ru`
 
 **Ready for Phase 2 when:** the network layer is stable on today's Discord, ≥ 8 plugins, a WASM plugin installs without a rebuild, the loader is proven on today's client, the GPUI report is done, the app speaks English and Russian.
 

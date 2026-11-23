@@ -64,11 +64,11 @@ Tasks: 61, plans with tasks: 1.
 | [phase-1](docs/phase-1/README.md) | 1.6.3 🟡 | What of GPUI is visible in a release binary | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.6.4 🟡 | Themes in Zed and what to expect from Phoenix | anyone | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.6.5 🔴 | Report `docs/research/gpui.md` | Nanda | ⏳ |
-| [phase-1](docs/phase-1/README.md) | 1.7.1 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.7.1 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ✅ 23.11, PR #9 |
 | [phase-1](docs/phase-1/README.md) | 1.7.2 🔴 | `language` setting, OS default | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.7.3 🔴 | Russian translation of CLI, notifications, installer | anyone | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.7.4 🟡 | `Host::t()` and per-plugin `.ftl` | Nanda | ⏳ |
-| [phase-1](docs/phase-1/README.md) | 1.7.5 🟡 | CI check: every `en` key exists in `ru` | anyone | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.7.5 🟡 | CI check: every `en` key exists in `ru` | anyone | ✅ 23.11, PR #9 |
 
 ## Nanda
 
@@ -112,7 +112,7 @@ Tasks: 61, plans with tasks: 1.
 | phase-1 | 1.6.1 🔴 | A map of GPUI | ⏳ |
 | phase-1 | 1.6.3 🟡 | What of GPUI is visible in a release binary | ⏳ |
 | phase-1 | 1.6.5 🔴 | Report `docs/research/gpui.md` | ⏳ |
-| phase-1 | 1.7.1 🔴 | `phoecord-i18n` on Fluent, fallback to English | ⏳ |
+| phase-1 | 1.7.1 🔴 | `phoecord-i18n` on Fluent, fallback to English | ✅ 23.11, PR #9 |
 | phase-1 | 1.7.2 🔴 | `language` setting, OS default | ⏳ |
 | phase-1 | 1.7.4 🟡 | `Host::t()` and per-plugin `.ftl` | ⏳ |
 
@@ -139,4 +139,4 @@ Tasks: 61, plans with tasks: 1.
 | phase-1 | 1.6.2 🔴 | GPUI reference build | ⏳ |
 | phase-1 | 1.6.4 🟡 | Themes in Zed and what to expect from Phoenix | ⏳ |
 | phase-1 | 1.7.3 🔴 | Russian translation of CLI, notifications, installer | ⏳ |
-| phase-1 | 1.7.5 🟡 | CI check: every `en` key exists in `ru` | ⏳ |
+| phase-1 | 1.7.5 🟡 | CI check: every `en` key exists in `ru` | ✅ 23.11, PR #9 |

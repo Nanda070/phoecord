@@ -15,6 +15,9 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - Issue and PR templates; CI on Linux, Windows and macOS plus an MSRV job.
 - Localization planned: English first, Russian next (ROADMAP 1.7).
 
+- `phoecord-i18n`: Fluent localizer with English and Russian bundles, fallback ru → en → key, OS language detection (stage 1.7.1).
+- `scripts/check_i18n.py`: fails when a Russian translation is missing a key or a variable; part of `check.sh` and CI (stage 1.7.5).
+
 ### Ported from the v0 proxy
 
 - `val`, `etf`, REST routes → `phoecord-core`.
