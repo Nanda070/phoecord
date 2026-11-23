@@ -99,6 +99,7 @@ plugin-desc-no_reply_mention = Disables reply pings by default
 plugin-desc-text_replace = Replace text in the messages you send
 plugin-desc-send_timestamps = Turn `12:34` in your messages into a Discord timestamp
 plugin-desc-anonymise_file_names = Anonymise uploaded file names
+plugin-desc-silent_message_toggle = Send messages without notifications
 
 # CLI: log
 cli-log-empty = nothing logged yet ({ $path })
