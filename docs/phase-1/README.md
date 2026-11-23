@@ -47,7 +47,7 @@ Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor
 
 ## Tasks
 
-Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is collected into [`TASKS.md`](../TASKS.md): after editing run `python scripts/gen_tasks.py`.
+Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is the only place task status is tracked**; `ROADMAP.md` and `ai/plan.md` carry no checkboxes.
 
 | Task | What | Who | Status |
 |:--|:--|:--|:--|
@@ -65,12 +65,12 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is coll
 | **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ⏳ |
 | **1.2.1** 🔴 | `silent_typing` | matvee | ✅ |
 | **1.2.2** 🟡 | `unindent` | matvee | ⏳ |
-| **1.2.3** 🟡 | `game_activity_toggle` | anyone | ⏳ |
-| **1.2.4** 🟡 | `relationship_notifier` | anyone | ⏳ |
-| **1.2.5** 🔴 | `fake_nitro` (emoji) | Nanda | ⏳ |
-| **1.2.6** 🔴 | `message_logger` and `phoecord log` | Nanda | ⏳ |
+| **1.2.3** 🟡 | `game_activity_toggle` | anyone | ✅ 23.11, PR #21 |
+| **1.2.4** 🟡 | `relationship_notifier` | anyone | ✅ 23.11, PR #21 |
+| **1.2.5** 🔴 | `fake_nitro` (emoji) | Nanda | ✅ 23.11, PR #21 |
+| **1.2.6** 🔴 | `message_logger` and `phoecord log` | Nanda | ✅ 23.11, PR #22 |
 | **1.2.7** 🔴 | `clear_urls` (new) | matvee | ⏳ |
-| **1.2.8** 🟡 | `/phoecord` slash commands (new) | Nanda | ⏳ |
+| **1.2.8** 🟡 | `/phoecord` slash commands (new) | Nanda | ✅ 23.11, PR #22 |
 | **1.2.9** 🟢 | `phoecord import-vencord` | anyone | ⏳ |
 | **1.2.10** 🟡 | Message filters: iLoveSpam, ImageLink, NoBlockedMessages, NoPendingCount, NoReplyMention | anyone | ⏳ |
 | **1.2.11** 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, BetterGifAltText, SilentMessageToggle (`/silent`) | anyone | ⏳ |
@@ -90,10 +90,10 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is coll
 | **1.3.6** 🟡 | SDK: bindings, macro, `examples/hello-plugin` | anyone | ⏳ |
 | **1.3.7** 🟡 | TypeScript plugin template | anyone | ⏳ |
 | **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ⏳ |
-| **1.4.1** 🔴 | Client discovery on 3 OSes | Nanda | ⏳ |
-| **1.4.2** 🔴 | CA and proxy autostart | Nanda | ⏳ |
+| **1.4.1** 🔴 | Client discovery on 3 OSes | Nanda | ✅ 23.11, PR #23 (library; real machines not checked) |
+| **1.4.2** 🔴 | CA and proxy autostart | Nanda | 🔄 code in PR #23; manual "runs after reboot" check pending |
 | **1.4.3** 🟡 | Installer GUI | Nanda | ⏳ |
-| **1.4.4** 🔴 | Full rollback | Nanda | ⏳ |
+| **1.4.4** 🔴 | Full rollback | Nanda | 🔄 code in PR #23; manual check on 3 OSes pending |
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
 | **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ✅ 23.11, PR #10 |
 | **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ✅ 23.11, PR #10 |
@@ -127,13 +127,12 @@ Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do 
 
 ## Living docs and publications
 
-- [`ROADMAP.md`](../ROADMAP.md): tick the 1.1–1.7 boxes in each task's PR.
 - [`docs/CHANGELOG.md`](../CHANGELOG.md): an "Unreleased" line in every PR; versions `0.2`–`0.6` at the end of stages.
 - [`ARCHITECTURE.md`](../ARCHITECTURE.md): on Plugin API changes, the runtime decision and how we reach Phoenix.
 - [`docs/CODE_MAP.md`](../CODE_MAP.md): every new file, config key and env variable.
-- [`docs/PROJECT_MAP.md`](../PROJECT_MAP.md): every plugin's status.
-- README: the "Plugins" table and the pre-alpha note at the end of each stage (keep it compact; details belong in `docs/PROJECT_MAP.md`).
-- GitHub Releases: one per stage starting at `0.2`, using [`_template/release.md`](../_template/release.md).
+- [`docs/PLUGINS.md`](../PLUGINS.md): the plugin's "Where" cell.
+- README: the "Plugins" table and the pre-alpha note at the end of each stage (keep it compact; details belong in `docs/PLUGINS.md`).
+- GitHub Releases: one per stage starting at `0.2`.
 
 ## How to start
 

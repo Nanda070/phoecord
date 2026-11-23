@@ -125,13 +125,13 @@ Known v0 defects fixed while porting: an unused `PathBuf` import broke `-D warni
 - WASM: a test guest that panics, one that loops (hits the epoch deadline), one that allocates past the limit, one that calls a denied `Host` method; all disable the plugin and leave the chain working.
 - Loader: AOB tests on synthetic buffers (exist); signature-file parsing; forwarding table generated for every export of the system DLL (Windows-only test).
 - i18n: every `en` key exists in `ru`; formatting with arguments; fallback order.
-- Benchmark (`cargo bench`, not in CI gate): READY 5 MB, MESSAGE_CREATE burst; result in `docs/reports/`.
+- Benchmark (`cargo bench`, not in CI gate): READY 5 MB, MESSAGE_CREATE burst; result in the PR description.
 
 ## 5. Docs
 
 - `ARCHITECTURE.md`: §3.1 API additions; keep the runtime and installer sections in sync with the code; localization details if they change.
 - `docs/CODE_MAP.md`: every new module, the config keys and env variables of §3.2, `data/` layout.
-- `docs/PROJECT_MAP.md`: plugin statuses.
+- `docs/PLUGINS.md`: plugin "Where" cells.
 - `docs/RUNBOOK.md`: remove the *(1.1)* markers as commands land; add WASM and loader failure rows.
-- `docs/SECRETS.md`: any new repository secret (none planned; releases are unsigned).
-- `docs/ROADMAP.md`, `docs/CHANGELOG.md`, `docs/TASKS.md` (generated) in every task PR.
+- `docs/GOVERNANCE.md` secrets table: any new repository secret (none planned; releases are unsigned).
+- `docs/CHANGELOG.md` and the task status in `docs/phase-1/README.md` in every task PR.

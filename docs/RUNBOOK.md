@@ -4,7 +4,7 @@ Checked against code: `6b3a7f5`, 23.11.2026. Whoever re-checks this document aga
 
 Short steps for when PhoeCord stops working on someone's machine: how to find out what broke and what to do. Living document: a new kind of breakage or a new diagnostic goes here, in the same commit. Commands marked *(1.1)* arrive with milestone 1.1.
 
-Related: [`CODE_MAP.md`](CODE_MAP.md) for where things live; [`SECRETS.md`](SECRETS.md) for keys; [`SECURITY.md`](../SECURITY.md) for anything that looks like a leak.
+Related: [`CODE_MAP.md`](CODE_MAP.md) for where things live; [`GOVERNANCE.md`](GOVERNANCE.md#secrets) for keys; [`SECURITY.md`](../SECURITY.md) for anything that looks like a leak.
 
 ---
 
@@ -61,5 +61,4 @@ The CA key or a token may have leaked, or the proxy accepted a non-local connect
 
 ## 6. After a breakage
 
-- A report from [`_template/incident.md`](_template/incident.md) into [`incidents/`](incidents/).
 - A test that catches it, a new row in this runbook, or both.

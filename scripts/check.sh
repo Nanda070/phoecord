@@ -17,8 +17,6 @@ step "cargo clippy --workspace --all-targets -- -D warnings"
 cargo clippy --workspace --all-targets -- -D warnings
 step "cargo test --workspace"
 cargo test --workspace
-step "gen_tasks.py --check"
-"$PY" scripts/gen_tasks.py --check
 step "gen_decisions.py --check"
 "$PY" scripts/gen_decisions.py --check
 step "check_i18n.py"

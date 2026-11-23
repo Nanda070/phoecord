@@ -36,7 +36,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python scripts/gen_tasks.py --check
       - run: python scripts/gen_decisions.py --check
       - run: python -I scripts/check_i18n.py
 

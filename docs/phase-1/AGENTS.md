@@ -33,7 +33,7 @@ If unsure, stop and ask the human to check `docs/phase-1/README.md`.
 - Tests never touch the network and never need a Discord token. Gateway tests use fixtures from `tests/fixtures/` with personal data removed.
 - User-facing strings: English source text; once 1.7.1 lands, through `.ftl` files, never hard-coded.
 - Never commit tokens, `ca.key`, `ca.pem`, traffic dumps or Discord client binaries. Never touch the copyright lines in `LICENSE`.
-- In the same PR: tick the task in `ROADMAP.md`, add a line under "Unreleased" in `docs/CHANGELOG.md`, update `docs/CODE_MAP.md`, update the status in the task table of `docs/phase-1/README.md`, run `python scripts/gen_tasks.py`.
+- In the same PR: a line under "Unreleased" in `docs/CHANGELOG.md`, `docs/CODE_MAP.md`, the plugin's row in `docs/PLUGINS.md`, and the status in the task table of `docs/phase-1/README.md` (the only place progress is tracked).
 - Do not change a decision of `README.md` silently: a `Ruling:` line in the ledger and the edit in the same commit, then `python scripts/gen_decisions.py`.
 - Everything you write (docs, comments, commits, PRs, ledger lines) is in English.
 

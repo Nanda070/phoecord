@@ -48,7 +48,7 @@ CI runs the same checks on Linux, Windows and macOS. Locally, in one command:
 bash scripts/check.sh            # Windows: powershell -File scripts/check.ps1
 ```
 
-It runs `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and checks that `docs/TASKS.md` and `docs/DECISIONS.md` are up to date.
+It runs `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and checks that `docs/DECISIONS.md` is up to date and that every English string has a Russian translation.
 
 ## Code rules
 

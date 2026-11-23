@@ -66,7 +66,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | Experiments | Discord experiments and dev features | 🌐 + 🎨 | 1.2.18 / 2 |
 | ExpressionManager | Clone, edit, delete emoji and stickers | 🎨 UI | 2 |
 | F8Break | Pause on F8 with DevTools | ⛔ N/A | DevTools only |
-| FakeNitro | Fake emoji and stickers, Nitro themes, Nitro stream quality | 🌐 Network | 1.2.5 |
+| FakeNitro | Fake emoji and stickers, Nitro themes, Nitro stream quality | 🌐 Network | done: emoji; stickers, stream 1.2.5 |
 | FakeProfileThemes | Profile themes hidden in the bio | 🌐 Network | 1.2.14 |
 | FavoriteEmojiFirst | Favourite emoji first in autocomplete | 🎨 UI | 2 |
 | FixCodeblockGap | Remove the gap under code blocks | 🖌️ Theme | 2.3 |
@@ -75,7 +75,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | ForceOwnerCrown | Owner crown on large servers | 🎨 UI | 2 |
 | FriendInvites | Friend invite links via commands | 🌐 Network | 1.2.12 |
 | FullSearchContext | Full context menus on search results | 🎨 UI | 2 |
-| GameActivityToggle | Toggle showing your game | 🌐 Network | 1.2.3 |
+| GameActivityToggle | Toggle showing your game | 🌐 Network | done |
 | GifPaste | Insert GIF links instead of sending | 🎨 UI | 2 |
 | GifProviderSwitcher | Tenor or Giphy for GIF search | 🌐 Network | 1.2.15 |
 | GreetStickerPicker | Pick any greet sticker | 🎨 UI | 2 |
@@ -95,7 +95,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | MessageClickActions | Click to delete, double-click to edit or reply | 🎨 UI | 2 |
 | MessageLatency | Mark messages that were slow to send | 🌐 + 🎨 | 1.2.16 / 2 |
 | MessageLinkEmbeds | Previews of linked messages | 🌐 + 🎨 | 1.2.16 / 2 |
-| MessageLogger | Keep deleted and edited messages | 🌐 + 🎨 | 1.2.6 / 2.3 |
+| MessageLogger | Keep deleted and edited messages | 🌐 + 🎨 | done: data / 2.3 |
 | MoreQuickReactions | More quick reactions | 🎨 UI | 2 |
 | MusicRichPresence | Last.fm and ListenBrainz Rich Presence | 🌐 Network | 1.2.13 |
 | MutedServersActivityBadge | Activity badge on muted servers | 🎨 UI | 2 |
@@ -134,7 +134,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | QuickReply | Reply and edit with keybinds | 🎨 UI | 2 |
 | ReactErrorDecoder | Readable React errors | ⛔ N/A | React only |
 | ReadAllNotificationsButton | Read all notifications at once | 🌐 + 🎨 | 1.2.16 / 2 |
-| RelationshipNotifier | Notify when someone removes you | 🌐 Network | 1.2.4 |
+| RelationshipNotifier | Notify when someone removes you | 🌐 Network | done |
 | ReplaceGoogleSearch | Other search engines in menus | 🎨 UI | 2 |
 | ReplyTimestamp | Timestamp on reply previews | 🎨 UI | 2 |
 | RevealAllSpoilers | Reveal all spoilers in a message | 🎨 UI | 2 |
@@ -224,6 +224,7 @@ From Nanda's Vencord `userplugins` folder. Bulk actions (`VoiceChatUtilities`, `
 
 ## How to read "Where"
 
+- `done`: built and merged; `done: data` means the network part.
 - `1.2.x`: a Phase 1 task in [`phase-1/ai/plan.md`](phase-1/ai/plan.md).
 - `2`: Phase 2 UI work, ordered by popularity; the top 30 are listed in `ROADMAP.md` 2.4.
 - `1.2.x / 2`: the network part in Phase 1, the on-screen part in Phase 2.

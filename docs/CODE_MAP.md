@@ -6,7 +6,7 @@ A reference to the repository: which file holds what, why it exists and what is 
 
 > **Mandatory for people and AI agents.** Added, renamed, moved or removed a crate, module, file, config key or environment variable: update this file in the same commit. A change after which this map is wrong is not done. The rule is in [`AGENTS.md`](AGENTS.md).
 
-Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PROJECT_MAP.md`](PROJECT_MAP.md) lists what the product does for people.
+Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PLUGINS.md`](PLUGINS.md) lists every plugin and its status.
 
 **How to read.** `phoecord-core` is pure data and contracts, no I/O. `phoecord-proxy` talks to the network. `phoecord-plugins` holds plugin logic only. `phoecord-loader` is the only crate allowed to use `unsafe`.
 
@@ -91,6 +91,11 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 | `src/lib.rs` | `builtin()`: every built-in plugin in default order; uniqueness test for ids | Order is run order |
 | `src/no_track.rs` | NoTrack: answers analytics and crash-report routes locally with 204 | `wants` must stay as narrow as `on_event` |
 | `src/silent_typing.rs` | SilentTyping: answers `POST /channels/{id}/typing` locally with 204 | Only that exact route; `wants` must stay as narrow as `on_event` |
+| `src/game_activity_toggle.rs` | GameActivityToggle: removes "Playing" activities from op 3 presence updates | The proxy re-sends the last presence on toggle |
+| `src/relationship_notifier.rs` | RelationshipNotifier: `notify` on unfriend, server and group removal; your own actions in the last 60 s are ignored | Own-action memory must match the REST routes |
+| `src/fake_nitro.rs` | FakeNitro (emoji): rewrites unusable emoji in outgoing messages as CDN links; `premium_type` 2 in `READY` only for tier 0 | Learns the real tier from `READY`; needs Ctrl+R after enabling |
+| `src/message_logger.rs` | MessageLogger: LRU cache of messages, deletes turned into marked updates, edit history, `messages.jsonl` via `Host::append_data` | Ids may be JSON strings or ETF ints |
+| `src/commands.rs` | `/phoecord plugins` and `toggle`: injects the command into search/index answers, answers `POST /interactions` locally; `Subcommand` trait | Command shapes not yet checked on a live client |
 
 ### `phoecord-loader`
 
@@ -111,7 +116,12 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 
 | File | What |
 |:---|:---|
-| `src/lib.rs` | `Channel` (Stable, PTB, Canary, Phoenix); logic comes in 1.4 |
+| `src/lib.rs` | `Channel` (Stable, PTB, Canary, Phoenix), module list |
+| `src/discover.rs` | `discover()`: Stable/PTB/Canary on Windows, macOS, Linux (PATH, Flatpak, Snap); `discover_in(&Roots)` for tests |
+| `src/system.rs` | `Os`, `Env`, the `System` trait (trust store, Run key, launchctl, systemd); `RealSystem` is the only code that touches the machine |
+| `src/ca.rs`, `src/autostart.rs` | Install steps: local CA + trust; Run key / LaunchAgent / systemd user unit |
+| `src/install.rs`, `src/uninstall.rs` | `install()` (idempotent) and `uninstall_all()` (undoes the log newest-first, `UninstallReport`) |
+| `src/log.rs` | `install.log` (JSON lines in the data folder): every step the installer made, so rollback removes only what it created |
 
 ### `phoecord-i18n`
 
@@ -131,13 +141,12 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 | Script | What |
 |:---|:---|
 | `scripts/check.sh`, `scripts/check.ps1` | All checks in order, stop at first failure (see `AGENTS.md`) |
-| `scripts/gen_tasks.py` | Builds `docs/TASKS.md` from the "Tasks" tables of `docs/<plan>/README.md`; `--check` exits 1 if stale |
 | `scripts/check_i18n.py` | Every key of `crates/*/i18n/en/*.ftl` exists in the `ru` file with the same variables; exit 1 otherwise |
 | `scripts/gen_decisions.py` | Builds `docs/DECISIONS.md` from `Ruling:` lines of `docs/<plan>/ai/ledger.md`; `--check` exits 1 if stale |
 
 ## 5. Docs
 
-See [`README.md`](README.md) in this folder. Project-level documents live here too: [`ARCHITECTURE.md`](ARCHITECTURE.md), [`ROADMAP.md`](ROADMAP.md), [`AGENTS.md`](AGENTS.md) + [`CLAUDE.md`](CLAUDE.md) (rules for people and AI agents) and the generated [`TASKS.md`](TASKS.md). [`PORTING_PLUGINS.md`](PORTING_PLUGINS.md) is the porting guide; [`PLUGINS.md`](PLUGINS.md) is the plugin catalogue (every Vencord plugin and userplugin mapped to a layer and a task).
+See [`README.md`](README.md) in this folder. Project-level documents live here too: [`ARCHITECTURE.md`](ARCHITECTURE.md), [`ROADMAP.md`](ROADMAP.md), [`AGENTS.md`](AGENTS.md) + [`CLAUDE.md`](CLAUDE.md) (rules for people and AI agents). [`PORTING_PLUGINS.md`](PORTING_PLUGINS.md) is the porting guide; [`PLUGINS.md`](PLUGINS.md) is the plugin catalogue (every Vencord plugin and userplugin mapped to a layer and a task).
 
 ## 6. Config, environment and files on disk
 
@@ -154,3 +163,5 @@ Planned in 1.1; the table is filled as each item lands.
 | `PHOECORD_NO_NOTIFY` | env | unset | `Host::notify` |
 | `ca.pem`, `ca.key` | data folder | created on first run | `phoecord-proxy::ca` |
 | `plugins/<id>/kv.json` | data folder | empty map | `Host::kv_*` |
+| `plugins/message_logger/messages.jsonl` | data folder | created when `write_log` is on | `message_logger`, `phoecord log` |
+| `install.log` | data folder | created by the installer | `phoecord-installer` rollback |

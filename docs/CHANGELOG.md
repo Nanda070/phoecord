@@ -24,6 +24,16 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 - `docs/research/gpui.md`: GPUI map, a release + LTO reference build (`research/gpui-reference`), anchors that survive in a stripped binary, and ranked hook candidates (palette, settings tabs, message row) for Phase 2 (stage 1.6).
 
+- Plugins `game_activity_toggle`, `relationship_notifier` and `fake_nitro` (emoji part), all off by default (stages 1.2.3-1.2.5).
+- `message_logger` plugin and `phoecord log`: deleted and edited messages stay visible and are written to `messages.jsonl` (stage 1.2.6).
+- `/phoecord plugins` and `/phoecord toggle <id>` slash commands, answered locally (stage 1.2.8).
+- Plugin API (minor, `API_VERSION` stays 1): `RestResponse.body` is mutable; new `Host` methods `emit_dispatch`, `plugin_enabled`, `set_plugin_enabled`, `append_data`.
+- Installer library: client discovery on 3 OSes, CA + autostart install with an install log, full rollback (stages 1.4.1, 1.4.2, 1.4.4; not wired to the CLI yet).
+
+### Removed
+
+- Docs: `PROJECT_MAP.md`, `SUPPORT.md`, `SECRETS.md` (merged into `GOVERNANCE.md`), `TASKS.md` and `scripts/gen_tasks.py`, `incidents/`, `reports/`, release, incident and plan templates. Task status now lives only in `docs/phase-1/README.md`.
+
 ### Ported from the v0 proxy
 
 - `val`, `etf`, REST routes → `phoecord-core`.

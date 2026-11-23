@@ -43,8 +43,9 @@ Phoenix is a compiled Rust binary: no JavaScript to patch, no stable ABI between
 | Plugin | | Status |
 |:---|:---|:---:|
 | `no_track` | Blocks Discord's analytics and crash reports | ✅ |
-| `silent_typing` · `unindent` · `game_activity_toggle` · `relationship_notifier` | Quality-of-life network plugins | ⏳ |
-| `fake_nitro` · `message_logger` · `clear_urls` · `/phoecord` | The headline features | ⏳ |
+| `silent_typing` · `game_activity_toggle` · `relationship_notifier` | Quality-of-life network plugins | ✅ |
+| `fake_nitro` (emoji) · `message_logger` · `/phoecord` | The headline features | ✅ |
+| `unindent` · `clear_urls` · the rest of Vencord's network plugins | Next | ⏳ |
 | Themes · settings tab · deleted-message view | UI layer on Phoenix | ⏳ Phase 2 |
 
 Goal: every Vencord plugin that works on a native client, mapped one by one in [`docs/PLUGINS.md`](docs/PLUGINS.md). Languages: English, Russian planned.

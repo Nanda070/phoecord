@@ -16,7 +16,6 @@ function Invoke-Step([string]$name, [scriptblock]$body) {
 Invoke-Step 'cargo fmt --all --check' { cargo fmt --all --check }
 Invoke-Step 'cargo clippy --workspace --all-targets -- -D warnings' { cargo clippy --workspace --all-targets -- -D warnings }
 Invoke-Step 'cargo test --workspace' { cargo test --workspace }
-Invoke-Step 'gen_tasks.py --check' { & $py scripts/gen_tasks.py --check }
 Invoke-Step 'gen_decisions.py --check' { & $py scripts/gen_decisions.py --check }
 Invoke-Step 'check_i18n.py' { & $py -I scripts/check_i18n.py }
 

@@ -16,14 +16,14 @@ A change that leaves these documents wrong is not done. Update them in the same 
 |:---|:---|
 | Added, renamed, moved or removed a crate, module, file, config key or env variable | [`docs/CODE_MAP.md`](CODE_MAP.md) |
 | Anything users or plugin authors notice | [`docs/CHANGELOG.md`](CHANGELOG.md), "Unreleased" |
-| Finished a roadmap item | the box in [`ROADMAP.md`](ROADMAP.md) and the task status in the plan's `README.md`, then `python scripts/gen_tasks.py` |
+| Finished a plan task | its status in the plan's `README.md` task table (the only place progress is tracked) |
 | The Plugin API, the runtime choice, how we reach Phoenix | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
-| A new secret, key or place where one is stored | [`docs/SECRETS.md`](SECRETS.md) (never the value) |
+| A new secret, key or place where one is stored | the secrets table in [`docs/GOVERNANCE.md`](GOVERNANCE.md) (never the value) |
 | A new kind of breakage or a new diagnostic | [`docs/RUNBOOK.md`](RUNBOOK.md) |
-| A plugin added or its behaviour changed | its row in [`docs/PLUGINS.md`](PLUGINS.md), [`docs/PROJECT_MAP.md`](PROJECT_MAP.md) and the plugin table in `ROADMAP.md` |
+| A plugin added or its behaviour changed | its row in [`docs/PLUGINS.md`](PLUGINS.md) |
 | A decision by the owner | a `Ruling:` line in the plan's `ai/ledger.md`, then `python scripts/gen_decisions.py` |
 
-`docs/TASKS.md` and `docs/DECISIONS.md` are generated: never edit them by hand. `scripts/check.sh` fails if they are stale.
+`docs/DECISIONS.md` is generated: never edit it by hand. `scripts/check.sh` fails if it is stale.
 
 A large document starts with a line `Checked against code: <sha>, <date>.` Whoever re-checks it against the code updates that line.
 
@@ -31,9 +31,8 @@ A large document starts with a line `Checked against code: <sha>, <date>.` Whoev
 
 - Branch from a fresh `origin/main` with a prefix: `feat/`, `fix/`, `refactor/`, `chore/`, `docs/`. Commits follow Conventional Commits, scope = crate name without `phoecord-`.
 - One task per PR. The PR template's checklist is part of the work, not decoration.
-- Plans follow the template in [`docs/_template/plan/`](_template/plan/): a small plan is one `README.md`; a large one adds `AGENTS.md`, `CLAUDE.md`, `ai/spec.md`, `ai/plan.md`, `ai/ledger.md`.
+- A new plan copies the shape of [`docs/phase-1/`](phase-1/): `README.md` (with the task table), `AGENTS.md`, `ai/spec.md`, `ai/plan.md`, `ai/ledger.md`.
 - An owner decision is never changed silently: a new `Ruling:` line plus the edit in the same commit. Format: [`docs/_template/ruling.md`](_template/ruling.md).
-- Breakage reports: [`docs/_template/incident.md`](_template/incident.md) into [`docs/incidents/`](incidents/). Releases: [`docs/_template/release.md`](_template/release.md).
 - Language: all docs, comments, commit messages and PRs are **English**. User-facing strings of the app are localized (English source, Russian translation; ARCHITECTURE.md, "Localization").
 
 ## Never
@@ -53,4 +52,4 @@ A large document starts with a line `Checked against code: <sha>, <date>.` Whoev
 bash scripts/check.sh            # Windows: powershell -File scripts/check.ps1
 ```
 
-It runs, in order and stopping at the first failure: `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, `python scripts/gen_tasks.py --check`, `python scripts/gen_decisions.py --check`. CI runs the same on Linux, Windows and macOS. Put the result in the PR's "Checks" section or link the green CI run.
+It runs, in order and stopping at the first failure: `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, `python scripts/gen_decisions.py --check`, `python scripts/check_i18n.py`. CI runs the same on Linux, Windows and macOS. Put the result in the PR's "Checks" section or link the green CI run.

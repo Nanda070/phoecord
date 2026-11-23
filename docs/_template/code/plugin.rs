@@ -2,7 +2,7 @@
 //!
 //! Template for a native built-in plugin. Copy to `crates/phoecord-plugins/src/<id>.rs`, add
 //! `pub mod <id>;` and an entry in `builtin()` in `crates/phoecord-plugins/src/lib.rs`, then a row
-//! in `docs/PROJECT_MAP.md` and the plugin table in `ROADMAP.md`.
+//! in `docs/PLUGINS.md`.
 
 use phoecord_core::plugin::API_VERSION;
 use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};

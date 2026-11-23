@@ -48,6 +48,6 @@ Describe what you found, how to reproduce it and what it affects. We reply withi
 
 ## Team rules
 
-- Never commit tokens, `ca.key`, `ca.pem`, traffic dumps or `.env` files. Where secrets live: [`docs/SECRETS.md`](docs/SECRETS.md).
+- Never commit tokens, `ca.key`, `ca.pem`, traffic dumps or `.env` files. Where secrets live: [`docs/GOVERNANCE.md`](docs/GOVERNANCE.md#secrets).
 - Changes to `crates/phoecord-proxy/src/ca.rs`, `trust.rs`, the proxy and `phoecord-loader` are reviewed by the owners.
 - A secret leaked? Tell Nanda right away.

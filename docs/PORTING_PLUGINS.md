@@ -52,7 +52,7 @@ Ask: *"Could a program between the client and Discord do this by changing the tr
 | Gateway sends (presence, voice state) | `Event::Send { op, payload }`, `host.emit_send(op, payload)` *(1.1)* | op 3 presence, op 4 voice state |
 | `DataStore` / `Settings.plugins.X.store` | `host.kv_get` / `host.kv_set` | small JSON values, per plugin |
 | `showNotification` / `Toasts` | `host.notify(title, body)` | rate-limited by the host |
-| `sendBotMessage` | a local `Dispatch` added to `extra` (a fake message only the user sees) | see `/phoecord` commands *(1.2.8)* |
+| `sendBotMessage` | `Host::emit_dispatch` with a local `MESSAGE_CREATE` (a message only the user sees) | `crates/phoecord-plugins/src/commands.rs` |
 | `UserStore.getCurrentUser()` | `host.self_id()` | more account facts: `host.guild_emojis`, `host.channel_guild` *(1.1)* |
 | React components, context menus, chat bar buttons | Phase 2 UI hooks *(2)*; until then a `/phoecord` command or a setting | |
 | `start()` / `stop()` | nothing: the host calls `wants` / `on_event` only while the plugin is enabled | keep state inside the plugin struct |
@@ -107,9 +107,8 @@ Tests never touch the network and never need a Discord token.
 ## 5. Finish the PR
 
 - `docs/PLUGINS.md`: set the plugin's "Where" cell to ✅ (or ✅ data part for 🌐 + 🎨).
-- `docs/PROJECT_MAP.md`: add or update its row.
 - `docs/CHANGELOG.md`: one line under "Unreleased".
-- The plan task in `docs/phase-1/README.md` if it closes one, then `python scripts/gen_tasks.py`.
+- The task status in `docs/phase-1/README.md` if it closes one.
 - PR title: `feat(plugins): port <PluginName>`.
 
 ---

@@ -1,4 +1,6 @@
-# Governance
+# Governance, access and secrets
+
+Checked against code: `2d347bf`, 23.11.2026.
 
 ## Team
 
@@ -6,23 +8,33 @@
 |:---|:---|:---|:---|
 | **Nanda** | Project lead | `nandak070` | [@nanda070](https://t.me/nanda070) |
 
-Copyright holder: **Cheterin Group** (see [`NOTICE`](../NOTICE)). License: GPL-3.0-or-later ([`LICENSE`](../LICENSE)).
+Copyright holder: **Cheterin Group** (see [`NOTICE`](../NOTICE)). License: GPL-3.0-or-later ([`LICENSE`](../LICENSE)); the plugin SDK, `wit/` and templates are MIT.
 
 ## Who decides what
 
 - **Nanda** leads development: architecture, the Plugin API, task priorities, review and merging into `main`, releases, repository access.
-- **Contributors** work through branches and Pull Requests; plugins, tests, fixtures, docs and research are open to everyone.
+- **Contributors** work through branches and Pull Requests ([`CONTRIBUTING.md`](../CONTRIBUTING.md)); plugins, tests, fixtures, docs and research are open to everyone.
+- Disputed technical questions are decided by Nanda, recorded as a `Ruling:` line in the plan's ledger ([`_template/ruling.md`](_template/ruling.md)) and collected in [`DECISIONS.md`](DECISIONS.md).
+- Changes to the CA, TLS, trust stores, the proxy and the loader always need the owner's review ([`SECURITY.md`](../SECURITY.md)).
+- Bugs and plugin ideas: the issue forms. Vulnerabilities: privately, per [`SECURITY.md`](../SECURITY.md).
 
-Disputed technical questions are decided by Nanda. A decision is recorded as a `Ruling:` line in the plan's ledger ([`_template/ruling.md`](_template/ruling.md)) and collected in [`DECISIONS.md`](DECISIONS.md).
+## Secrets
 
-## How changes flow
+**Values never go here.** A new key, access or storage place is added to this table in the same commit.
 
-Per [`CONTRIBUTING.md`](../CONTRIBUTING.md): a branch prefixed `feat/` `fix/` `refactor/` `chore/` `docs/` → Conventional Commits → a Pull Request into `main` → green CI → review and **Squash and merge by the owners only**. Releases are cut from `main` only, by Nanda ([`_template/release.md`](_template/release.md)).
+| Secret | Where | Who holds it | Who uses it |
+|:---|:---|:---|:---|
+| Local CA key (`ca.key`) of each user | The user's own PhoeCord data folder, owner-only permissions | Each user, never the project | The user's proxy |
+| GitHub repository admin | GitHub account `Nanda070` | Nanda | Repository settings, secrets, releases |
+| GitHub Actions secrets | Repository settings → Secrets; none yet | Nanda | CI |
 
-Changes to the CA, TLS, trust stores, the proxy and the loader always need the owner's review ([`SECURITY.md`](../SECURITY.md)).
+The project never needs a Discord token: tests do not log in, and `selftest` runs without an account. A user's CA belongs to that user: the project never generates, collects or ships one. Releases are built only by CI.
 
-## Access
+A secret that reached the repository, a chat, a log or a screenshot counts as leaked: rotate it, do not just delete it.
 
-- The repository is public under GPL-3.0-or-later (plugin SDK under MIT); write access is granted and revoked by Nanda.
-- Repository secrets: only Nanda ([`SECRETS.md`](SECRETS.md)).
-- When someone leaves, their access is revoked the same day.
+| Leaked | What to do |
+|:---|:---|
+| A user's `ca.key` | `phoecord untrust`, delete the data folder, run again: a new CA is created. Only Discord domains were ever at risk |
+| GitHub access | Revoke the token or remove the collaborator, review recent pushes and releases |
+
+Tell Nanda right away in every case. Write access is granted and revoked by Nanda; when someone leaves, their access is revoked the same day.

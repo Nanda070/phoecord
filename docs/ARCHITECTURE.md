@@ -96,8 +96,11 @@ pub trait Plugin: Send + Sync {
 
 pub enum Event<'a>   { RestRequest{..}, RestResponse{..}, Dispatch{..}, Send{..} }
 pub enum Verdict     { Pass, Changed, Drop, Reply { status, body } }
-pub trait Host       { setting, kv_get, kv_set, self_id, notify, log }
+pub trait Host       { setting, kv_get, kv_set, self_id, notify, log, emit_send, emit_dispatch,
+                       plugin_enabled, set_plugin_enabled, append_data, guild_emojis, channel_guild, rest, fetch }
 ```
+
+`RestResponse.body` is mutable: a plugin that returns `Changed` makes the proxy send the rewritten JSON. `emit_dispatch` queues a server → client frame only this client sees (used for local slash command answers); from a REST event the proxy broadcasts it to open gateway connections. `append_data` is the only way a plugin writes a file: one line into `data/plugins/<id>/<file>`.
 
 Chain rules (`phoecord-plugin-runtime::Chain`): plugins run in load order; the first `Drop` or `Reply` stops the chain; `Changed` from any plugin means re-encoding.
 
@@ -195,6 +198,7 @@ Process: Ghidra/IDA + the open GPUI (Zed) sources → find the function → make
 ## Installer and releases
 
 - **GUI toolkit: [egui](https://github.com/emilk/egui) (`eframe`).** Pure Rust, one small static binary, mature on Windows, macOS and Linux, no runtime to install. GPUI was considered for practice before Phase 2, but it is heavier and its API still moves; GPUI knowledge comes from the research stage (1.6) instead. The GUI is a thin layer over `phoecord-installer`, so the toolkit can change later without touching install logic. Cyrillic needs an embedded font with Cyrillic glyphs (egui's default font has none).
+- **Install log and rollback.** Every change outside plain files goes through the `System` trait; each step is appended to `install.log` only after it succeeds, and uninstall undoes the log newest-first, so it never removes what PhoeCord did not create.
 - **No code signing.** PhoeCord ships unsigned, like Vencord's installer (Vencord cites a cost of over 300 € a year). Users get a SmartScreen warning on first run; releases carry `SHA256SUMS` from reproducible CI builds and a README note on the warning. Because a proxy `version.dll` next to the client is a pattern antivirus engines watch, the loader is submitted to Microsoft Defender's false-positive portal with each release.
 
 ## Localization
