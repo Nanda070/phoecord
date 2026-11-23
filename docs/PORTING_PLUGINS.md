@@ -1,12 +1,12 @@
 # Porting a plugin to PhoeCord
 
-Checked against code: `6d1821c`, 23.11.2026. Whoever re-checks this guide against the code updates this line (rule in `AGENTS.md`).
+Checked against code: `a965f75`, 23.11.2026. Whoever re-checks this guide against the code updates this line (rule in `AGENTS.md`).
 
 A step-by-step guide to moving any plugin (a Vencord built-in, a Vencord userplugin, or your own idea) onto PhoeCord. Follow the steps in order; every step ends with something you can check.
 
 Related: [`PLUGINS.md`](PLUGINS.md) (which plugin goes where), [`ARCHITECTURE.md`](ARCHITECTURE.md) "Plugin API v1", the templates [`_template/code/plugin.rs`](_template/code/plugin.rs) and [`_template/code/plugin.toml`](_template/code/plugin.toml).
 
-> **Status.** Native plugins work today. Items marked *(1.1)* arrive with stage 1.1 (the proxy on the new API), *(1.3)* with the WASM runtime, *(2)* with Phase 2 UI hooks. Until then, write the plugin against the API that exists and leave a `// needs: …` note.
+> **Status.** Native and WASM plugins work today. `Host::rest` and `Host::fetch` are stubs that answer "not wired" *(not wired yet)*; on-screen parts wait for Phase 2 UI hooks *(2)*. Write the plugin against the API that exists and leave a `// needs: …` note for the rest.
 
 ---
 
@@ -26,8 +26,8 @@ Look the plugin up in [`PLUGINS.md`](PLUGINS.md). If it is not there, decide wit
 |:---|:---|:---|
 | changes what you send (message text, files, presence, typing, voice state) | 🌐 Network | now, in the proxy |
 | changes or hides what you receive (messages, profiles, flags, counts) | 🌐 Network | now, in the proxy |
-| adds a command | 🌐 Network | now, as a `/phoecord` command *(1.2.8)* |
-| needs an external service (translation, DeArrow, Last.fm) | 🌐 Network | now, with `Host::fetch` *(1.1)* |
+| adds a command | 🌐 Network | now, as a `/phoecord` command |
+| needs an external service (translation, DeArrow, Last.fm) | 🌐 Network | now, with `Host::fetch` *(not wired yet)* |
 | shows data in a new place on screen (badge, button, panel, tooltip) | 🌐 + 🎨 | data part now, on-screen part in Phase 2 |
 | only changes how the client looks or behaves locally (zoom, keybinds, menus) | 🎨 UI | Phase 2 |
 | only changes colours, spacing, fonts | 🖌️ Theme | Phase 2 theme engine |
@@ -44,18 +44,18 @@ Ask: *"Could a program between the client and Discord do this by changing the tr
 | Vencord | PhoeCord | Notes |
 |:---|:---|:---|
 | `definePlugin({ name, description, authors })` | `Manifest { id, name, description, authors, vencord, layers, api }` | `id` is `snake_case` of the name; set `vencord: Some("OriginalName")` |
-| `definePluginSettings({ … })` | `[plugins.<id>]` in `config.toml`, read with `host.setting("key")` | defaults go in the manifest *(1.1)*; native plugins read a missing key as its default |
+| `definePluginSettings({ … })` | `[plugins.<id>]` in `config.toml`, read with `host.setting("key")` | defaults go in the manifest; native plugins read a missing key as its default |
 | `patches: [{ find, replacement }]` | nothing in Phase 1; a UI hook in Phase 2 *(2)* | if the patch only changes data, find the request or event that carries that data instead |
 | `FluxDispatcher` events (`MESSAGE_CREATE`, …) | `Event::Dispatch { name, payload, extra }` | same event names as the Gateway |
 | `MessageEvents.addPreSendListener` | `Event::RestRequest` on `POST /channels/{id}/messages` | edit `body["content"]`, return `Verdict::Changed` |
 | `MessageEvents.addPreEditListener` | `Event::RestRequest` on `PATCH /channels/{id}/messages/{mid}` | |
-| `RestAPI` calls you make | `host.rest(method, route, body)` *(1.1)* | rate-limited; warn the user in the plugin's description if it does bulk work |
-| `fetch` to an outside site | `host.fetch(request)` *(1.1)* | the host must be listed under `fetch = [...]` in the manifest |
-| Gateway sends (presence, voice state) | `Event::Send { op, payload }`, `host.emit_send(op, payload)` *(1.1)* | op 3 presence, op 4 voice state |
+| `RestAPI` calls you make | `host.rest(method, route, body)` *(not wired yet)* | rate-limited; warn the user in the plugin's description if it does bulk work |
+| `fetch` to an outside site | `host.fetch(request)` *(not wired yet)* | the host must be listed under `fetch = [...]` in the manifest |
+| Gateway sends (presence, voice state) | `Event::Send { op, payload }`, `host.emit_send(op, payload)` | op 3 presence, op 4 voice state |
 | `DataStore` / `Settings.plugins.X.store` | `host.kv_get` / `host.kv_set` | small JSON values, per plugin |
 | `showNotification` / `Toasts` | `host.notify(title, body)` | rate-limited by the host |
 | `sendBotMessage` | `Host::emit_dispatch` with a local `MESSAGE_CREATE` (a message only the user sees) | `crates/phoecord-plugins/src/commands.rs` |
-| `UserStore.getCurrentUser()` | `host.self_id()` | more account facts: `host.guild_emojis`, `host.channel_guild` *(1.1)* |
+| `UserStore.getCurrentUser()` | `host.self_id()` | more account facts: `host.guild_emojis`, `host.channel_guild` |
 | React components, context menus, chat bar buttons | Phase 2 UI hooks *(2)*; until then a `/phoecord` command or a setting | |
 | `start()` / `stop()` | nothing: the host calls `wants` / `on_event` only while the plugin is enabled | keep state inside the plugin struct |
 | User-facing strings | English in code now; `host.t("key")` with `i18n/{en,ru}.ftl` *(1.7)* | never hard-code Russian or other languages |
@@ -85,11 +85,11 @@ Which `Verdict` to return:
 
 `Drop` and `Reply` stop the chain: later plugins do not see the event. Use them only when that is the point (NoTrack, SilentTyping).
 
-### 3.2 WASM (third-party) plugin *(1.3)*
+### 3.2 WASM (third-party) plugin
 
-Same logic, different packaging: a crate that depends on `phoecord-plugin-sdk`, built for `wasm32-wasip2`, plus a `plugin.toml` from [`_template/code/plugin.toml`](_template/code/plugin.toml) listing `events`, `rights` and `fetch` hosts. The host only delivers the events and allows the `Host` calls the manifest lists. Drop the `plugin.toml` + `plugin.wasm` into the `plugins/<id>/` data folder.
+Same logic, different packaging: a crate built for `wasm32-wasip2` against `wit/phoecord.wit` (with `wit-bindgen` until the SDK and its macro land in 1.3.6), plus a `plugin.toml` from [`_template/code/plugin.toml`](_template/code/plugin.toml) listing `events`, `rights` and `fetch` hosts. The host only delivers the events and allows the `Host` calls the manifest lists. Drop the `plugin.toml` + `plugin.wasm` into the `plugins/<id>/` data folder: a running proxy loads it within 2 seconds. Switch it on with `[plugins.<id>] enabled = true` in `config.toml` (`phoecord enable` knows built-ins only for now).
 
-**Check:** `cargo build` passes and the plugin appears in `phoecord plugins` *(1.1)*.
+**Check:** the build passes and the proxy log shows the package loaded.
 
 ---
 

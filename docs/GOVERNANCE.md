@@ -1,6 +1,6 @@
 # Governance, access and secrets
 
-Checked against code: `2d347bf`, 23.11.2026.
+Checked against code: `a965f75`, 23.11.2026.
 
 ## Team
 

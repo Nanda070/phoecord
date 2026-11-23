@@ -91,10 +91,11 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.3.7** 🟡 | TypeScript plugin template | anyone | ⏳ |
 | **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ⏳ |
 | **1.4.1** 🔴 | Client discovery on 3 OSes | Nanda | ✅ 23.11, PR #23 (library; real machines not checked) |
-| **1.4.2** 🔴 | CA and proxy autostart | Nanda | 🔄 code in PR #23; manual "runs after reboot" check pending |
+| **1.4.2** 🔴 | CA and proxy autostart | Nanda | ✅ 23.11, PR #23; `phoecord setup` uses it since PR #33 |
 | **1.4.3** 🟡 | Installer GUI, with a Plugins tab (install from file or link, rights shown first, on/off, remove) | Nanda | ⏳ |
-| **1.4.4** 🔴 | Full rollback | Nanda | 🔄 code in PR #23; manual check on 3 OSes pending |
+| **1.4.4** 🔴 | Full rollback | Nanda | ✅ 23.11, PR #23; `phoecord uninstall` since PR #33 |
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
+| **1.4.6** 🔴 | Manual check on real Windows, macOS and Linux machines: `setup` → reboot → proxy runs and Discord connects; `uninstall` leaves no file, trust entry or autostart entry | Nanda | ⏳ |
 | **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ✅ 23.11, PR #10 |
 | **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ✅ 23.11, PR #10 |
 | **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ✅ 23.11, PR #10 |
@@ -136,7 +137,7 @@ Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do 
 
 ## How to start
 
-Read [`AGENTS.md`](AGENTS.md), then [`ai/spec.md`](ai/spec.md) and your task in [`ai/plan.md`](ai/plan.md). Branch from a fresh `main` with a prefix from [`CONTRIBUTING.md`](../../CONTRIBUTING.md). Nanda's next task is 1.1.1. A contributor's first task is 1.2.1 `silent_typing`, once 1.1.5 is merged; until then 1.1.9 (fixtures) and 1.6.2 (GPUI reference build) are open.
+Read [`AGENTS.md`](AGENTS.md), then [`ai/spec.md`](ai/spec.md) and your task in [`ai/plan.md`](ai/plan.md). Branch from a fresh `main` with a prefix from [`CONTRIBUTING.md`](../../CONTRIBUTING.md). Open for contributors: 1.1.9 (fixtures), 1.2.9 (`import-vencord`), 1.2.10–1.2.15 and 1.2.17 (Vencord network plugins), 1.3.6 (SDK), 1.3.7 (TypeScript template), 1.7.3 (Russian translation). Pick one, write a `claimed` line in the ledger and set yourself as "Who" in the table.
 
 ## Where things are
 
@@ -150,5 +151,6 @@ Read [`AGENTS.md`](AGENTS.md), then [`ai/spec.md`](ai/spec.md) and your task in 
 | Built-in plugins | `crates/phoecord-plugins/src/` |
 | Plugin template | `docs/_template/code/plugin.rs`, `docs/_template/code/plugin.toml` |
 | AOB scanner | `crates/phoecord-loader/src/aob.rs` |
-| Installer | `crates/phoecord-installer/src/lib.rs` |
+| Installer | `crates/phoecord-installer/src/` (`discover`, `install`, `uninstall`, `system`) |
+| WASM runtime | `crates/phoecord-plugin-runtime/src/wasm.rs`, `package.rs`, `wit/phoecord.wit` |
 | CLI | `crates/phoecord-cli/src/main.rs` |

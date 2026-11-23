@@ -32,6 +32,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - WASM plugin runtime: `wit/phoecord.wit`, wasmtime 38 backend behind the same `Chain`, 5 ms / 32 MiB limits, plugin packages (`plugin.toml` + `plugin.wasm`, `events` and `rights`) with reload (stages 1.3.1-1.3.5).
 - WASM plugins: a slow event costs a strike (3 in a minute disable the plugin) instead of disabling it at 5 ms; new rights `emit_dispatch`, `plugins`, `data`; plugin packages copied into or removed from `plugins/` load and unload without a restart, and `phoecord run` now loads them (stage 1.3.4).
 - Issues are the place for every problem; leaks of personal data or secrets go privately to `nandak070` on Discord (`SECURITY.md`). The README shows contributors automatically.
+- `phoecord setup` now runs the installer library (CA, trust and autostart, logged in `install.log`), and `phoecord uninstall` undoes it (stages 1.4.2, 1.4.4).
 
 ### Removed
 

@@ -6,7 +6,10 @@ pub const CMD_RUN: &str =
     "Run the proxy (the default). Point Discord at it with `--proxy-server=http://127.0.0.1:18463`";
 pub const CMD_LAUNCH: &str =
     "Run the proxy and start Discord through it (quit Discord first). Optional: the client command";
-pub const CMD_SETUP: &str = "First-time setup: write the config, make the local CA and trust it";
+pub const CMD_SETUP: &str =
+    "First-time setup: write the config, make the local CA, trust it and start the proxy at login";
+pub const CMD_UNINSTALL: &str =
+    "Undo everything `setup` did: autostart, CA trust, the files it created (your config stays)";
 pub const CMD_TRUST: &str = "Trust the local CA in the certificate stores Discord uses";
 pub const CMD_UNTRUST: &str = "Remove the local CA from those stores";
 pub const CMD_PLUGINS: &str = "List plugins and whether they are on";
@@ -44,6 +47,22 @@ pub fn ca_line(path: &str, hosts: &str) -> String {
     format!("local CA: {path} (only valid for {hosts})")
 }
 pub const SETUP_DONE: &str = "\nDone. Quit Discord fully, then start it with `phoecord launch`.";
+pub const UNINSTALL_DONE: &str = "
+PhoeCord is removed. Restart Discord without `phoecord launch`.";
+pub const UNINSTALL_INCOMPLETE: &str =
+    "some steps could not be undone; they stay in install.log, run `phoecord uninstall` again";
+pub fn setup_steps(added: usize) -> String {
+    format!("{added} new install step(s) recorded in install.log")
+}
+pub fn uninstall_removed(what: &str) -> String {
+    format!("removed  {what}")
+}
+pub fn uninstall_kept(what: &str) -> String {
+    format!("kept     {what}")
+}
+pub fn uninstall_failed(what: &str, why: &str) -> String {
+    format!("failed   {what}: {why}")
+}
 pub fn paths_line(label: &str, path: &str) -> String {
     format!("{label:<8}{path}")
 }

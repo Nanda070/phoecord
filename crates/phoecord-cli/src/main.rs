@@ -31,6 +31,8 @@ enum Cmd {
     },
     #[command(about = text::CMD_SETUP)]
     Setup,
+    #[command(about = text::CMD_UNINSTALL)]
+    Uninstall,
     #[command(about = text::CMD_TRUST)]
     Trust,
     #[command(about = text::CMD_UNTRUST)]
@@ -73,6 +75,7 @@ fn main() -> Result<()> {
         Cmd::Run => runtime()?.block_on(run(paths, None)),
         Cmd::Launch { command } => runtime()?.block_on(run(paths, Some(command))),
         Cmd::Setup => setup(&paths),
+        Cmd::Uninstall => uninstall(),
         Cmd::Trust => {
             let ca = ca::Authority::load_or_create(&paths.data)?;
             trust::install(&ca.ca_pem_path)
@@ -152,16 +155,41 @@ async fn run(paths: Paths, launch: Option<Vec<String>>) -> Result<()> {
 fn setup(paths: &Paths) -> Result<()> {
     Config::load_or_init(&paths.config)?;
     println!("{}", text::config_line(&paths.config.display().to_string()));
-    let ca = ca::Authority::load_or_create(&paths.data)?;
+    // CA, trust and autostart, each step recorded in `install.log` so `uninstall` can undo it.
+    let env = phoecord_installer::system::Env::system()?;
+    let report =
+        phoecord_installer::install::install(&env, &phoecord_installer::system::RealSystem)?;
     println!(
         "{}",
         text::ca_line(
-            &ca.ca_pem_path.display().to_string(),
+            &report.ca_pem.display().to_string(),
             &ca::CONSTRAINED_TO.join(", ")
         )
     );
-    trust::install(&ca.ca_pem_path)?;
+    println!("{}", text::setup_steps(report.added));
     println!("{}", text::SETUP_DONE);
+    Ok(())
+}
+
+fn uninstall() -> Result<()> {
+    let env = phoecord_installer::system::Env::system()?;
+    let r = phoecord_installer::uninstall::uninstall_all(
+        &env,
+        &phoecord_installer::system::RealSystem,
+    )?;
+    for what in &r.removed {
+        println!("{}", text::uninstall_removed(what));
+    }
+    for what in &r.kept {
+        println!("{}", text::uninstall_kept(what));
+    }
+    for (what, why) in &r.failed {
+        eprintln!("{}", text::uninstall_failed(what, why));
+    }
+    if !r.is_clean() {
+        anyhow::bail!(text::UNINSTALL_INCOMPLETE);
+    }
+    println!("{}", text::UNINSTALL_DONE);
     Ok(())
 }
 

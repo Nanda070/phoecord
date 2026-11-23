@@ -321,7 +321,7 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 - Create and trust the CA (via `phoecord-proxy::{ca,trust}`); autostart per OS (spec §3.4); `data/install.log` of every step.
 
-**Done when:** after a reboot the proxy is running and the client connects through it.
+**Done when:** `phoecord setup` installs CA trust and autostart through the logged steps (tests over a fake `System` on all 3 OSes); the reboot check on real machines is 1.4.6.
 
 ### 1.4.3. Installer GUI (Nanda)
 
@@ -338,7 +338,15 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 - Undo every logged step: CA from stores, loader DLL, autostart, folders.
 
-**Done when:** after uninstall no PhoeCord file, store entry or autostart entry is left (checked on 3 OSes).
+**Done when:** `phoecord uninstall` undoes every logged step, keeps going after a failed one and leaves an empty tree (tests over a fake `System` on all 3 OSes); the check on real machines is 1.4.6.
+
+### 1.4.6. Manual check on real machines (Nanda)
+
+**Files:** none (results go into the ledger line that closes it).
+
+- On Windows, macOS and Linux: `phoecord setup`, reboot, check the proxy runs and Discord connects through it; then `phoecord uninstall` and check no PhoeCord file, trust-store entry or autostart entry is left.
+
+**Done when:** all three OSes pass, or each failure has an issue.
 
 ### 1.4.5. Releases (Nanda)
 

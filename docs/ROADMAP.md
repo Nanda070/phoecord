@@ -136,8 +136,8 @@ The goal is full Vencord parity on Phoenix, visual plugins and panels included: 
 
 | # | Plugin | Layer | Status |
 |---:|:---|:---|:---|
-| 1 | MessageLogger | Network + UI | ⏳ |
-| 2 | FakeNitro | Network | ⏳ |
+| 1 | MessageLogger | Network + UI | ✅ network (1.2.6), ⏳ UI (2.3) |
+| 2 | FakeNitro | Network | 🔄 emoji ✅, stickers and stream quality ⏳ |
 | 3 | NoTrack | Network | ✅ |
 | 4 | ClearURLs | Network | ⏳ |
 | 5 | SilentTyping | Network | ✅ |

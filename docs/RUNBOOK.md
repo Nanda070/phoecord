@@ -1,8 +1,8 @@
 # What to do when something breaks (runbook)
 
-Checked against code: `6b3a7f5`, 23.11.2026. Whoever re-checks this document against the code updates this line (rule in `AGENTS.md`).
+Checked against code: `a965f75`, 23.11.2026. Whoever re-checks this document against the code updates this line (rule in `AGENTS.md`).
 
-Short steps for when PhoeCord stops working on someone's machine: how to find out what broke and what to do. Living document: a new kind of breakage or a new diagnostic goes here, in the same commit. Commands marked *(1.1)* arrive with milestone 1.1.
+Short steps for when PhoeCord stops working on someone's machine: how to find out what broke and what to do. Living document: a new kind of breakage or a new diagnostic goes here, in the same commit.
 
 Related: [`CODE_MAP.md`](CODE_MAP.md) for where things live; [`GOVERNANCE.md`](GOVERNANCE.md#secrets) for keys; [`SECURITY.md`](../SECURITY.md) for anything that looks like a leak.
 
@@ -11,9 +11,9 @@ Related: [`CODE_MAP.md`](CODE_MAP.md) for where things live; [`GOVERNANCE.md`](G
 ## 0. The first two minutes
 
 ```bash
-phoecord selftest          # (1.1) REST + Gateway against the real Discord, no login
-phoecord paths             # (1.1) where config, CA and logs are
-phoecord plugins           # (1.1) which plugins are on
+phoecord selftest          # REST + Gateway against the real Discord, no login
+phoecord paths             # where config, CA and logs are
+phoecord plugins           # which plugins are on
 ```
 
 Run with more logging: `PHOECORD_LOG=phoecord=debug phoecord run`.
@@ -50,10 +50,10 @@ Write down right away: when it started (UTC), Discord client and version, PhoeCo
 ## 4. Removing everything
 
 ```bash
-phoecord untrust           # (1.1) remove the CA from the trust stores
+phoecord uninstall         # undo autostart, CA trust and the files setup created
 ```
 
-Then delete the binary and the folders `phoecord paths` prints. The installer's "Uninstall" (1.4) does all of this.
+Your `config.toml` stays; delete it and the binary by hand if you want nothing left. If `uninstall` reports a failed step, run it again: the step stays in `install.log` until it succeeds.
 
 ## 5. Suspected security problem
 

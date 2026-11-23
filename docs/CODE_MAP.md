@@ -1,6 +1,6 @@
 # Code map: which file does what
 
-Checked against code: `6b3a7f5`, 23.11.2026. Whoever re-checks this document (or a section of it) against the code updates this line (rule in `AGENTS.md`).
+Checked against code: `a965f75`, 23.11.2026. Whoever re-checks this document (or a section of it) against the code updates this line (rule in `AGENTS.md`).
 
 A reference to the repository: which file holds what, why it exists and what is easy to break in it. Also every config key, environment variable and on-disk file the app uses. This is a living document and describes the `main` branch.
 
@@ -70,7 +70,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/ca.rs` | `Authority`: local CA load-or-create, name constraint (`CONSTRAINED_TO`), leaf certificates per SNI, rustls `ServerConfig` | `CA_NAME` is what `untrust` looks for; tests check the constraint blocks other domains |
 | `src/trust.rs` | Install/remove the CA: Windows `certutil -user`, macOS keychain, Linux NSS (incl. Flatpak, Snap) | Platform code behind `cfg`; build on all 3 OSes before merging |
 
-Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, `config.rs`, `selftest.rs`, `launch.rs`, `notify.rs` (see [`phase-1/ai/spec.md`](phase-1/ai/spec.md) §2).
+`Host::rest` and `Host::fetch` are stubs: they answer "not wired" (the rate limiter is in place, no real request is made yet).
 
 ### `phoecord-plugin-runtime`
 
@@ -87,7 +87,7 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 
 | File | What |
 |:---|:---|
-| `src/lib.rs` | `API_VERSION` only; bindings and macro come in 1.3. MIT-licensed (`license = "MIT"`), unlike the rest of the workspace |
+| `src/lib.rs` | `API_VERSION` only; bindings and the `#[phoecord::plugin]` macro are task 1.3.6. MIT-licensed (`license = "MIT"`), unlike the rest of the workspace |
 
 ### `phoecord-plugins`
 
@@ -137,9 +137,11 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 
 ### `phoecord-cli`
 
-| File | What |
-|:---|:---|
-| `src/main.rs` | Scaffold: prints version, built-in plugin ids and the CA name |
+| File | What | Easy to break |
+|:---|:---|:---|
+| `src/main.rs` | Commands: `run`, `launch`, `setup` (installer `install()`), `uninstall` (installer `uninstall_all()`), `trust`, `untrust`, `plugins`, `enable`, `disable`, `toggle`, `log`, `selftest`, `paths`; `run` loads WASM packages | `plugins`/`enable` know built-ins only, not WASM packages |
+| `src/text.rs` | Every user-facing CLI string (moves to `.ftl` in 1.7.2–1.7.3) | |
+| `src/log.rs`, `src/selftest.rs` | `phoecord log` output, `phoecord selftest` | |
 
 ## 4. Scripts
 

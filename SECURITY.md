@@ -20,11 +20,11 @@ All other traffic (CDN, media, voice, other sites) goes through a plain tunnel: 
 
 ## The loader (UI layer)
 
-Status: in development (ROADMAP, 1.5). Requirements the loader must meet: `phoecord-loader` is placed next to the client as a proxy DLL; it loads only plugins installed in PhoeCord's own folder, never downloads code from the network and has no function that reads the token. The installer puts the DLL in place only on an explicit user command and can remove it.
+Status: prototype merged (stages 1.5.1–1.5.4), not yet placed by the installer; checked with a test host only, not inside Discord. Requirements the loader must meet: `phoecord-loader` is placed next to the client as a proxy DLL; it loads only plugins installed in PhoeCord's own folder, never downloads code from the network and has no function that reads the token. The installer puts the DLL in place only on an explicit user command and can remove it.
 
 ## Third-party plugins
 
-Status: the WASM runtime is in development (ROADMAP, 1.3). How it must work: WASM plugins run in a sandbox with no access to files, network or the process, only through the host API. A plugin sees only the events its manifest subscribes to. Native plugins are code with full rights: install them only from sources you trust.
+Status: the WASM runtime works (stage 1.3). WASM plugins run in a sandbox with no access to files, network or the process, only through the host API, and only with the `rights` their `plugin.toml` lists (none by default). A plugin sees only the events its manifest subscribes to. Each event has a time limit (50 ms soft with strikes, 1 s hard) and a 32 MiB memory limit. Native plugins are code with full rights: install them only from sources you trust.
 
 ## Where to report
 

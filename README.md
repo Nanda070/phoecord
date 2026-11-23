@@ -37,7 +37,7 @@ Phoenix is a compiled Rust binary: no JavaScript to patch, no stable ABI between
 | 🧩 **Plugins** | One API, sandboxed WASM packages: install third-party plugins without rebuilding |
 | 🔒 **Private** | A CA generated on your machine, limited to Discord's domains, never sent anywhere. No telemetry |
 
-> **Pre-alpha.** Core, Gateway codecs, local CA, plugin chain and AOB scanner are in; the proxy is being wired to the new API ([Phase 1](docs/phase-1/README.md)). Client mods break Discord's Terms, as Vencord does.
+> **Pre-alpha.** The proxy runs on today's Discord with 8 built-in plugins, WASM plugins load from a folder without a restart, `phoecord setup` / `uninstall` install and remove everything, and the loader prototype is in. Next: the rest of Vencord's network plugins, the GUI installer and Russian ([Phase 1](docs/phase-1/README.md)). Client mods break Discord's Terms, as Vencord does.
 
 ## Plugins
 
