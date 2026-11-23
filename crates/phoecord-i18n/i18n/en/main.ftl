@@ -91,6 +91,7 @@ plugin-desc-message_logger = Keep deleted messages visible and show edit history
 plugin-desc-no_track = Block Discord's analytics and crash reports
 plugin-desc-relationship_notifier = Notify you when you're unfriended or removed from a server or group
 plugin-desc-silent_typing = Your typing indicator is never sent
+plugin-desc-clear_urls = Strip tracking parameters from links you send
 plugin-desc-commands = The /phoecord slash command: plugins, toggle
 
 # CLI: log

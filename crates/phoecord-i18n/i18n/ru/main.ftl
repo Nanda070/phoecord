@@ -96,6 +96,7 @@ plugin-desc-message_logger = Сохраняет удалённые сообще�
 plugin-desc-no_track = Блокирует аналитику и отчёты о сбоях Discord
 plugin-desc-relationship_notifier = Сообщает, когда вас убрали из друзей, с сервера или из группы
 plugin-desc-silent_typing = Индикатор набора текста никогда не отправляется
+plugin-desc-clear_urls = Убирает параметры отслеживания из ссылок, которые вы отправляете
 plugin-desc-commands = Слэш-команда /phoecord: plugins, toggle
 
 # CLI: log

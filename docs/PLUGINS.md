@@ -46,7 +46,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | BlurNSFW | Blur NSFW attachments until hovered | 🎨 UI | 2 |
 | CallTimer | Timer in voice calls | 🎨 UI | 2 |
 | CharacterCounter | Character counter in the chat input | 🎨 UI | 2 |
-| ClearURLs | Strip tracking parameters from links you send | 🌐 Network | 1.2.7 |
+| ClearURLs | Strip tracking parameters from links you send | 🌐 Network | done |
 | ClientTheme | Custom client colour | 🖌️ Theme | 2.3 |
 | ColorSighted | Remove colourblind status icons | 🎨 UI | 2 |
 | ConsoleJanitor | Silence console noise | ⛔ N/A | web console only |
