@@ -48,6 +48,4 @@ body:
       options:
         - label: The plugin is not in the ROADMAP.md table
           required: true
-        - label: The plugin is not for spam, self-bots, evading bans or spying on other people
-          required: true
         - label: I am willing to write it myself

@@ -46,7 +46,7 @@ Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor
 
 ## Tasks
 
-Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is collected into the root [`TASKS.md`](../../TASKS.md): after editing run `python scripts/gen_tasks.py`.
+Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is collected into [`TASKS.md`](../TASKS.md): after editing run `python scripts/gen_tasks.py`.
 
 | Task | What | Who | Status |
 |:--|:--|:--|:--|
@@ -121,14 +121,14 @@ Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do 
 - **Antivirus flags `version.dll` as malware.** Open source, reproducible builds with `SHA256SUMS`, submitting samples to Microsoft and major vendors before release.
 - **Discord changes the Gateway protocol.** Caught by `selftest` (1.1.8) and fixtures; the fix goes into `phoecord-proxy::codec`, plugins stay untouched.
 - **WASM is slow on the hot path.** Run the 1.1.10 benchmark on a WASM chain too; if p99 > 1 ms, `message_logger` and `fake_nitro` stay native.
-- **Account bans.** Client modification breaks Discord's Terms. Plugins do nothing the server would see as bot activity (mass requests, self-bots); this rule applies to every PR review.
+- **Account bans.** Client modification breaks Discord's Terms, and heavy automation (bulk requests) is the easiest thing for Discord to spot; bulk plugins go through the `Host::rest` rate limiter.
 - **Russian translation drifts behind English.** The 1.7.5 CI check fails on missing keys; a string without a translation falls back to English rather than showing a key.
 
 ## Living docs and publications
 
-- [`ROADMAP.md`](../../ROADMAP.md): tick the 1.1–1.7 boxes in each task's PR.
+- [`ROADMAP.md`](../ROADMAP.md): tick the 1.1–1.7 boxes in each task's PR.
 - [`docs/CHANGELOG.md`](../CHANGELOG.md): an "Unreleased" line in every PR; versions `0.2`–`0.6` at the end of stages.
-- [`ARCHITECTURE.md`](../../ARCHITECTURE.md): on Plugin API changes, the runtime decision and how we reach Phoenix.
+- [`ARCHITECTURE.md`](../ARCHITECTURE.md): on Plugin API changes, the runtime decision and how we reach Phoenix.
 - [`docs/CODE_MAP.md`](../CODE_MAP.md): every new file, config key and env variable.
 - [`docs/PROJECT_MAP.md`](../PROJECT_MAP.md): every plugin's status.
 - README: the "Plugins" table and the pre-alpha note at the end of each stage (keep it compact; details belong in `docs/PROJECT_MAP.md`).

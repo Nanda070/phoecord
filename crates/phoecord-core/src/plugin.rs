@@ -15,7 +15,7 @@ use crate::Val;
 /// Version of this contract. Plugins declare the version they were built for in their manifest.
 pub const API_VERSION: u32 = 1;
 
-/// Where a plugin works. Decides when it can run and what breaks it (see ARCHITECTURE.md).
+/// Where a plugin works. Decides when it can run and what breaks it (see docs/ARCHITECTURE.md).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Layer {
     /// REST and gateway traffic. Independent of the client binary.

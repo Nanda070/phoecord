@@ -52,7 +52,7 @@ So PhoeCord splits the work into two layers by one rule: **everything that can b
 
 ## Network layer
 
-The base is the v0 proxy, which already works with today's Discord; its migration is in the [Phase 1 plan](docs/phase-1/README.md).
+The base is the v0 proxy, which already works with today's Discord; its migration is in the [Phase 1 plan](phase-1/README.md).
 
 1. The client sends `CONNECT host:443` to `127.0.0.1:18463`. Non-loopback connections are refused.
 2. A host on the `intercept` list (`discord.com`, `*.discord.com`, `discordapp.com`, `gateway*.discord.gg`) → TLS is terminated with a certificate from the local CA, and a separate TLS connection to Discord is opened and verified against `webpki-roots`. Everything else is `copy_bidirectional` without decryption.
@@ -209,7 +209,7 @@ The app ships in **English** first; **Russian** is the first translation (ROADMA
 
 ## Security model
 
-- A local CA per install, name-constrained to Discord's domains; the key never leaves the computer ([`SECURITY.md`](SECURITY.md)).
+- A local CA per install, name-constrained to Discord's domains; the key never leaves the computer ([`SECURITY.md`](../SECURITY.md)).
 - The proxy is loopback-only; only hosts on `intercept` are decrypted.
 - WASM plugins run in a sandbox with explicit rights in the manifest; native plugins are only built-in ones or ones the user installed by hand.
 - The loader loads the real system DLL only by full path from `System32`, so it never becomes a DLL hijacking point itself.

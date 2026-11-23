@@ -1,6 +1,6 @@
 # Contributing
 
-We use GitHub Flow: every change is its own branch and Pull Request. The rules (branch prefixes, commits, who merges, checks, living docs) live in the root [`AGENTS.md`](AGENTS.md), the single source of truth; this page only lists the steps for a human. Which document to read for which task: [`docs/README.md`](docs/README.md).
+We use GitHub Flow: every change is its own branch and Pull Request. The rules (branch prefixes, commits, who merges, checks, living docs) live in [`docs/AGENTS.md`](docs/AGENTS.md), the single source of truth; this page only lists the steps for a human. Which document to read for which task: [`docs/README.md`](docs/README.md).
 
 Branch prefixes: `feat/`, `fix/`, `refactor/`, `chore/`, `docs/` (example: `feat/proxy-gateway`). Commits follow [Conventional Commits](https://www.conventionalcommits.org/); the scope is the crate name without `phoecord-`: `feat(proxy): wire gateway into plugin chain`, `fix(loader): reject ambiguous AOB matches`.
 
@@ -48,7 +48,7 @@ CI runs the same checks on Linux, Windows and macOS. Locally, in one command:
 bash scripts/check.sh            # Windows: powershell -File scripts/check.ps1
 ```
 
-It runs `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and checks that `TASKS.md` and `docs/DECISIONS.md` are up to date.
+It runs `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and checks that `docs/TASKS.md` and `docs/DECISIONS.md` are up to date.
 
 ## Code rules
 
@@ -56,13 +56,12 @@ It runs `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and check
 - **Plugin API.** A change to `Event`, `Verdict`, `Host` or `Manifest` is its own PR, labelled `api`, with an entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). A new variant is a minor change; changing an existing one bumps `API_VERSION`.
 - **`unsafe`.** Allowed only in `phoecord-loader`, with a `// SAFETY:` comment above every block.
 - **Tests without network.** Tests never call Discord and never need a token. Gateway tests use recorded payloads with personal data removed.
-- **Plugins.** Port or write them by [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md); adapted Vencord code is fine with its attribution header. Every plugin has a unique `snake_case` id, tests next to its code, and a row in the plugin table of [`ROADMAP.md`](ROADMAP.md).
+- **Plugins.** Port or write them by [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md); adapted Vencord code is fine with its attribution header. Every plugin has a unique `snake_case` id, tests next to its code, and a row in the plugin table of [`ROADMAP.md`](docs/ROADMAP.md).
 - **User-facing text.** Strings the app shows go through the localization layer once it exists (ROADMAP 1.7); until then keep them in one place per crate so they are easy to extract. English is the source language, Russian is the first translation.
 - **License.** PhoeCord is GPL-3.0-or-later ([`LICENSE`](LICENSE), [`NOTICE`](NOTICE)); by contributing you license your work under it. The plugin SDK and templates are MIT. Never remove the notices in [`LICENSES/`](LICENSES/).
 
 ## What not to send
 
 - Discord tokens, `ca.key`, `ca.pem`, traffic dumps with personal data, Discord client binaries or disassembled pieces of them.
-- Features for mass messaging, self-bots, ban or moderation evasion, or collecting other people's data. Such PRs are closed without review.
 
 Vulnerabilities go privately, not into an issue: [`SECURITY.md`](SECURITY.md).
