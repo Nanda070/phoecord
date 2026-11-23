@@ -14,3 +14,5 @@ pub enum Channel {
     /// The native Rust/GPUI client. Install paths unknown until it ships.
     Phoenix,
 }
+
+pub mod launch;

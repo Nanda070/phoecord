@@ -14,7 +14,19 @@ phoecord-core.workspace = true
 phoecord-proxy.workspace = true
 phoecord-plugin-runtime.workspace = true
 phoecord-plugins.workspace = true
+phoecord-installer = { path = "../phoecord-installer" }
 anyhow.workspace = true
+clap = { version = "4", features = ["derive"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+http-body-util = "0.1"
+hyper = { version = "1", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+rustls.workspace = true
+tokio = { version = "1", features = ["full"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12", "logging"] }
+tokio-tungstenite = { version = "0.30", default-features = false, features = ["connect", "handshake"] }
+tracing.workspace = true
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [lints]
 workspace = true
