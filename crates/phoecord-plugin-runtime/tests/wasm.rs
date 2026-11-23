@@ -62,7 +62,7 @@ fn well_behaved_guest_works_in_the_chain_like_a_native_plugin() {
         Outcome::Untouched
     );
     assert_eq!(
-        chain.rest_response(&mut host, "GET", "/x", 200, &Val::Null),
+        chain.rest_response(&mut host, "GET", "/x", 200, &mut Val::Null),
         Outcome::Untouched
     );
 }

@@ -835,9 +835,9 @@ impl Plugin for WasmPlugin {
                 }
                 extra.extend(decoded.extra);
             }
-            Event::Send { payload, .. } => {
+            Event::RestResponse { body, .. } | Event::Send { payload: body, .. } => {
                 if let (true, Some(new)) = (changed, decoded.payload) {
-                    *payload = new;
+                    *body = new;
                 }
             }
             _ => {}
