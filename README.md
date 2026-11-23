@@ -60,9 +60,13 @@ bash scripts/check.sh           # all checks (Windows: powershell -File scripts/
 
 Branches, commits and PRs: [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for people and AI agents: [`AGENTS.md`](docs/AGENTS.md). Where every file lives: [`docs/CODE_MAP.md`](docs/CODE_MAP.md). Porting a plugin: [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md).
 
-## Team
+## Contributors
 
-**Nanda**, project lead · Discord `nandak070` · Telegram [@nanda070](https://t.me/nanda070)
+<a href="https://github.com/Nanda070/phoecord/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Nanda070/phoecord" alt="Contributors" />
+</a>
+
+Updated automatically from the repository's commit history. Want to join? See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 Thanks to [Vencord](https://github.com/Vendicated/Vencord) for the plugin ideas and to [Zed](https://github.com/zed-industries/zed) for open-sourcing GPUI. Not affiliated with Discord Inc., Vencord or Zed Industries.
 
