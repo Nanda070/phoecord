@@ -101,10 +101,10 @@ mod limits {
         }))
     }
 
-    /// The guest faults on `event` (default limits: 5 ms, 32 MiB). It is switched off, logged once
+    /// The guest faults on `event` (hard ceiling 200 ms, 32 MiB). It is switched off, logged once
     /// and the event passes; the native plugin behind it still runs, now and on later events.
     fn assert_disabled_and_chain_alive(event: &str) {
-        let rt = common::runtime();
+        let rt = common::quick_runtime();
         let guest = WasmPlugin::from_bytes(&rt, guest_wasm()).unwrap();
         let chain = Chain::new(vec![Box::new(guest) as Box<dyn Plugin>, native()]);
         let mut host = NullHost::default();
@@ -149,9 +149,9 @@ mod limits {
     }
 
     #[test]
-    fn the_timeout_is_configurable() {
+    fn the_hard_ceiling_is_configurable() {
         let rt = WasmRuntime::with_limits(WasmLimits {
-            event_timeout: Duration::from_millis(100),
+            hard_timeout: Duration::from_millis(300),
             ..WasmLimits::default()
         })
         .unwrap();
@@ -164,7 +164,75 @@ mod limits {
             &mut vec![],
         );
         let took = t.elapsed();
-        assert!(took >= Duration::from_millis(90), "{took:?}");
+        assert!(took >= Duration::from_millis(290), "{took:?}");
         assert!(took < Duration::from_secs(3), "{took:?}");
+    }
+
+    /// Every event overruns a zero soft limit, so these tests do not depend on how fast the
+    /// machine is.
+    fn overrunning(window: Duration) -> (WasmPlugin, NullHost) {
+        let rt = WasmRuntime::with_limits(WasmLimits {
+            event_timeout: Duration::ZERO,
+            overrun_window: window,
+            ..WasmLimits::default()
+        })
+        .unwrap();
+        (
+            WasmPlugin::from_bytes(&rt, guest_wasm()).unwrap(),
+            NullHost::default(),
+        )
+    }
+
+    fn noop(plugin: &WasmPlugin, host: &mut NullHost) {
+        let mut payload = Val::map();
+        plugin.on_event(
+            host,
+            Event::Dispatch {
+                name: "NOOP",
+                payload: &mut payload,
+                extra: &mut vec![],
+            },
+        );
+    }
+
+    #[test]
+    fn a_single_slow_event_is_logged_but_not_fatal() {
+        let (plugin, mut host) = overrunning(Duration::from_secs(60));
+        noop(&plugin, &mut host);
+        assert!(!plugin.is_disabled());
+        assert_eq!(host.logs.len(), 1, "{:?}", host.logs);
+        assert!(host.logs[0].contains("overrun 1 of 3"), "{:?}", host.logs);
+        assert!(host.logs[0].contains("took"), "{:?}", host.logs);
+        // Healthy again: it still answers.
+        let chain = chain_of(plugin);
+        let out = chain.dispatch(&mut host, "MESSAGE_CREATE", &mut Val::map(), &mut vec![]);
+        assert_eq!(out, Outcome::Changed);
+    }
+
+    #[test]
+    fn repeated_overruns_disable_the_plugin() {
+        let (plugin, mut host) = overrunning(Duration::from_secs(60));
+        noop(&plugin, &mut host);
+        noop(&plugin, &mut host);
+        assert!(!plugin.is_disabled());
+        noop(&plugin, &mut host);
+        assert!(plugin.is_disabled(), "{:?}", host.logs);
+        assert!(
+            host.logs
+                .iter()
+                .any(|l| l.contains("test_guest is disabled until restart")),
+            "{:?}",
+            host.logs
+        );
+    }
+
+    #[test]
+    fn overruns_spread_over_time_do_not_add_up() {
+        let (plugin, mut host) = overrunning(Duration::from_millis(40));
+        for _ in 0..6 {
+            noop(&plugin, &mut host);
+            std::thread::sleep(Duration::from_millis(80));
+        }
+        assert!(!plugin.is_disabled(), "{:?}", host.logs);
     }
 }

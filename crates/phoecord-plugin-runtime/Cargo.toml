@@ -17,3 +17,7 @@ wasmtime = { version = "38", default-features = false, features = ["component-mo
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "overhead"
+harness = false

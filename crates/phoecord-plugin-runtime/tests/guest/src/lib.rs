@@ -33,6 +33,8 @@ fn touched() -> Tree {
 
 fn dispatch(name: &str) -> Outcome {
     match name {
+        // No host call, no change: measures the cost of the WASM path alone.
+        "NOOP" => outcome(Verdict::Pass),
         "PANIC" => panic!("guest panic"),
         "LOOP" => {
             let mut n = 0u64;

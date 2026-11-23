@@ -11,6 +11,7 @@ use phoecord_core::{
     Event, EventKind, Host, HostResponse, Layer, Manifest, Plugin, Val, Verdict,
     plugin::API_VERSION,
 };
+use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex};
@@ -256,7 +257,8 @@ enum Down {
 /// Worker to caller.
 enum Up {
     Host(HostCall),
-    Done(Result<wit::Outcome, String>),
+    /// The outcome and how long the guest itself ran (host calls excluded).
+    Done(Result<wit::Outcome, String>, Duration),
 }
 
 struct Job {
@@ -272,7 +274,8 @@ struct State {
     /// When the current job started, and how long it has spent waiting for the host since.
     started: Instant,
     host_wait: Duration,
-    timeout: Duration,
+    /// The hard ceiling: past this the guest is interrupted.
+    hard_timeout: Duration,
     rights: Vec<Right>,
     /// Rights a call was refused for, so each is logged once.
     refused: Vec<Right>,
@@ -447,9 +450,18 @@ fn serve(host: &mut dyn Host, call: HostCall) -> HostReply {
 /// Limits applied to every WASM plugin.
 #[derive(Clone, Copy, Debug)]
 pub struct WasmLimits {
-    /// CPU time one event may take in the guest (time spent in host calls does not count).
-    /// Enforced with epoch interruption, so it is accurate to about a millisecond.
+    /// Soft limit: time one event may take in the guest (time spent in host calls does not count).
+    /// An event that takes longer is an *overrun*: it is logged with the measured time and counts
+    /// as a strike (see `max_overruns`), but the event is still answered. Measured as wall time,
+    /// so a loaded machine can inflate it; that is why one overrun is not fatal.
     pub event_timeout: Duration,
+    /// Hard ceiling: a guest still running after this long is interrupted and disabled at once
+    /// (an endless loop). Enforced with epoch interruption, accurate to about a millisecond.
+    pub hard_timeout: Duration,
+    /// Overruns within `overrun_window` that disable the plugin.
+    pub max_overruns: usize,
+    /// How far back overruns count.
+    pub overrun_window: Duration,
     /// Most linear memory a guest may grow to, in bytes.
     pub memory: usize,
 }
@@ -457,7 +469,10 @@ pub struct WasmLimits {
 impl Default for WasmLimits {
     fn default() -> Self {
         WasmLimits {
-            event_timeout: Duration::from_millis(5),
+            event_timeout: Duration::from_millis(50),
+            hard_timeout: Duration::from_secs(1),
+            max_overruns: 3,
+            overrun_window: Duration::from_secs(60),
             memory: 32 << 20,
         }
     }
@@ -633,6 +648,9 @@ pub struct WasmPlugin {
     events: EventFilter,
     worker: Mutex<Worker>,
     disabled: AtomicBool,
+    limits: WasmLimits,
+    /// When recent overruns happened.
+    overruns: Mutex<VecDeque<Instant>>,
 }
 
 impl WasmPlugin {
@@ -672,17 +690,17 @@ impl WasmPlugin {
                             .build(),
                         started: Instant::now(),
                         host_wait: Duration::ZERO,
-                        timeout: limits.event_timeout,
+                        hard_timeout: limits.hard_timeout,
                         rights,
                         refused: Vec::new(),
                     },
                 );
                 store.limiter(|s| &mut s.limits);
                 // Runs on every epoch tick the guest is executing through: trap once the guest
-                // itself has used up its time.
+                // itself has used up its hard ceiling.
                 store.epoch_deadline_callback(|ctx| {
                     let s = ctx.data();
-                    if s.started.elapsed().saturating_sub(s.host_wait) > s.timeout {
+                    if s.started.elapsed().saturating_sub(s.host_wait) > s.hard_timeout {
                         Err(Trap::Interrupt.into())
                     } else {
                         Ok(UpdateDeadline::Continue(1))
@@ -723,7 +741,9 @@ impl WasmPlugin {
                         })
                         .map_err(|e| format!("{e:#}"));
                     let failed = result.is_err();
-                    if store.data().up.send(Up::Done(result)).is_err() || failed {
+                    let s = store.data();
+                    let guest_time = s.started.elapsed().saturating_sub(s.host_wait);
+                    if s.up.send(Up::Done(result, guest_time)).is_err() || failed {
                         break;
                     }
                 }
@@ -750,6 +770,8 @@ impl WasmPlugin {
                 thread: Some(thread),
             }),
             disabled: AtomicBool::new(false),
+            limits,
+            overruns: Mutex::new(VecDeque::new()),
         })
     }
 
@@ -760,6 +782,40 @@ impl WasmPlugin {
 
     /// Send one job to the worker and serve its host calls until it answers.
     fn run_job(&self, host: &mut dyn Host, job: Job) -> Result<wit::Outcome, String> {
+        let (outcome, guest_time) = self.run_timed(host, job)?;
+        if guest_time > self.limits.event_timeout {
+            self.overrun(host, guest_time)?;
+        }
+        Ok(outcome)
+    }
+
+    /// Count an overrun; `Err` once there are too many in the window.
+    fn overrun(&self, host: &mut dyn Host, took: Duration) -> Result<(), String> {
+        let now = Instant::now();
+        let mut recent = self.overruns.lock().unwrap();
+        while recent
+            .front()
+            .is_some_and(|t| now.duration_since(*t) > self.limits.overrun_window)
+        {
+            recent.pop_front();
+        }
+        recent.push_back(now);
+        let (n, max) = (recent.len(), self.limits.max_overruns);
+        host.log(&format!(
+            "plugin {} took {:.1?} for one event (limit {:.1?}), overrun {n} of {max}",
+            self.manifest.id, took, self.limits.event_timeout
+        ));
+        if n >= max {
+            Err(format!(
+                "{n} overruns within {:.0?} (limit {:.1?} per event)",
+                self.limits.overrun_window, self.limits.event_timeout
+            ))
+        } else {
+            Ok(())
+        }
+    }
+
+    fn run_timed(&self, host: &mut dyn Host, job: Job) -> Result<(wit::Outcome, Duration), String> {
         let worker = self
             .worker
             .lock()
@@ -768,7 +824,7 @@ impl WasmPlugin {
         loop {
             match worker.up.recv() {
                 Ok(Up::Host(call)) => worker.send(Down::Reply(serve(host, call)))?,
-                Ok(Up::Done(result)) => return result,
+                Ok(Up::Done(result, took)) => return result.map(|o| (o, took)),
                 Err(_) => return Err("the plugin worker is gone".into()),
             }
         }
