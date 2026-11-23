@@ -33,3 +33,5 @@ Ruling: the in-client UI (settings tab, UI plugins, themes) is built only for Ph
 2026-11-23 12:05 | 1.4.1 | complete | installer-1-4/Claude | discovery library, PR #23
 2026-11-23 12:05 | 1.4.2, 1.4.4 | review | installer-1-4/Claude | code merged in PR #23; manual checks on real machines pending
 Ruling: docs are trimmed: PROJECT_MAP, SUPPORT, incidents/, reports/, release/incident/plan templates, phase-1/CLAUDE.md and TASKS.md are deleted, SECRETS merges into GOVERNANCE, and task status lives only in the phase-1 README table (owner Nanda, 2026-11-23, "yes, delete", "yes, merge" (translated)) — why: duplicates had to be updated by hand on every merge and were already stale — risk: none; files can be recreated when needed
+2026-11-23 17:00 | 1.3.1-1.3.3, 1.3.5 | complete | wasm-1-3/Claude | WASM runtime; rebased by the coordinator, mutable RestResponse followed, tests moved to a 2 s timeout after a macOS CI flake; PR #24
+2026-11-23 17:00 | 1.3.4 | review | wasm-1-3/Claude | packages and reload merged in PR #24; picking up a brand-new package without restart needs a Chain hook

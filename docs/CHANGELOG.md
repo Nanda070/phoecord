@@ -29,6 +29,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - `/phoecord plugins` and `/phoecord toggle <id>` slash commands, answered locally (stage 1.2.8).
 - Plugin API (minor, `API_VERSION` stays 1): `RestResponse.body` is mutable; new `Host` methods `emit_dispatch`, `plugin_enabled`, `set_plugin_enabled`, `append_data`.
 - Installer library: client discovery on 3 OSes, CA + autostart install with an install log, full rollback (stages 1.4.1, 1.4.2, 1.4.4; not wired to the CLI yet).
+- WASM plugin runtime: `wit/phoecord.wit`, wasmtime 38 backend behind the same `Chain`, 5 ms / 32 MiB limits, plugin packages (`plugin.toml` + `plugin.wasm`, `events` and `rights`) with reload (stages 1.3.1-1.3.5).
 
 ### Removed
 

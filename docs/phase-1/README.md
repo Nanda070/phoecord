@@ -82,11 +82,11 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.2.17** 🟡 | Translate, ReviewDB, VoiceMessages (data part), XSOverlay | anyone | ⏳ |
 | **1.2.18** 🟢 | ShowHiddenChannels, ShowHiddenThings, Experiments (data part) | Nanda | ⏳ |
 | **1.2.19** 🟡 | Owner's userplugins: SilentDelete, FakeDeafen, FakeDeafenDetector, localDevBadges, FollowUser, VoiceChatUtilities, rmcord, AntiRickroll (network parts) | Nanda | ⏳ |
-| **1.3.1** 🔴 | `wit/phoecord.wit` | Nanda | ⏳ |
-| **1.3.2** 🔴 | WASM backend for `Chain` on wasmtime | Nanda | ⏳ |
-| **1.3.3** 🔴 | Limits: time, memory, disable on panic | Nanda | ⏳ |
-| **1.3.4** 🔴 | Packages `plugin.toml` + `plugin.wasm`, hot loading | Nanda | ⏳ |
-| **1.3.5** 🔴 | Rights from the manifest | Nanda | ⏳ |
+| **1.3.1** 🔴 | `wit/phoecord.wit` | Nanda | ✅ 23.11, PR #24 |
+| **1.3.2** 🔴 | WASM backend for `Chain` on wasmtime | Nanda | ✅ 23.11, PR #24 |
+| **1.3.3** 🔴 | Limits: time, memory, disable on panic | Nanda | ✅ 23.11, PR #24 |
+| **1.3.4** 🔴 | Packages `plugin.toml` + `plugin.wasm`, hot loading | Nanda | 🔄 PR #24: packages and reload of known ones; a new package needs a restart |
+| **1.3.5** 🔴 | Rights from the manifest | Nanda | ✅ 23.11, PR #24 |
 | **1.3.6** 🟡 | SDK: bindings, macro, `examples/hello-plugin` | anyone | ⏳ |
 | **1.3.7** 🟡 | TypeScript plugin template | anyone | ⏳ |
 | **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ⏳ |

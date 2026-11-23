@@ -144,7 +144,9 @@ PhoeCord is GPL-3.0-or-later. The plugin SDK (`phoecord-plugin-sdk`), the WIT co
 
 **Decision (23.11.2026, see `docs/DECISIONS.md`):** the main runtime is **WASM (wasmtime + WIT)**. The contract is written once in `wit/phoecord.wit` and mirrors `phoecord-core::plugin`. JS authors write TypeScript and build a component with `componentize-js`, so a separate QuickJS is not needed. Lua is rejected: too weak a sandbox for code that sees every message.
 
-Guest limits: no WASI files or sockets; a per-event timeout (epoch, 5 ms by default); a memory limit (32 MB by default); on a panic or a limit hit the plugin is disabled until restart and the event passes as `Pass`.
+How it is built (`crates/phoecord-plugin-runtime/src/wasm.rs`, `package.rs`): WIT has no recursive types, so a `Val` crosses the boundary as a `tree`, an index arena whose `nodes[0]` is the root; the host checks bounds, depth and single use of every node a guest returns. Each plugin has its own `Store` on a worker thread, and `host` imports are served over channels, so no `unsafe` is needed. A package is `plugins/<id>/plugin.toml` + `plugin.wasm`; `events` globs become `wants`, and `rights` (`kv`, `notify`, `emit_send`, `guilds`, `fetch`, `rest`, none by default) gate `Host` methods: a denied call returns an error to the guest. `emit_dispatch`, `set_plugin_enabled` and `append_data` are native-only for now. A changed package is swapped in between events; a broken new version leaves the old one running.
+
+Guest limits: no WASI files or sockets (WASI imports trap); a per-event timeout (epoch, 5 ms of wall time minus host calls by default); a memory limit (32 MB by default); on a panic or a limit hit the plugin is disabled until restart and the event passes as `Pass`.
 
 Built-in plugins stay native for now (`phoecord-plugins`); once the WASM runtime is stable they move to WASM packages, except those where every percent of CPU matters.
 

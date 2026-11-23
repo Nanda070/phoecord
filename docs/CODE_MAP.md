@@ -77,6 +77,10 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 | File | What | Easy to break |
 |:---|:---|:---|
 | `src/lib.rs` | `Chain` (plugins in run order; first `Drop`/`Reply` stops), `Outcome`, `NullHost` for tests | The stop rule is part of the API semantics |
+| `src/wasm.rs` | `WasmRuntime` (engine + epoch clock), `WasmLimits`, `WasmPlugin`, `Right`, `Setup`, `tree` ↔ `Val` | Guest trees are untrusted: keep the bounds, depth and single-use checks |
+| `src/package.rs` | `plugin.toml` format (documented at the top), `PackagePlugin` with reload, `load_dir` | A broken new version must leave the old one running |
+| `tests/guest/` | A separate workspace: the test guest, built for `wasm32-wasip2` by the tests (CI installs the target) | Tests use `common::runtime()` (2 s timeout), not the 5 ms default |
+| `wit/phoecord.wit` (repo root) | The `plugin` world and `host` interface; mirrors `phoecord-core::plugin` | Change together with `plugin.rs` |
 
 ### `phoecord-plugin-sdk`
 
