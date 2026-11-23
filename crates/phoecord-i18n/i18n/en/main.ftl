@@ -142,3 +142,7 @@ cli-selftest-err-expected-hello = expected HELLO, got op { $op }
 terms-prompt = Type `yes` to accept these terms and install; anything else cancels:
 terms-declined = Terms not accepted; nothing was installed.
 cli-arg-accept-terms = Skip the terms prompt: you have read TERMS.md and accept it
+
+# Bug fixes 1.4.8
+cli-uninstall-stopped = stopped  PhoeCord proxy (process { $pid })
+cli-uninstall-stop-failed = could not stop a running PhoeCord proxy: { $why }

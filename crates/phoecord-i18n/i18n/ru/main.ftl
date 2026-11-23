@@ -147,3 +147,7 @@ cli-selftest-err-expected-hello = ожидался HELLO, получен op { $o
 terms-prompt = Введите `да` (или `yes`), чтобы принять условия и установить; всё остальное отменяет:
 terms-declined = Условия не приняты; ничего не установлено.
 cli-arg-accept-terms = Не спрашивать про условия: вы прочитали TERMS.ru.md и принимаете их
+
+# Исправления 1.4.8
+cli-uninstall-stopped = остановлен прокси PhoeCord (процесс { $pid })
+cli-uninstall-stop-failed = не удалось остановить работающий прокси PhoeCord: { $why }

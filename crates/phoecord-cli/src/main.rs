@@ -340,6 +340,15 @@ fn uninstall(l10n: &Localizer) -> Result<()> {
         &env,
         &phoecord_installer::system::RealSystem,
     )?;
+    for pid in &r.stopped {
+        println!(
+            "{}",
+            tf(l10n, "cli-uninstall-stopped", &[("pid", &pid.to_string())])
+        );
+    }
+    if let Some(why) = &r.stop_failed {
+        eprintln!("{}", tf(l10n, "cli-uninstall-stop-failed", &[("why", why)]));
+    }
     for step in &r.removed {
         let what = describe_step(l10n, step);
         println!("{}", tf(l10n, "cli-uninstall-removed", &[("what", &what)]));
