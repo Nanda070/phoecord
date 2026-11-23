@@ -26,5 +26,10 @@ impl Channel {
     }
 }
 
+pub mod autostart;
+pub mod ca;
 pub mod discover;
+pub mod install;
 pub mod launch;
+pub mod log;
+pub mod system;
