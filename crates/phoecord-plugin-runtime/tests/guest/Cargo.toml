@@ -1,0 +1,19 @@
+# Test guest for the WASM runtime tests (tests/wasm.rs builds it for wasm32-wasip2).
+# Not a workspace member: it has its own workspace root and lockfile.
+[package]
+name = "phoecord-test-guest"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.46"
+
+[workspace]
+
+[profile.release]
+opt-level = 1

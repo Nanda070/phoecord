@@ -3,6 +3,8 @@
 //! Today it drives native plugins (`phoecord-plugins`). The WASM backend (wasmtime + a WIT world that
 //! mirrors `phoecord_core::plugin`) plugs in behind the same [`Chain`] (docs/ROADMAP.md, milestone 1.3).
 
+pub mod wasm;
+
 use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashSet;
 use std::panic::{AssertUnwindSafe, catch_unwind};
