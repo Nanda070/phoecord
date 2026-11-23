@@ -28,7 +28,7 @@ Tasks are grouped by stage. Each has files, steps and "done when". Statuses and 
 - [x] Remove upstream mentions; keep the `LICENSE` copyright lines.
 - [x] Mirror the VALORANT docs structure; English-only docs.
 - [x] `scripts/gen_tasks.py`, `scripts/gen_decisions.py`, `scripts/check.{sh,ps1}`; CI job for generated docs.
-- [ ] PR from `docs/phase-1-plan`, green CI, merged by Nanda.
+- [x] PR #4 from `docs/phase-1-plan`, green CI, merged by Nanda (`ea73482`).
 
 **Done when:** `main` has `docs/phase-1/`, `TASKS.md` and `docs/DECISIONS.md` are generated and fresh, and no Cyrillic text is left in the repository.
 
@@ -37,8 +37,8 @@ Tasks are grouped by stage. Each has files, steps and "done when". Statuses and 
 **Files:** `.github/workflows/ci.yml`, `.github/dependabot.yml`
 
 - [x] MSRV job pinned via `dtolnay/rust-toolchain@master` + `toolchain: "1.88"`.
-- [ ] Close PR #1 (`rust-toolchain` 1.88 → 1.120) with a comment pointing to the pin.
-- [ ] Merge PR #2 (`actions/checkout` 4 → 7) and PR #3 (cargo group) after green CI and a rebase on 1.0.1.
+- [x] Close PR #1 (`rust-toolchain` 1.88 → 1.120) with a comment pointing to the pin.
+- [x] PR #2 (`actions/checkout` 4 → 7) and PR #3 (cargo group: `rcgen` 0.14.10, `time` 0.3.55) folded into one PR on `chore/deps-and-1.0-close`; #2 and #3 closed in its favour.
 
 **Done when:** no open Dependabot PRs; the MSRV job still runs 1.88.
 

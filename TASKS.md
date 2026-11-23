@@ -8,8 +8,8 @@ Tasks: 51, plans with tasks: 1.
 
 | Plan | Task | What | Who | Status |
 |:--|:--|:--|:--|:--|
-| [phase-1](docs/phase-1/README.md) | 1.0.1 🔴 | Merge the Phase 1 plan, the docs structure and the English-only docs | Nanda | 🔄 branch `docs/phase-1-plan` |
-| [phase-1](docs/phase-1/README.md) | 1.0.2 🟡 | Dependabot: close #1, merge #2 and #3 after green CI | Nanda | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.0.1 🔴 | Merge the Phase 1 plan, the docs structure and the English-only docs | Nanda | ✅ 23.11, `main` `ea73482` (PR #4) |
+| [phase-1](docs/phase-1/README.md) | 1.0.2 🟡 | Dependabot: close #1, merge #2 and #3 after green CI | Nanda | ✅ 23.11, folded into one PR |
 | [phase-1](docs/phase-1/README.md) | 1.1.1 🔴 | Proxy `Host`: settings, KV, `self_id`, `notify` | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.1.2 🔴 | `config.toml` with `[plugins.<id>]` sections and live reload | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.1.3 🔴 | Account state behind `Host` | Nanda | ⏳ |
@@ -64,8 +64,8 @@ Tasks: 51, plans with tasks: 1.
 
 | Plan | Task | What | Status |
 |:--|:--|:--|:--|
-| phase-1 | 1.0.1 🔴 | Merge the Phase 1 plan, the docs structure and the English-only docs | 🔄 branch `docs/phase-1-plan` |
-| phase-1 | 1.0.2 🟡 | Dependabot: close #1, merge #2 and #3 after green CI | ⏳ |
+| phase-1 | 1.0.1 🔴 | Merge the Phase 1 plan, the docs structure and the English-only docs | ✅ 23.11, `main` `ea73482` (PR #4) |
+| phase-1 | 1.0.2 🟡 | Dependabot: close #1, merge #2 and #3 after green CI | ✅ 23.11, folded into one PR |
 | phase-1 | 1.1.1 🔴 | Proxy `Host`: settings, KV, `self_id`, `notify` | ⏳ |
 | phase-1 | 1.1.2 🔴 | `config.toml` with `[plugins.<id>]` sections and live reload | ⏳ |
 | phase-1 | 1.1.3 🔴 | Account state behind `Host` | ⏳ |

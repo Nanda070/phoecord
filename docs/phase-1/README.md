@@ -6,7 +6,7 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 
 ## Status
 
-23.11.2026, `main` `6b3a7f5`. Phase 0 is closed: workspace of 8 crates, Plugin API v1, plugin chain, AOB scanner; the Gateway codecs, the local CA, certificate trust and `no_track` are ported; CI is green on Linux, Windows and macOS. This plan lives on the `docs/phase-1-plan` branch. Next: task 1.0.1 (merge this plan), then stage 1.1.
+23.11.2026, `main` `ea73482`. Stage 1.0 is closed: plan, docs structure and English-only docs merged (PR #4), Dependabot updates folded into one PR. Phase 0 is closed: workspace of 8 crates, Plugin API v1, plugin chain, AOB scanner; the Gateway codecs, the local CA, certificate trust and `no_track` are ported; CI is green on Linux, Windows and macOS. Next: stage 1.1, starting with 1.1.1.
 
 ## What we get
 
@@ -20,6 +20,7 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 - The repository is public, `nanda070/phoecord` (Nanda 23.11.2026: "Public", translated).
 - The copyright holder is Cheterin Group (Nanda 23.11.2026: "Copyright in LICENSE", translated).
 - Hybrid architecture: the network is the base, the UI layer is targeted; dynamic plugins through an external runtime (Nanda 23.11.2026, project brief).
+- Git history stays as it is; no force-push to `main` (Nanda 23.11.2026: "keep the history", translated).
 - Docs, plans and templates follow the VALORANT repository's structure (Nanda 23.11.2026: "like VALORANT", translated).
 - All documentation is English-only; the app must support Russian later (Nanda 23.11.2026: "translate all docs to English, no Russian at all, though the program should support Russian in the future", translated). Localization becomes stage 1.7.
 
@@ -30,8 +31,6 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 - **Plugin runtime: WASM (wasmtime + WIT)?** [`ARCHITECTURE.md`](../../ARCHITECTURE.md) proposes WASM over Lua and QuickJS (strong sandbox, typed contract, TypeScript via `componentize-js`). Needs Nanda's confirmation before stage 1.3.
 - **Installer GUI on GPUI or something lighter (egui / native Win32)?** GPUI is practice for Phase 2 but heavier and less mature on Windows. Decide before 1.4.3.
 - **Code signing.** Without a code signing certificate, Windows SmartScreen will warn users, and an unsigned `version.dll` may trip antivirus. Whether to buy one and in whose name: Nanda, before 1.4.5.
-- **Git history.** The first commit `6b3a7f5` in the public history mentions the upstream project in its message. Rewrite the history (force-push to `main`) or keep it: Nanda.
-- **Dependabot PR #1** bumps `dtolnay/rust-toolchain@1.88` to `@1.120`, which would silently drop the MSRV check. This branch pins the toolchain via `toolchain:` instead; close PR #1 (task 1.0.2).
 
 ## Who does what
 
@@ -48,8 +47,8 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is coll
 
 | Task | What | Who | Status |
 |:--|:--|:--|:--|
-| **1.0.1** 🔴 | Merge the Phase 1 plan, the docs structure and the English-only docs | Nanda | 🔄 branch `docs/phase-1-plan` |
-| **1.0.2** 🟡 | Dependabot: close #1, merge #2 and #3 after green CI | Nanda | ⏳ |
+| **1.0.1** 🔴 | Merge the Phase 1 plan, the docs structure and the English-only docs | Nanda | ✅ 23.11, `main` `ea73482` (PR #4) |
+| **1.0.2** 🟡 | Dependabot: close #1, merge #2 and #3 after green CI | Nanda | ✅ 23.11, folded into one PR |
 | **1.1.1** 🔴 | Proxy `Host`: settings, KV, `self_id`, `notify` | Nanda | ⏳ |
 | **1.1.2** 🔴 | `config.toml` with `[plugins.<id>]` sections and live reload | Nanda | ⏳ |
 | **1.1.3** 🔴 | Account state behind `Host` | Nanda | ⏳ |
@@ -119,12 +118,12 @@ Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do 
 - [`ARCHITECTURE.md`](../../ARCHITECTURE.md): on Plugin API changes, the runtime decision and how we reach Phoenix.
 - [`docs/CODE_MAP.md`](../CODE_MAP.md): every new file, config key and env variable.
 - [`docs/PROJECT_MAP.md`](../PROJECT_MAP.md): every plugin's status.
-- README: the "Development status" table at the end of each stage.
+- README: the "Plugins" table and the pre-alpha note at the end of each stage (keep it compact; details belong in `docs/PROJECT_MAP.md`).
 - GitHub Releases: one per stage starting at `0.2`, using [`_template/release.md`](../_template/release.md).
 
 ## How to start
 
-Read [`AGENTS.md`](AGENTS.md), then [`ai/spec.md`](ai/spec.md) and your task in [`ai/plan.md`](ai/plan.md). Branch from a fresh `main` with a prefix from [`CONTRIBUTING.md`](../../CONTRIBUTING.md). Nanda's first task is 1.0.1 (merge this plan), then 1.1.1. A contributor's first task is 1.2.1 `silent_typing`, once 1.1.5 is merged; until then 1.1.9 (fixtures) and 1.6.2 (GPUI reference build) are open.
+Read [`AGENTS.md`](AGENTS.md), then [`ai/spec.md`](ai/spec.md) and your task in [`ai/plan.md`](ai/plan.md). Branch from a fresh `main` with a prefix from [`CONTRIBUTING.md`](../../CONTRIBUTING.md). Nanda's next task is 1.1.1. A contributor's first task is 1.2.1 `silent_typing`, once 1.1.5 is merged; until then 1.1.9 (fixtures) and 1.6.2 (GPUI reference build) are open.
 
 ## Where things are
 

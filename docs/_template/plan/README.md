@@ -61,7 +61,7 @@ importance: 🔴 required · 🟡 desirable · 🟢 if possible.
 
 ## Living docs and publications
 
-<Which documents from the root `AGENTS.md` table change, release notes, README status table.>
+<Which documents from the root `AGENTS.md` table change, release notes, README "Plugins" table.>
 
 ## How to start
 

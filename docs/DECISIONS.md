@@ -6,10 +6,12 @@ in its plan's `ai/ledger.md` first, then rerun the script.
 
 ## Phase 1. Before the Phoenix Canary public beta
 
-Source: `docs/phase-1/ai/ledger.md`, decisions: 5.
+Source: `docs/phase-1/ai/ledger.md`, decisions: 7.
 
 - Ruling: the repository is public on Nanda070's account (owner Nanda, 2026-11-23, "Public" (translated)) — why: open-source MIT project — risk: everything pushed is published at once; secrets rules in AGENTS.md and SECRETS.md
 - Ruling: the copyright holder is Cheterin Group, next to the retained upstream MIT copyright line (owner Nanda, 2026-11-23, "Copyright in LICENSE" (translated)) — why: project ownership — risk: none
 - Ruling: remove every mention of the upstream project; keep only the copyright line and MIT text in LICENSE, which the license requires (owner Nanda, 2026-11-23, "remove all mentions of [the upstream project]" (translated)) — why: own brand — risk: the first commit message in public history still names it; rewriting history is an open question
 - Ruling: docs follow the VALORANT repository structure: docs/README.md index, CODE_MAP, PROJECT_MAP, GOVERNANCE, RUNBOOK, SECRETS, SUPPORT, DECISIONS, CHANGELOG, _template/, incidents/, reports/, plans as README + AGENTS + ai/ (owner Nanda, 2026-11-23, "make the docs like valorant" (translated)) — why: one way of working across projects — risk: none; VALORANT content itself is private and is not copied
 - Ruling: all documentation is English-only; the app gets Russian localization later, as stage 1.7 (owner Nanda, 2026-11-23, "translate all docs to English, no Russian at all, though the program should support Russian in the future" (translated)) — why: international audience — risk: Russian app strings drift; CI key check in 1.7.5
+- Ruling: git history stays as it is, the first commit message is not rewritten and main is never force-pushed (owner Nanda, 2026-11-23, "keep the history" (translated)) — why: a public repository's history is not rewritten — risk: the first commit message names the upstream project
+- Ruling: all branches end up in main: PR #4 merged, Dependabot PRs #2 and #3 folded into one PR, #1 closed (owner Nanda, 2026-11-23, "merge the branches into one" (translated)) — why: one line of history, no stray branches — risk: none
