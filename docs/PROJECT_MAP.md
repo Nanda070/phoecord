@@ -26,7 +26,7 @@ The full map of every Vencord plugin (and the owner's userplugins) to PhoeCord i
 | Plugin | Layer | What it does | Status |
 |:---|:---|:---|:---|
 | `no_track` | Network | Blocks Discord's analytics and crash reports. On by default | ✅ |
-| `silent_typing` | Network | Your typing indicator is never sent | ⏳ 1.2 |
+| `silent_typing` | Network | Your typing indicator is never sent | ✅ |
 | `unindent` | Network | Strips shared indentation from code blocks you send | ⏳ 1.2 |
 | `game_activity_toggle` | Network | Hides the game you are playing from your status | ⏳ 1.2 |
 | `relationship_notifier` | Network | Notifies you when someone unfriends you or removes you from a server | ⏳ 1.2 |

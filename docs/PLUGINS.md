@@ -153,7 +153,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | ShowMeYourName | Usernames next to nicknames | 🎨 UI | 2 |
 | ShowTimeoutDuration | How long a timeout lasts | 🎨 UI | 2 |
 | SilentMessageToggle | Button for silent messages | 🌐 + 🎨 | 1.2.11 / 2 |
-| SilentTyping | Hide that you are typing | 🌐 Network | 1.2.1 |
+| SilentTyping | Hide that you are typing | 🌐 Network | done |
 | SortFriendRequests | Sort friend requests by date | 🎨 UI | 2 |
 | SpotifyControls | Spotify player above the account panel | 🎨 UI | 2 |
 | SpotifyCrack | Free listen-along, no auto-pause | ⛔ N/A | Spotify-side, out of scope |

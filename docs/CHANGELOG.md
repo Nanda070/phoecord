@@ -20,6 +20,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - `scripts/check_i18n.py`: fails when a Russian translation is missing a key or a variable; part of `check.sh` and CI (stage 1.7.5).
 
 - `phoecord-loader` builds as a proxy `version.dll`: lazy export forwarding to the system DLL, a `DllMain` that only starts a worker, client build detection (file version + `.text` SHA-256), `signatures/*.toml` with unique AOB matches and RIP resolution, inline detours with removal on unload (stages 1.5.1-1.5.4).
+- `silent_typing` plugin: your typing indicator is never sent (stage 1.2.1).
 
 ### Ported from the v0 proxy
 

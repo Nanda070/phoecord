@@ -89,6 +89,7 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 |:---|:---|:---|
 | `src/lib.rs` | `builtin()`: every built-in plugin in default order; uniqueness test for ids | Order is run order |
 | `src/no_track.rs` | NoTrack: answers analytics and crash-report routes locally with 204 | `wants` must stay as narrow as `on_event` |
+| `src/silent_typing.rs` | SilentTyping: answers `POST /channels/{id}/typing` locally with 204 | Only that exact route; `wants` must stay as narrow as `on_event` |
 
 ### `phoecord-loader`
 

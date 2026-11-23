@@ -20,7 +20,7 @@ Tasks: 61, plans with tasks: 1.
 | [phase-1](phase-1/README.md) | 1.1.8 🟡 | `selftest` against the real Discord | Nanda | ✅ |
 | [phase-1](phase-1/README.md) | 1.1.9 🟡 | Gateway fixtures without personal data | anyone | ⏳ |
 | [phase-1](phase-1/README.md) | 1.1.10 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.2.1 🔴 | `silent_typing` | matvee | ⏳ |
+| [phase-1](phase-1/README.md) | 1.2.1 🔴 | `silent_typing` | matvee | ✅ |
 | [phase-1](phase-1/README.md) | 1.2.2 🟡 | `unindent` | matvee | ⏳ |
 | [phase-1](phase-1/README.md) | 1.2.3 🟡 | `game_activity_toggle` | anyone | ⏳ |
 | [phase-1](phase-1/README.md) | 1.2.4 🟡 | `relationship_notifier` | anyone | ⏳ |
@@ -142,6 +142,6 @@ Tasks: 61, plans with tasks: 1.
 
 | Plan | Task | What | Status |
 |:--|:--|:--|:--|
-| phase-1 | 1.2.1 🔴 | `silent_typing` | ⏳ |
+| phase-1 | 1.2.1 🔴 | `silent_typing` | ✅ |
 | phase-1 | 1.2.2 🟡 | `unindent` | ⏳ |
 | phase-1 | 1.2.7 🔴 | `clear_urls` (new) | ⏳ |

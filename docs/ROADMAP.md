@@ -39,7 +39,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 ### 1.2 Built-in plugins on the Plugin API · `0.3`
 
 - [x] `no_track`
-- [ ] `silent_typing`
+- [x] `silent_typing`
 - [ ] `unindent`
 - [ ] `game_activity_toggle`
 - [ ] `relationship_notifier`
@@ -135,7 +135,7 @@ Scope: every 🌐 and 🌐 + 🎨 plugin of [`docs/PLUGINS.md`](PLUGINS.md) comp
 | 2 | FakeNitro | Network | ⏳ |
 | 3 | NoTrack | Network | ✅ |
 | 4 | ClearURLs | Network | ⏳ |
-| 5 | SilentTyping | Network | ⏳ |
+| 5 | SilentTyping | Network | ✅ |
 | 6 | ShowHiddenChannels | Network + UI | ⏳ |
 | 7 | Translate | Network | ⏳ |
 | 8 | PlatformIndicators | Network + UI | ⏳ |
