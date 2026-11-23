@@ -37,3 +37,95 @@ lang-source-flag = --lang flag
 lang-source-config = config.toml
 lang-source-os = OS language
 lang-source-default = default
+
+# CLI: --help and subcommands
+cmd-about = Vencord-style plugins for Discord, through a local proxy
+cmd-run = Run the proxy (the default). Point Discord at it with `--proxy-server=http://127.0.0.1:18463`
+cmd-launch = Run the proxy and start Discord through it (quit Discord first). Optional: the client command
+cmd-setup = First-time setup: write the config, make the local CA, trust it and start the proxy at login
+cmd-uninstall = Undo everything `setup` did: autostart, CA trust, the files it created (your config stays)
+cmd-trust = Trust the local CA in the certificate stores Discord uses
+cmd-untrust = Remove the local CA from those stores
+cmd-plugins = List plugins and whether they are on
+cmd-enable = Switch a plugin on
+cmd-disable = Switch a plugin off
+cmd-toggle = Flip a plugin (e.g. `phoecord toggle game_activity_toggle`)
+cmd-log = Show the newest deleted and edited messages kept by message_logger
+cmd-selftest = Check everything works against the real Discord (no login needed)
+cmd-paths = Print where config, CA and plugin data live
+cli-help-usage = Usage:
+cli-help-commands = Commands
+cli-help-options = Options
+cli-help-arguments = Arguments
+cli-help-help = Print help
+cli-help-version = Print version
+cli-arg-lang = UI language: en or ru (default: `language` in config.toml, then the OS language)
+cli-arg-log-n = How many entries to show (default 20)
+
+# CLI: run, launch
+cli-listening = PhoeCord listening on { $listen } (plugins: { $plugins })
+cli-starting = starting { $program }
+cli-launcher-exited = launcher exited ({ $status }); still serving, Ctrl+C to stop
+cli-client-exited = Discord exited ({ $status })
+cli-err-listen = listening on { $listen }
+cli-err-start-discord = starting Discord
+cli-err-no-discord-linux = no Discord found on PATH; pass the command: phoecord launch -- /path/to/discord
+cli-err-no-discord-windows = no Discord found in %LOCALAPPDATA%; pass the command: phoecord launch -- C:\path\to\Discord.exe
+cli-err-no-discord-macos = no Discord found in /Applications; pass the command: phoecord launch -- /path/to/Discord
+cli-error-prefix = error
+cli-warning-prefix = warning
+
+# CLI: plugins, enable, disable, toggle
+cli-plugin-on = on
+cli-plugin-off = off
+cli-plugins-vencord = (Vencord: { $name })
+cli-no-such-plugin = no plugin named { $name } (see `phoecord plugins`)
+cli-plugin-state-on = { $name }: on
+cli-plugin-state-off = { $name }: off
+cli-gateway-note = (gateway plugin: takes effect when Discord reconnects; Ctrl+R in Discord does that)
+cli-config-line = config: { $path }
+cli-ca-line = local CA: { $path } (only valid for { $hosts })
+plugin-desc-fake_nitro = Send any emoji without Nitro (as linked images)
+plugin-desc-game_activity_toggle = While on, your status doesn't show the game you're playing
+plugin-desc-message_logger = Keep deleted messages visible and show edit history
+plugin-desc-no_track = Block Discord's analytics and crash reports
+plugin-desc-relationship_notifier = Notify you when you're unfriended or removed from a server or group
+plugin-desc-silent_typing = Your typing indicator is never sent
+plugin-desc-commands = The /phoecord slash command: plugins, toggle
+
+# CLI: log
+cli-log-empty = nothing logged yet ({ $path })
+cli-log-place-channel = in channel { $channel }
+cli-log-place-guild = in guild { $guild }, channel { $channel }
+cli-log-edited = { $time }  ✏ { $author } { $place }: { $was } → { $content }{ $tail }
+cli-log-deleted = { $time }  🗑 { $author } { $place }: { $content }{ $tail }
+
+# CLI: uninstall report (what was removed)
+cli-step-dir = folder { $path }
+cli-step-file = file { $path }
+cli-step-ca-trusted = CA { $path } from the system trust stores
+cli-step-run-key = Run key value { $name }
+cli-step-launch-agent = LaunchAgent { $label }
+cli-step-systemd-unit = systemd user unit { $unit }
+cli-kept-already-gone = already gone
+cli-kept-not-empty = not empty
+cli-kept-holds-log = holds the log of failed steps
+cli-kept-line = kept     { $what } ({ $why })
+
+# CLI: selftest
+cli-selftest-rest-ok = ✓ REST: discord.com intercepted, local CA accepted, API reachable
+cli-selftest-rest-fail = ✗ REST: { $reason }
+cli-selftest-rest-timeout = ✗ REST: timed out
+cli-selftest-gateway-ok = ✓ gateway { $combo }: HELLO round-tripped (heartbeat { $ms } ms)
+cli-selftest-gateway-fail = ✗ gateway { $combo }: { $reason }
+cli-selftest-gateway-timeout = ✗ gateway { $combo }: timed out
+cli-selftest-undecodable = ✗ { $count } gateway payload(s) PhoeCord could not decode
+cli-selftest-decoded = proxy decoded { $count } payload(s)
+cli-selftest-failed = { $count } check(s) failed
+cli-selftest-passed = all checks passed
+cli-selftest-err-connect-closed = proxy closed the CONNECT
+cli-selftest-err-proxy-answered = proxy answered { $line }
+cli-selftest-err-http = HTTP { $status }: { $body }
+cli-selftest-err-handshake = handshake
+cli-selftest-err-closed-before-hello = closed before HELLO
+cli-selftest-err-expected-hello = expected HELLO, got op { $op }

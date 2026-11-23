@@ -140,6 +140,15 @@ impl Localizer {
         self.lookup(key, Some(args))
     }
 
+    /// The message for `key` in the language in effect or English, or `None` when neither has it
+    /// (no warning is logged: the caller has its own fallback).
+    pub fn try_t(&self, key: &str) -> Option<String> {
+        self.primary
+            .iter()
+            .chain(std::iter::once(&self.english))
+            .find_map(|b| format(b, key, None))
+    }
+
     fn lookup(&self, key: &str, args: Option<&FluentArgs>) -> String {
         for b in self.primary.iter().chain(std::iter::once(&self.english)) {
             if let Some(text) = format(b, key, args) {

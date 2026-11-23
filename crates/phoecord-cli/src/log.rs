@@ -1,19 +1,27 @@
 //! `phoecord log [-n N]`: print the newest entries of the message logger's JSON-lines file.
 
-use crate::text;
+use crate::tf;
 use anyhow::Result;
+use phoecord_i18n::Localizer;
 use phoecord_plugins::message_logger::LOG_FILE;
 use phoecord_proxy::config::Paths;
 
-pub fn run(paths: &Paths, n: usize) -> Result<()> {
+pub fn run(paths: &Paths, n: usize, l10n: &Localizer) -> Result<()> {
     let file = paths.plugin_dir("message_logger").join(LOG_FILE);
     let body = std::fs::read_to_string(&file).unwrap_or_default();
     let lines = tail(&body, n);
     if lines.is_empty() {
-        println!("{}", text::log_empty(&file.display().to_string()));
+        println!(
+            "{}",
+            tf(
+                l10n,
+                "cli-log-empty",
+                &[("path", &file.display().to_string())]
+            )
+        );
     }
     for l in lines {
-        println!("{}", format_entry(l));
+        println!("{}", format_entry(l, l10n));
     }
     Ok(())
 }
@@ -25,15 +33,19 @@ fn tail(body: &str, n: usize) -> Vec<&str> {
 }
 
 /// One human-readable line for one log entry (a broken line is shown as it is).
-fn format_entry(line: &str) -> String {
+fn format_entry(line: &str, l10n: &Localizer) -> String {
     let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else {
         return line.to_string();
     };
     let s = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string();
     let place = if s("guild").is_empty() {
-        text::log_channel(&s("channel"))
+        tf(l10n, "cli-log-place-channel", &[("channel", &s("channel"))])
     } else {
-        text::log_guild(&s("guild"), &s("channel"))
+        tf(
+            l10n,
+            "cli-log-place-guild",
+            &[("guild", &s("guild")), ("channel", &s("channel"))],
+        )
     };
     let attachments: Vec<&str> = v
         .get("attachments")
@@ -45,21 +57,24 @@ fn format_entry(line: &str) -> String {
     } else {
         format!("  [{}]", attachments.join(", "))
     };
-    match s("kind").as_str() {
-        "edited" => format!(
-            "{}  ✏ {} in {place}: {:?} → {:?}{tail}",
-            s("time"),
-            s("author"),
-            s("was"),
-            s("content")
-        ),
-        _ => format!(
-            "{}  🗑 {} in {place}: {:?}{tail}",
-            s("time"),
-            s("author"),
-            s("content")
-        ),
-    }
+    let quoted = |k: &str| format!("{:?}", s(k));
+    let key = if s("kind") == "edited" {
+        "cli-log-edited"
+    } else {
+        "cli-log-deleted"
+    };
+    tf(
+        l10n,
+        key,
+        &[
+            ("time", &s("time")),
+            ("author", &s("author")),
+            ("place", &place),
+            ("was", &quoted("was")),
+            ("content", &quoted("content")),
+            ("tail", &tail),
+        ],
+    )
 }
 
 #[cfg(test)]
@@ -76,16 +91,27 @@ mod tests {
 
     #[test]
     fn entries_are_readable() {
+        let en = Localizer::new("en");
         let del = r#"{"time":"2026-01-01T00:00:00Z","kind":"deleted","channel":"9","guild":null,"author":"bob","content":"hi","was":null,"attachments":[]}"#;
         assert_eq!(
-            format_entry(del),
+            format_entry(del, &en),
             "2026-01-01T00:00:00Z  🗑 bob in channel 9: \"hi\""
         );
         let edit = r#"{"time":"t","kind":"edited","channel":"9","guild":"7","author":"bob","content":"b","was":"a","attachments":["u"]}"#;
         assert_eq!(
-            format_entry(edit),
+            format_entry(edit, &en),
             "t  ✏ bob in guild 7, channel 9: \"a\" → \"b\"  [u]"
         );
-        assert_eq!(format_entry("not json"), "not json");
+        assert_eq!(format_entry("not json", &en), "not json");
+    }
+
+    #[test]
+    fn entries_are_readable_in_russian() {
+        let ru = Localizer::new("ru");
+        let del = r#"{"time":"t","kind":"deleted","channel":"9","guild":"7","author":"bob","content":"hi","was":null,"attachments":[]}"#;
+        assert_eq!(
+            format_entry(del, &ru),
+            "t  🗑 bob на сервере 7, в канале 9: \"hi\""
+        );
     }
 }

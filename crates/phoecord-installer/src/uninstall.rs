@@ -10,12 +10,33 @@ use std::path::Path;
 
 #[derive(Debug, Default)]
 pub struct UninstallReport {
-    /// Human descriptions of what was removed.
-    pub removed: Vec<String>,
+    /// What was removed.
+    pub removed: Vec<Step>,
     /// Things left on purpose (a folder that still holds the user's files) or already gone.
-    pub kept: Vec<String>,
-    /// `(what, why)` for steps that could not be undone; they remain in the log.
-    pub failed: Vec<(String, String)>,
+    pub kept: Vec<(Step, Kept)>,
+    /// `(step, why)` for steps that could not be undone; they remain in the log. `why` is the
+    /// system's own error text.
+    pub failed: Vec<(Step, String)>,
+}
+
+/// Why a step was not undone but is not an error.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Kept {
+    AlreadyGone,
+    NotEmpty,
+    /// The data folder, which still holds the log of failed steps.
+    HoldsLog,
+}
+
+impl Kept {
+    /// English text, for logs; the CLI localizes by variant.
+    pub fn describe(self) -> &'static str {
+        match self {
+            Kept::AlreadyGone => "already gone",
+            Kept::NotEmpty => "not empty",
+            Kept::HoldsLog => "holds the log of failed steps",
+        }
+    }
 }
 
 impl UninstallReport {
@@ -26,13 +47,13 @@ impl UninstallReport {
 
 enum Outcome {
     Removed,
-    Kept(&'static str),
+    Kept(Kept),
 }
 
 fn remove_file(path: &Path) -> Result<Outcome> {
     match std::fs::remove_file(path) {
         Ok(()) => Ok(Outcome::Removed),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Outcome::Kept("already gone")),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Outcome::Kept(Kept::AlreadyGone)),
         Err(e) => Err(e.into()),
     }
 }
@@ -40,10 +61,10 @@ fn remove_file(path: &Path) -> Result<Outcome> {
 fn remove_dir(path: &Path) -> Result<Outcome> {
     match std::fs::remove_dir(path) {
         Ok(()) => Ok(Outcome::Removed),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Outcome::Kept("already gone")),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Outcome::Kept(Kept::AlreadyGone)),
         // Not empty: it holds something that is not ours (plugins, config). Leave it.
         Err(_) if path.read_dir().is_ok_and(|mut d| d.next().is_some()) => {
-            Ok(Outcome::Kept("not empty"))
+            Ok(Outcome::Kept(Kept::NotEmpty))
         }
         Err(e) => Err(e.into()),
     }
@@ -73,7 +94,6 @@ pub fn uninstall_all(env: &Env, sys: &dyn System) -> Result<UninstallReport> {
     let mut report = UninstallReport::default();
     let mut failed: Vec<Entry> = Vec::new(); // newest first
     for (i, entry) in entries.iter().enumerate().rev() {
-        let what = entry.step.describe();
         // The log lives in the data folder: once nothing but folders and the log are left to undo,
         // it goes too, or the folder could never be removed.
         if matches!(&entry.step, Step::Dir { path } if *path == env.data_dir)
@@ -88,9 +108,7 @@ pub fn uninstall_all(env: &Env, sys: &dyn System) -> Result<UninstallReport> {
         let outcome = if is_data_dir && !failed.is_empty() {
             // The log (and what the failed steps still need) lives here: try again next run.
             failed.push(entry.clone());
-            report
-                .kept
-                .push(format!("{what} (holds the log of failed steps)"));
+            report.kept.push((entry.step.clone(), Kept::HoldsLog));
             None
         } else {
             Some(undo(&entry.step, sys))
@@ -98,10 +116,10 @@ pub fn uninstall_all(env: &Env, sys: &dyn System) -> Result<UninstallReport> {
         match outcome {
             None => {}
             Some(r) => match r {
-                Ok(Outcome::Removed) => report.removed.push(what),
-                Ok(Outcome::Kept(why)) => report.kept.push(format!("{what} ({why})")),
+                Ok(Outcome::Removed) => report.removed.push(entry.step.clone()),
+                Ok(Outcome::Kept(why)) => report.kept.push((entry.step.clone(), why)),
                 Err(e) => {
-                    report.failed.push((what, format!("{e:#}")));
+                    report.failed.push((entry.step.clone(), format!("{e:#}")));
                     failed.push(entry.clone());
                 }
             },
@@ -173,7 +191,11 @@ mod tests {
             // Reverse order: autostart is undone before the CA.
             assert!(at(undo_call) < at("untrust_ca"), "{os:?}: {calls:?}");
             // And the report names what it removed.
-            assert!(r.removed.iter().any(|s| s.contains("CA")));
+            assert!(
+                r.removed
+                    .iter()
+                    .any(|s| matches!(s, Step::CaTrusted { .. }))
+            );
         }
     }
 
@@ -202,7 +224,7 @@ mod tests {
         *sys.fail_on.borrow_mut() = Some("untrust_ca".into());
         let r = uninstall_all(&e, &sys).unwrap();
         assert_eq!(r.failed.len(), 1);
-        assert!(r.failed[0].0.contains("CA"));
+        assert!(matches!(r.failed[0].0, Step::CaTrusted { .. }));
         assert!(!e.config_home.join("systemd/user/phoecord.service").exists());
         let left = InstallLog::in_dir(&e.data_dir).read().unwrap();
         assert!(

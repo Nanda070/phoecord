@@ -1,12 +1,16 @@
 //! `phoecord`: command line front end. Thin: every command calls library code.
+//!
+//! Every user-facing string comes from the `.ftl` bundles of `phoecord-i18n` through one `Localizer`.
 
+mod help;
 mod log;
 mod selftest;
-mod text;
 
 use anyhow::{Context, Result};
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
 use phoecord_i18n::{Args, Localizer, Resolved, resolve_language};
+use phoecord_installer::log::Step;
+use phoecord_installer::uninstall::Kept;
 use phoecord_plugin_runtime::Chain;
 use phoecord_plugin_runtime::package::PackageSet;
 use phoecord_plugin_runtime::wasm::WasmRuntime;
@@ -14,10 +18,16 @@ use phoecord_proxy::config::{Config, Paths};
 use phoecord_proxy::{Proxy, ca, server, trust};
 use std::time::{Duration, Instant};
 
+/// Help texts are set at run time by `help::localize`: clap wants `&'static str` here.
 #[derive(Parser)]
-#[command(name = "phoecord", version, about = text::ABOUT)]
+#[command(
+    name = "phoecord",
+    version,
+    disable_help_flag = true,
+    disable_version_flag = true,
+    disable_help_subcommand = true
+)]
 struct Cli {
-    /// UI language: en or ru (default: `language` in config.toml, then the OS language)
     #[arg(long, global = true, value_name = "CODE")]
     lang: Option<String>,
     #[command(subcommand)]
@@ -26,46 +36,47 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    #[command(about = text::CMD_RUN)]
     Run,
-    #[command(about = text::CMD_LAUNCH)]
     Launch {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         command: Vec<String>,
     },
-    #[command(about = text::CMD_SETUP)]
     Setup,
-    #[command(about = text::CMD_UNINSTALL)]
     Uninstall,
-    #[command(about = text::CMD_TRUST)]
     Trust,
-    #[command(about = text::CMD_UNTRUST)]
     Untrust,
-    #[command(about = text::CMD_PLUGINS)]
     Plugins,
-    #[command(about = text::CMD_ENABLE)]
-    Enable { name: String },
-    #[command(about = text::CMD_DISABLE)]
-    Disable { name: String },
-    #[command(about = text::CMD_TOGGLE)]
-    Toggle { name: String },
-    #[command(about = text::CMD_LOG)]
+    Enable {
+        name: String,
+    },
+    Disable {
+        name: String,
+    },
+    Toggle {
+        name: String,
+    },
     Log {
-        /// How many entries to show
         #[arg(short, default_value_t = 20)]
         n: usize,
     },
-    #[command(about = text::CMD_SELFTEST)]
     Selftest,
-    #[command(about = text::CMD_PATHS)]
     Paths,
+}
+
+/// A message with `{ $name }` variables, from `(name, value)` pairs.
+fn tf(l: &Localizer, key: &str, vars: &[(&str, &str)]) -> String {
+    let mut a = Args::new();
+    for (k, v) in vars {
+        a.set(*k, v.to_string());
+    }
+    l.t_args(key, &a)
 }
 
 fn chain() -> Chain {
     Chain::new(phoecord_plugins::builtin())
 }
 
-fn main() -> Result<()> {
+fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_env("PHOECORD_LOG")
@@ -73,29 +84,60 @@ fn main() -> Result<()> {
         )
         .with_target(false)
         .init();
-    let cli = Cli::parse();
     let paths = Paths::resolve();
-    let resolved = language(&paths, cli.lang.as_deref());
-    for w in &resolved.warnings {
-        eprintln!("warning: {w}");
-    }
+    // The language is needed before clap runs, so that `--help` is already translated.
+    let raw: Vec<String> = std::env::args().collect();
+    let resolved = language(&paths, help::lang_from_args(&raw).as_deref());
     let l10n = Localizer::new(&resolved.lang);
+    for w in &resolved.warnings {
+        eprintln!("{}: {w}", l10n.t("cli-warning-prefix"));
+    }
+    let matches = help::localize(Cli::command(), &l10n).get_matches();
+    let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|e| e.exit());
+    if let Err(e) = dispatch(cli, paths, &resolved, &l10n) {
+        eprintln!(
+            "{}: {}",
+            l10n.t("cli-error-prefix"),
+            describe_error(&e, &l10n)
+        );
+        std::process::exit(1);
+    }
+}
+
+/// The error chain as one line; a few known errors get their localized text.
+fn describe_error(e: &anyhow::Error, l10n: &Localizer) -> String {
+    if e.downcast_ref::<phoecord_installer::launch::NoDiscord>()
+        .is_some()
+    {
+        let key = if cfg!(windows) {
+            "cli-err-no-discord-windows"
+        } else if cfg!(target_os = "macos") {
+            "cli-err-no-discord-macos"
+        } else {
+            "cli-err-no-discord-linux"
+        };
+        return l10n.t(key);
+    }
+    format!("{e:#}")
+}
+
+fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Result<()> {
     match cli.cmd.unwrap_or(Cmd::Run) {
-        Cmd::Run => runtime()?.block_on(run(paths, None)),
-        Cmd::Launch { command } => runtime()?.block_on(run(paths, Some(command))),
-        Cmd::Setup => setup(&paths, &l10n),
-        Cmd::Uninstall => uninstall(&l10n),
+        Cmd::Run => runtime()?.block_on(run(paths, None, l10n)),
+        Cmd::Launch { command } => runtime()?.block_on(run(paths, Some(command), l10n)),
+        Cmd::Setup => setup(&paths, l10n),
+        Cmd::Uninstall => uninstall(l10n),
         Cmd::Trust => {
             let ca = ca::Authority::load_or_create(&paths.data)?;
             trust::install(&ca.ca_pem_path)
         }
         Cmd::Untrust => trust::uninstall(),
-        Cmd::Plugins => plugins(&paths),
-        Cmd::Enable { name } => switch(&paths, &name, Some(true)),
-        Cmd::Disable { name } => switch(&paths, &name, Some(false)),
-        Cmd::Toggle { name } => switch(&paths, &name, None),
-        Cmd::Log { n } => log::run(&paths, n),
-        Cmd::Selftest => runtime()?.block_on(selftest::run(paths)),
+        Cmd::Plugins => plugins(&paths, l10n),
+        Cmd::Enable { name } => switch(&paths, &name, Some(true), l10n),
+        Cmd::Disable { name } => switch(&paths, &name, Some(false), l10n),
+        Cmd::Toggle { name } => switch(&paths, &name, None, l10n),
+        Cmd::Log { n } => log::run(&paths, n, l10n),
+        Cmd::Selftest => runtime()?.block_on(selftest::run(paths, l10n)),
         Cmd::Paths => {
             for (key, p) in [
                 ("cli-paths-config", paths.config.clone()),
@@ -140,7 +182,7 @@ fn runtime() -> Result<tokio::runtime::Runtime> {
     Ok(tokio::runtime::Runtime::new()?)
 }
 
-async fn run(paths: Paths, launch: Option<Vec<String>>) -> Result<()> {
+async fn run(paths: Paths, launch: Option<Vec<String>>, l10n: &Localizer) -> Result<()> {
     let cfg = Config::load_or_init(&paths.config)?;
     let listen = cfg.listen.clone();
     let proxy = Proxy::new(paths, cfg, chain(), false)?;
@@ -152,29 +194,43 @@ async fn run(paths: Paths, launch: Option<Vec<String>>) -> Result<()> {
     proxy.spawn_reloader();
     let listener = server::bind(&listen)
         .await
-        .with_context(|| format!("listening on {listen}"))?;
+        .with_context(|| tf(l10n, "cli-err-listen", &[("listen", &listen)]))?;
     tracing::info!(
         "{}",
-        text::listening(&listen, &proxy.chain.enabled_ids().join(", "))
+        tf(
+            l10n,
+            "cli-listening",
+            &[
+                ("listen", &listen),
+                ("plugins", &proxy.chain.enabled_ids().join(", "))
+            ]
+        )
     );
     let server = tokio::spawn(server::serve(proxy.clone(), listener));
 
     if let Some(args) = launch {
         let cmd = phoecord_installer::launch::command(&args, &listen)?;
-        tracing::info!("{}", text::starting(&format!("{:?}", cmd.get_program())));
+        tracing::info!(
+            "{}",
+            tf(
+                l10n,
+                "cli-starting",
+                &[("program", &format!("{:?}", cmd.get_program()))]
+            )
+        );
         let started = Instant::now();
         let mut child = tokio::process::Command::from(cmd)
             .spawn()
-            .context("starting Discord")?;
+            .with_context(|| l10n.t("cli-err-start-discord"))?;
         tokio::select! {
             status = child.wait() => {
-                let status = status?;
+                let status = status?.to_string();
                 // Launchers (Update.exe, flatpak) hand off and exit at once: keep serving then.
                 if started.elapsed() < Duration::from_secs(15) {
-                    tracing::info!("{}", text::launcher_exited(&status.to_string()));
+                    tracing::info!("{}", tf(l10n, "cli-launcher-exited", &[("status", &status)]));
                     let _ = tokio::signal::ctrl_c().await;
                 } else {
-                    tracing::info!("{}", text::client_exited(&status.to_string()));
+                    tracing::info!("{}", tf(l10n, "cli-client-exited", &[("status", &status)]));
                 }
             }
             _ = tokio::signal::ctrl_c() => {}
@@ -188,18 +244,30 @@ async fn run(paths: Paths, launch: Option<Vec<String>>) -> Result<()> {
     Ok(())
 }
 
+fn config_line(l10n: &Localizer, paths: &Paths) -> String {
+    tf(
+        l10n,
+        "cli-config-line",
+        &[("path", &paths.config.display().to_string())],
+    )
+}
+
 fn setup(paths: &Paths, l10n: &Localizer) -> Result<()> {
     Config::load_or_init(&paths.config)?;
-    println!("{}", text::config_line(&paths.config.display().to_string()));
+    println!("{}", config_line(l10n, paths));
     // CA, trust and autostart, each step recorded in `install.log` so `uninstall` can undo it.
     let env = phoecord_installer::system::Env::system()?;
     let report =
         phoecord_installer::install::install(&env, &phoecord_installer::system::RealSystem)?;
     println!(
         "{}",
-        text::ca_line(
-            &report.ca_pem.display().to_string(),
-            &ca::CONSTRAINED_TO.join(", ")
+        tf(
+            l10n,
+            "cli-ca-line",
+            &[
+                ("path", &report.ca_pem.display().to_string()),
+                ("hosts", &ca::CONSTRAINED_TO.join(", "))
+            ]
         )
     );
     let mut a = Args::new();
@@ -209,22 +277,66 @@ fn setup(paths: &Paths, l10n: &Localizer) -> Result<()> {
     Ok(())
 }
 
+/// What an install step was, in words.
+fn describe_step(l10n: &Localizer, step: &Step) -> String {
+    match step {
+        Step::Dir { path } => tf(
+            l10n,
+            "cli-step-dir",
+            &[("path", &path.display().to_string())],
+        ),
+        Step::File { path } => tf(
+            l10n,
+            "cli-step-file",
+            &[("path", &path.display().to_string())],
+        ),
+        Step::CaTrusted { ca_pem } => tf(
+            l10n,
+            "cli-step-ca-trusted",
+            &[("path", &ca_pem.display().to_string())],
+        ),
+        Step::RunKey { name, .. } => tf(l10n, "cli-step-run-key", &[("name", name)]),
+        Step::LaunchAgent { label, .. } => tf(l10n, "cli-step-launch-agent", &[("label", label)]),
+        Step::SystemdUnit { unit } => tf(l10n, "cli-step-systemd-unit", &[("unit", unit)]),
+    }
+}
+
+fn describe_kept(l10n: &Localizer, why: Kept) -> String {
+    l10n.t(match why {
+        Kept::AlreadyGone => "cli-kept-already-gone",
+        Kept::NotEmpty => "cli-kept-not-empty",
+        Kept::HoldsLog => "cli-kept-holds-log",
+    })
+}
+
 fn uninstall(l10n: &Localizer) -> Result<()> {
     let env = phoecord_installer::system::Env::system()?;
     let r = phoecord_installer::uninstall::uninstall_all(
         &env,
         &phoecord_installer::system::RealSystem,
     )?;
-    for what in &r.removed {
-        println!("{}", l10n.t_args("cli-uninstall-removed", &what_arg(what)));
+    for step in &r.removed {
+        let what = describe_step(l10n, step);
+        println!("{}", tf(l10n, "cli-uninstall-removed", &[("what", &what)]));
     }
-    for what in &r.kept {
-        println!("{}", l10n.t_args("cli-uninstall-kept", &what_arg(what)));
+    for (step, why) in &r.kept {
+        let what = describe_step(l10n, step);
+        let why = describe_kept(l10n, *why);
+        println!(
+            "{}",
+            tf(l10n, "cli-kept-line", &[("what", &what), ("why", &why)])
+        );
     }
-    for (what, why) in &r.failed {
-        let mut a = what_arg(what);
-        a.set("why", why.to_string());
-        eprintln!("{}", l10n.t_args("cli-uninstall-failed", &a));
+    for (step, why) in &r.failed {
+        let what = describe_step(l10n, step);
+        eprintln!(
+            "{}",
+            tf(
+                l10n,
+                "cli-uninstall-failed",
+                &[("what", &what), ("why", why)]
+            )
+        );
     }
     if !r.is_clean() {
         anyhow::bail!(l10n.t("cli-uninstall-incomplete"));
@@ -233,44 +345,115 @@ fn uninstall(l10n: &Localizer) -> Result<()> {
     Ok(())
 }
 
-fn what_arg(what: &str) -> Args<'static> {
-    let mut a = Args::new();
-    a.set("what", what.to_string());
-    a
+/// The description of a plugin: translated when the bundles have `plugin-desc-<id>`, else the
+/// manifest's own text (plugins from packages bring their own).
+fn plugin_description(l10n: &Localizer, id: &str, fallback: &str) -> String {
+    l10n.try_t(&format!("plugin-desc-{id}"))
+        .unwrap_or_else(|| fallback.to_string())
 }
 
-fn plugins(paths: &Paths) -> Result<()> {
+fn plugins(paths: &Paths, l10n: &Localizer) -> Result<()> {
     let cfg = Config::load_or_init(&paths.config)?;
+    let (on_text, off_text) = (l10n.t("cli-plugin-on"), l10n.t("cli-plugin-off"));
+    let width = on_text.chars().count().max(off_text.chars().count());
     for m in chain().manifests() {
-        let on = if cfg.is_enabled(&m.id) { "on " } else { "off" };
+        let state = if cfg.is_enabled(&m.id) {
+            &on_text
+        } else {
+            &off_text
+        };
+        let state = format!("{state:<width$}");
         let vencord = m
             .vencord
             .as_deref()
-            .map(|v| format!("  (Vencord: {v})"))
+            .map(|v| format!("  {}", tf(l10n, "cli-plugins-vencord", &[("name", v)])))
             .unwrap_or_default();
-        println!("{on}  {:<22} {}{vencord}", m.id, m.description);
+        println!(
+            "{state}  {:<22} {}{vencord}",
+            m.id,
+            plugin_description(l10n, &m.id, &m.description)
+        );
     }
-    println!(
-        "\n{}",
-        text::config_line(&paths.config.display().to_string())
-    );
+    println!("\n{}", config_line(l10n, paths));
     Ok(())
 }
 
-fn switch(paths: &Paths, name: &str, to: Option<bool>) -> Result<()> {
+fn switch(paths: &Paths, name: &str, to: Option<bool>, l10n: &Localizer) -> Result<()> {
     let chain = chain();
     if !chain.ids().iter().any(|id| id == name) {
-        anyhow::bail!(text::no_such_plugin(name));
+        anyhow::bail!(tf(l10n, "cli-no-such-plugin", &[("name", name)]));
     }
     let mut cfg = Config::load_or_init(&paths.config)?;
     let was = cfg.is_enabled(name);
     let on = to.unwrap_or(!was);
     cfg.set_enabled(name, on)?;
     cfg.save(&paths.config)?;
-    println!("{}", text::plugin_state(name, on));
+    let key = if on {
+        "cli-plugin-state-on"
+    } else {
+        "cli-plugin-state-off"
+    };
+    println!("{}", tf(l10n, key, &[("name", name)]));
     if on && !was && chain.uses_gateway(name) {
         // Gateway plugins only see a connection that started after they were switched on.
-        println!("{}", text::GATEWAY_NOTE);
+        println!("{}", l10n.t("cli-gateway-note"));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every `"cli-…"`, `"cmd-…"` and `"plugin-desc-…"` literal in the CLI sources.
+    fn requested_keys() -> Vec<String> {
+        let mut keys = Vec::new();
+        for src in [
+            include_str!("main.rs"),
+            include_str!("log.rs"),
+            include_str!("selftest.rs"),
+            include_str!("help.rs"),
+        ] {
+            for part in src.split('"').skip(1).step_by(2) {
+                let ok = part.starts_with("cli-")
+                    && !part.ends_with('-')
+                    && part
+                        .chars()
+                        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-');
+                if ok {
+                    keys.push(part.to_string());
+                }
+            }
+        }
+        keys
+    }
+
+    #[test]
+    fn every_requested_key_exists_in_english_and_russian() {
+        let keys = requested_keys();
+        assert!(keys.len() > 40, "scan found only {}", keys.len());
+        let (en, ru) = (Localizer::new("en"), Localizer::new("ru"));
+        for k in keys {
+            assert!(en.try_t(&k).is_some(), "key {k} is missing in en");
+            assert!(ru.try_t(&k).is_some(), "key {k} is missing in ru");
+        }
+        for id in ["fake_nitro", "message_logger", "commands"] {
+            assert!(en.try_t(&format!("plugin-desc-{id}")).is_some());
+        }
+        for source in ["flag", "config", "os", "default"] {
+            assert!(en.try_t(&format!("lang-source-{source}")).is_some());
+        }
+    }
+
+    #[test]
+    fn every_builtin_plugin_has_a_description_key() {
+        let en = Localizer::new("en");
+        for m in chain().manifests() {
+            assert!(
+                en.try_t(&format!("plugin-desc-{}", m.id)).is_some(),
+                "plugin-desc-{} is missing",
+                m.id
+            );
+        }
+    }
 }

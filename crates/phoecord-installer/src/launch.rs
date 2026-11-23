@@ -1,8 +1,20 @@
 //! Start a Discord client that sends its traffic through PhoeCord.
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use std::path::PathBuf;
 use std::process::Command;
+
+/// No Discord client was found; the CLI shows a localized message for this error.
+#[derive(Debug)]
+pub struct NoDiscord;
+
+impl std::fmt::Display for NoDiscord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("no Discord found; pass the command: phoecord launch -- <path to Discord>")
+    }
+}
+
+impl std::error::Error for NoDiscord {}
 
 fn which(name: &str) -> Option<PathBuf> {
     let path = std::env::var_os("PATH")?;
@@ -49,7 +61,7 @@ fn detect(flag: &str) -> Result<Command> {
         c.args(["run", "com.discordapp.Discord", flag]);
         return Ok(c);
     }
-    bail!("no Discord found on PATH; pass the command: phoecord launch -- /path/to/discord")
+    Err(NoDiscord.into())
 }
 
 #[cfg(windows)]
@@ -68,9 +80,7 @@ fn detect(flag: &str) -> Result<Command> {
         }
     }
     let _ = which;
-    bail!(
-        "no Discord found in %LOCALAPPDATA%; pass the command: phoecord launch -- C:\\path\\to\\Discord.exe"
-    )
+    Err(NoDiscord.into())
 }
 
 #[cfg(target_os = "macos")]
@@ -84,7 +94,5 @@ fn detect(flag: &str) -> Result<Command> {
         }
     }
     let _ = which;
-    bail!(
-        "no Discord found in /Applications; pass the command: phoecord launch -- /path/to/Discord"
-    )
+    Err(NoDiscord.into())
 }
