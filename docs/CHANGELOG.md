@@ -35,7 +35,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - `phoecord setup` now runs the installer library (CA, trust and autostart, logged in `install.log`), and `phoecord uninstall` undoes it (stages 1.4.2, 1.4.4).
 - Language setting: `phoecord --lang ru`, `language` in `config.toml`, or the OS language; `setup`, `uninstall` and `paths` already speak Russian, the rest of the CLI follows in 1.7.3 (stage 1.7.2).
 - The whole CLI speaks Russian, `--help` included (stage 1.7.3).
-- Terms of use (`TERMS.md`, `TERMS.ru.md`, draft): `phoecord setup` shows them and installs nothing until you type `yes` (`да`); a new version asks again (stage 1.4.7).
+- Terms of use (`TERMS.md`, `TERMS.ru.md`, version 1): `phoecord setup` shows them and installs nothing until you type `yes` (`да`); a new version asks again (stage 1.4.7).
 
 ### Removed
 

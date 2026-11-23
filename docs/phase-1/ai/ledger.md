@@ -48,3 +48,5 @@ Ruling: the installer GUI must be as easy, convenient and good-looking as possib
 2026-11-23 21:30 | 1.4.3 | claimed | Kennurken | assigned by Nanda; installer GUI (dark red, tabs, motion, terms screen, Plugins tab); the owner signs off on the look
 2026-11-23 22:00 | 1.7.3 | complete | ru-1-7-3/Claude | all CLI strings in .ftl, Russian, runtime --help; reviewed by the coordinator, PR #39
 2026-11-23 22:00 | 1.4.7 | review | terms-1-4-7/Claude | TERMS.md / TERMS.ru.md draft, terms module, setup prompt; rebased over #39 by the coordinator, PR #38; text awaits the owner's approval
+2026-11-23 22:30 | 1.4.7 | complete | Nanda/Claude | terms text approved by the owner; the GUI terms screen is part of 1.4.3
+Ruling: TERMS.md and TERMS.ru.md version 1 are approved as written in PR #38 (owner Nanda, 2026-11-23, "yes, I approve" (translated)) — why: the user must accept the account risk and know what PhoeCord does before installing — risk: any later change to the text must bump TERMS_VERSION so users are asked again
