@@ -61,3 +61,4 @@ Ruling: every pull request is assigned to Nanda070 and requests Nanda070's revie
 2026-11-24 03:00 | 1.4.8 | complete | installer-fixes-1-4-8/Claude | five fixes from the Windows check with tests (stop_proxies limited to PhoeCord's own run/launch processes, never itself); reviewed by the coordinator, PR #52; Windows re-check pending in 1.4.6
 2026-11-24 03:00 | 1.1.11 | complete | buslan07 | `egress` module: socks5/http upstream for tunnel, REST and Gateway connections, fake-SOCKS5 and HTTP tests, `selftest` honours it; awaiting review
 2026-11-24 03:00 | 1.2.9 | complete | buslan07 | `phoecord import-vencord` + `phoecord_installer::vencord`; names only, settings not copied; awaiting review
+2026-11-24 04:00 | 1.1.11, 1.2.9 | complete | buslan07 | merged after the owner's review, PR #54; the coordinator rebased it and fixed a Windows-only duplicate in vencord::find (case-insensitive paths)

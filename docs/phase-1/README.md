@@ -41,7 +41,7 @@ none
 | | Nanda | Contributors |
 |:---|:---|:---|
 | Area | core, Plugin API, proxy, CA and trust, loader, installer, runtime, releases, review and merging | plugins, SDK examples, tests and fixtures, translations, docs, research |
-| Tasks | 1.0, 1.1 (except 1.1.9), 1.2.3–1.2.6, 1.2.8, 1.3 (except 1.3.6, 1.3.7), 1.4 (except 1.4.3), 1.5, 1.6, 1.7.1–1.7.5 | 1.1.9, 1.2.1 (matvee, done), 1.2.2 and 1.2.7 (matvee), 1.4.3 (Kennurken), 1.2.9, 1.3.6, 1.3.7 |
+| Tasks | 1.0, 1.1 (except 1.1.9), 1.2.3–1.2.6, 1.2.8, 1.3 (except 1.3.6, 1.3.7), 1.4 (except 1.4.3), 1.5, 1.6, 1.7.1–1.7.5 | 1.1.9, 1.2.1 (matvee, done), 1.2.2 and 1.2.7 (matvee), 1.1.11 and 1.2.9 (buslan07, done), 1.4.3 (Kennurken), 1.3.6, 1.3.7 |
 
 Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor plugins are written against an API that is already merged.
 
@@ -63,7 +63,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.1.8** 🟡 | `selftest` against the real Discord | Nanda | ✅ |
 | **1.1.9** 🟡 | Gateway fixtures without personal data | anyone | ⏳ |
 | **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ⏳ |
-| **1.1.11** 🟡 | Upstream proxy (SOCKS5 / HTTP) for outgoing connections, for VPN and zapret users | buslan07 | ✅ 23.11, in review |
+| **1.1.11** 🟡 | Upstream proxy (SOCKS5 / HTTP) for outgoing connections, for VPN and zapret users | buslan07 | ✅ 24.11, PR #54 |
 | **1.1.12** 🟡 | Transport boundary: the proxy as one backend of the plugin chain, ready for an in-process backend | Nanda | ⏳ |
 | **1.2.1** 🔴 | `silent_typing` | matvee | ✅ |
 | **1.2.2** 🟡 | `unindent` | matvee | ⏳ |
@@ -73,7 +73,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.2.6** 🔴 | `message_logger` and `phoecord log` | Nanda | ✅ 23.11, PR #22 |
 | **1.2.7** 🔴 | `clear_urls` (new) | matvee | ✅ 23.11, PR #42 |
 | **1.2.8** 🟡 | `/phoecord` slash commands (new) | Nanda | ✅ 23.11, PR #22 |
-| **1.2.9** 🟢 | `phoecord import-vencord` | buslan07 | ✅ 23.11, in review |
+| **1.2.9** 🟢 | `phoecord import-vencord` | buslan07 | ✅ 24.11, PR #54 (plugin names only, settings not copied) |
 | **1.2.10** 🟡 | Message filters: iLoveSpam, NoBlockedMessages, NoReplyMention (ImageLink and NoPendingCount are UI-only, moved to Phase 2) | Nanda | ✅ 23.11, PR #45 |
 | **1.2.11** 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, SilentMessageToggle (`/phoecord silent`); BetterGifAltText is UI-only, moved to Phase 2 | Nanda | ✅ 23.11, PR #49 |
 | **1.2.12** 🟡 | Commands: CustomCommands, FriendInvites, petpet, SpotifyShareCommands, ServerInfo, ViewRaw, UnsuppressEmbeds | anyone | ⏳ |

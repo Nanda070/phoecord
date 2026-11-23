@@ -54,6 +54,10 @@ Write down right away: when it started (UTC), Discord client and version, PhoeCo
 - "address used by another program, not PhoeCord": something else holds the port; change `listen` in `config.toml`.
 - `phoecord setup --channel canary` adds a Start-menu shortcut "Discord Canary (PhoeCord)"; `phoecord uninstall` removes it.
 
+## 3c. VPN, zapret, a blocked network
+
+Discord works without PhoeCord but not through it: the proxy connects to Discord itself, outside your VPN app's or zapret's per-app rules. Set `upstream = "socks5://127.0.0.1:1080"` (or `http://host:port`) in `config.toml` to send PhoeCord's connections through the same tunnel; `phoecord selftest` checks it. Credentials in the upstream address are not supported.
+
 ## 3a. Running checks from inside another app
 
 If you start `phoecord` from a packaged (MSIX / Store) app, for example the Claude desktop app's terminal, Windows redirects its AppData and HKCU writes into that app's private cache: setup seems to work but nothing lands in your real profile. Run PhoeCord from a normal terminal (Windows Terminal, PowerShell from the Start menu).
