@@ -6,7 +6,7 @@ in its plan's `ai/ledger.md` first, then rerun the script.
 
 ## Phase 1. Before the Phoenix Canary public beta
 
-Source: `docs/phase-1/ai/ledger.md`, decisions: 21.
+Source: `docs/phase-1/ai/ledger.md`, decisions: 22.
 
 - Ruling: the repository is public on Nanda070's account (owner Nanda, 2026-11-23, "Public" (translated)) — why: open-source MIT project — risk: everything pushed is published at once; secrets rules in AGENTS.md and SECRETS.md
 - Ruling: the copyright holder is Cheterin Group, next to the retained upstream MIT copyright line (owner Nanda, 2026-11-23, "Copyright in LICENSE" (translated)) — why: project ownership — risk: none
@@ -29,3 +29,4 @@ Source: `docs/phase-1/ai/ledger.md`, decisions: 21.
 - Ruling: Vencord source is reused while porting by default: logic, routes, data tables, setting names, with attribution (owner Nanda, 2026-11-23, "take it as you go" (translated)) — why: GPL-compatible and faster than reimplementing blind — risk: none beyond keeping attribution headers
 - Ruling: the WASM per-event limit is a 50 ms soft limit with strikes (3 in 60 s disable) and a 1 s hard ceiling, replacing the hard 5 ms (owner Nanda, 2026-11-23, "rethink it" (translated)) — why: wall-clock 5 ms disabled healthy plugins on a loaded machine — risk: a misbehaving plugin can add up to 50 ms to an event before it is disabled
 - Ruling: every problem goes to the repository's Issues; leaks of personal data or other secrets, and vulnerabilities, go privately to nandak070 on Discord (user ID 1219803151180370021) (owner Nanda, 2026-11-23, "all problems into issues, leaks of personal data and other secret information to nandak070 in DMs" (translated)) — why: one public place for problems, one private channel for anything sensitive — risk: a reporter posts a leak publicly anyway; the bug form and SECURITY.md warn against it
+- Ruling: the installer GUI must be as easy, convenient and good-looking as possible, comparable to BetterDiscord and Vencord: dark red tones, tabs, motion animations; and it shows terms of use that must be accepted before installing (new task 1.4.7) (owner Nanda, 2026-11-23, "the installer UI must be as easy, convenient and beautiful as possible, in dark red tones with tabs, motion animations ... plus terms of use that must be accepted" (translated)) — why: the installer is the first thing a user sees, and the user must agree to the account risk up front — risk: polish takes time; egui can do it, but motion needs custom work

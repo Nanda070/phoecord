@@ -92,10 +92,11 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ⏳ |
 | **1.4.1** 🔴 | Client discovery on 3 OSes | Nanda | ✅ 23.11, PR #23 (library; real machines not checked) |
 | **1.4.2** 🔴 | CA and proxy autostart | Nanda | ✅ 23.11, PR #23; `phoecord setup` uses it since PR #33 |
-| **1.4.3** 🟡 | Installer GUI, with a Plugins tab (install from file or link, rights shown first, on/off, remove) | Nanda | ⏳ |
+| **1.4.3** 🟡 | Installer GUI: dark red theme, tabs, motion, as easy as BetterDiscord/Vencord; terms screen; Plugins tab (install from file or link, rights shown first, on/off, remove) | Nanda | ⏳ |
 | **1.4.4** 🔴 | Full rollback | Nanda | ✅ 23.11, PR #23; `phoecord uninstall` since PR #33 |
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
 | **1.4.6** 🔴 | Manual check on real Windows, macOS and Linux machines: `setup` → reboot → proxy runs and Discord connects; `uninstall` leaves no file, trust entry or autostart entry | Nanda | ⏳ |
+| **1.4.7** 🔴 | Terms of use (`TERMS.md`, English and Russian) that must be accepted before install, in the GUI and in `phoecord setup` | Nanda | ⏳ |
 | **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ✅ 23.11, PR #10 |
 | **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ✅ 23.11, PR #10 |
 | **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ✅ 23.11, PR #10 |

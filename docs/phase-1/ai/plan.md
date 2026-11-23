@@ -327,10 +327,27 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Files:** `crates/phoecord-installer-gui/**`
 
-- `eframe` (egui) app with an embedded font that has Cyrillic glyphs; one window: client list, Install / Uninstall / Repair, status; English and Russian (needs 1.7.1).
+- `eframe` (egui) app with an embedded font that has Cyrillic glyphs; English and Russian (needs 1.7.1).
+- **Look and feel: as easy, convenient and good-looking as possible**, at least as easy as the BetterDiscord and Vencord installers, and nicer:
+  - dark theme in **dark red** tones (deep red accents on near-black, readable contrast); one palette defined in one place;
+  - **tabs** (for example: Install, Plugins, Settings, About), the current tab clearly marked;
+  - **motion**: animated tab switches, hover and press states, progress for each install step, smooth list changes (egui `animate_*` and custom easing); nothing that blocks input;
+  - one obvious main action per screen, plain words, no terminal knowledge needed, every error says what to do next;
+  - client list with Install / Uninstall / Repair and a live status per client.
+- **Terms screen that must be accepted**: on first start the app shows the PhoeCord terms (1.4.7) and a scrollable text with "I accept" and "Quit"; nothing is installed until the user accepts. The accepted terms version is stored in the data folder; a new version of the terms is shown again.
 - **Plugins tab**, so userplugins are easier to add than in Vencord (no rebuild, no terminal): a list of built-in plugins and installed packages with an on/off switch each; "Install from file" (a `.zip` or folder with `plugin.toml` + `plugin.wasm`) and "Install from link" (HTTPS only); before installing, a dialog shows the plugin's name, version, author, `events` and `rights` in plain words and installs only after the user confirms; "Remove" deletes the package folder and its data after a confirm. Packages go into the data folder's `plugins/`, where the proxy picks them up without a restart (1.3.4).
 
-**Done when:** a non-developer installs and removes PhoeCord without a terminal, and installs, switches off and removes a WASM plugin from a file without a terminal.
+**Done when:** a non-developer accepts the terms, installs and removes PhoeCord without a terminal, and installs, switches off and removes a WASM plugin from a file without a terminal; the owner signs off on the look (dark red, tabs, motion).
+
+### 1.4.7. Terms of use (Nanda)
+
+**Files:** `TERMS.md` (repository root), its Russian version, `crates/phoecord-installer-gui/**` (shows it)
+
+- Plain-language terms the user accepts before installing: PhoeCord modifies the Discord client and breaks Discord's Terms of Service, the account risk is the user's; no warranty (GPL-3.0 §15–16); what PhoeCord does on the computer (local CA limited to Discord domains, local proxy, no telemetry, nothing leaves the machine); third-party plugins are the user's choice and run with the rights they show; where to report problems and leaks (`SECURITY.md`).
+- A version number in the file; the installer and `phoecord setup` record which version was accepted.
+- `phoecord setup` shows the same terms and asks to type "yes" before the first install.
+
+**Done when:** the owner approves the text (English and Russian), and neither the GUI nor `phoecord setup` installs anything before the terms are accepted.
 
 ### 1.4.4. Full rollback (Nanda)
 

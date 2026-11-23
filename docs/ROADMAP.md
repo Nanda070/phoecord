@@ -67,7 +67,8 @@ What each stage covers. Task status: the table in [`docs/phase-1/README.md`](pha
 
 - `phoecord-installer`: find Stable / PTB / Canary on Windows, macOS, Linux (Flatpak, Snap)
 - Install and remove the CA, autostart the proxy (service / LaunchAgent / systemd user unit)
-- GUI on egui: a client list and "Install", "Uninstall", "Repair" buttons
+- GUI on egui, as easy as the BetterDiscord and Vencord installers and better-looking: dark red theme, tabs, motion animations; a client list and "Install", "Uninstall", "Repair" buttons
+- Terms of use that must be accepted before anything is installed
 - A "Plugins" tab in the GUI: install a plugin from a file or a link (rights shown before install), switch plugins on and off, remove them; no terminal and no rebuild
 - Full rollback: CA, DLL, autostart, folders, one button
 - Releases with `SHA256SUMS` on GitHub Releases (unsigned, like Vencord)
