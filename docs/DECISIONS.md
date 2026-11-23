@@ -6,7 +6,7 @@ in its plan's `ai/ledger.md` first, then rerun the script.
 
 ## Phase 1. Before the Phoenix Canary public beta
 
-Source: `docs/phase-1/ai/ledger.md`, decisions: 19.
+Source: `docs/phase-1/ai/ledger.md`, decisions: 21.
 
 - Ruling: the repository is public on Nanda070's account (owner Nanda, 2026-11-23, "Public" (translated)) — why: open-source MIT project — risk: everything pushed is published at once; secrets rules in AGENTS.md and SECRETS.md
 - Ruling: the copyright holder is Cheterin Group, next to the retained upstream MIT copyright line (owner Nanda, 2026-11-23, "Copyright in LICENSE" (translated)) — why: project ownership — risk: none
@@ -27,3 +27,5 @@ Source: `docs/phase-1/ai/ledger.md`, decisions: 19.
 - Ruling: the installer GUI (1.4.3) gets a Plugins tab: install from a file or a link with the plugin's rights shown before install, on/off switches, remove; the Phoenix settings tab (2.3) does the same (owner Nanda, 2026-11-23, "yes, add it" (translated)) — why: userplugins must be easier to add than in Vencord, with no terminal and no rebuild — risk: installing from a link fetches third-party code; mitigated by HTTPS only, the rights dialog and the WASM sandbox
 - Ruling: the goal includes porting Vencord's visual plugins and panels, not only network ones; v1.0 is a release cut, not a scope limit (owner Nanda, 2026-11-23, "our goal is to port visual plugins and panels too" (translated)) — why: full Vencord parity — risk: every UI plugin needs Phoenix hooks that can break with client updates
 - Ruling: Vencord source is reused while porting by default: logic, routes, data tables, setting names, with attribution (owner Nanda, 2026-11-23, "take it as you go" (translated)) — why: GPL-compatible and faster than reimplementing blind — risk: none beyond keeping attribution headers
+- Ruling: the WASM per-event limit is a 50 ms soft limit with strikes (3 in 60 s disable) and a 1 s hard ceiling, replacing the hard 5 ms (owner Nanda, 2026-11-23, "rethink it" (translated)) — why: wall-clock 5 ms disabled healthy plugins on a loaded machine — risk: a misbehaving plugin can add up to 50 ms to an event before it is disabled
+- Ruling: every problem goes to the repository's Issues; leaks of personal data or other secrets, and vulnerabilities, go privately to nandak070 on Discord (user ID 1219803151180370021) (owner Nanda, 2026-11-23, "all problems into issues, leaks of personal data and other secret information to nandak070 in DMs" (translated)) — why: one public place for problems, one private channel for anything sensitive — risk: a reporter posts a leak publicly anyway; the bug form and SECURITY.md warn against it

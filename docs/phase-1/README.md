@@ -85,7 +85,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.3.1** 🔴 | `wit/phoecord.wit` | Nanda | ✅ 23.11, PR #24 |
 | **1.3.2** 🔴 | WASM backend for `Chain` on wasmtime | Nanda | ✅ 23.11, PR #24 |
 | **1.3.3** 🔴 | Limits: time, memory, disable on panic | Nanda | ✅ 23.11, PR #24 |
-| **1.3.4** 🔴 | Packages `plugin.toml` + `plugin.wasm`, hot loading | Nanda | 🔄 PR #24: packages and reload of known ones; a new package needs a restart |
+| **1.3.4** 🔴 | Packages `plugin.toml` + `plugin.wasm`, hot loading | Nanda | ✅ 23.11, PRs #24 and #28 (new packages load on the next 2 s scan, removed ones unload) |
 | **1.3.5** 🔴 | Rights from the manifest | Nanda | ✅ 23.11, PR #24 |
 | **1.3.6** 🟡 | SDK: bindings, macro, `examples/hello-plugin` | anyone | ⏳ |
 | **1.3.7** 🟡 | TypeScript plugin template | anyone | ⏳ |
