@@ -24,6 +24,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 ### Changed
 
 - All documentation is English-only.
+- `docs/PORTING_PLUGINS.md`: step-by-step guide to porting any plugin (layer choice, Vencord → PhoeCord concept map, native and WASM, tests, worked example).
 - `docs/PLUGINS.md`: every Vencord plugin and the owner's userplugins mapped to a layer and a task; Phase 1 tasks 1.2.10–1.2.19 for Vencord parity on the network.
 - Decided: WASM plugin runtime, egui installer GUI, no code signing (like Vencord).
 

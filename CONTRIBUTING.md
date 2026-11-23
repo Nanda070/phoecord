@@ -56,7 +56,7 @@ It runs `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and check
 - **Plugin API.** A change to `Event`, `Verdict`, `Host` or `Manifest` is its own PR, labelled `api`, with an entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). A new variant is a minor change; changing an existing one bumps `API_VERSION`.
 - **`unsafe`.** Allowed only in `phoecord-loader`, with a `// SAFETY:` comment above every block.
 - **Tests without network.** Tests never call Discord and never need a token. Gateway tests use recorded payloads with personal data removed.
-- **Plugins.** Every plugin has a unique `snake_case` id, tests next to its code, and a row in the plugin table of [`ROADMAP.md`](ROADMAP.md).
+- **Plugins.** Port or write them by [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md); never copy Vencord code (GPL-3.0). Every plugin has a unique `snake_case` id, tests next to its code, and a row in the plugin table of [`ROADMAP.md`](ROADMAP.md).
 - **User-facing text.** Strings the app shows go through the localization layer once it exists (ROADMAP 1.7); until then keep them in one place per crate so they are easy to extract. English is the source language, Russian is the first translation.
 - **License.** Never remove or edit the copyright lines in [`LICENSE`](LICENSE).
 

@@ -9,6 +9,7 @@ One index page for `docs/`. The working rules are in the root [`AGENTS.md`](../A
 | Starting work | [`AGENTS.md`](../AGENTS.md) (rules), [`CONTRIBUTING.md`](../CONTRIBUTING.md) (git and PR steps), then the plan's `AGENTS.md` if the work belongs to a plan |
 | Changing code | [`CODE_MAP.md`](CODE_MAP.md) (which file does what), [`ARCHITECTURE.md`](../ARCHITECTURE.md) (how the layers fit), [`PROJECT_MAP.md`](PROJECT_MAP.md) (what the product does) |
 | Which plugins we build | [`PLUGINS.md`](PLUGINS.md): every Vencord plugin and userplugin, its layer and its task |
+| Porting a plugin (Vencord, userplugin, new) | [`PORTING_PLUGINS.md`](PORTING_PLUGINS.md): step by step, with a worked example |
 | Writing a plugin | [`ARCHITECTURE.md`](../ARCHITECTURE.md) "Plugin API v1", the template in [`_template/code/`](_template/code/), [`PROJECT_MAP.md`](PROJECT_MAP.md) (existing plugins) |
 | Working on Phase 1 | [`phase-1/README.md`](phase-1/README.md) (for people), [`phase-1/AGENTS.md`](phase-1/AGENTS.md) (for AI agents), [`phase-1/ai/`](phase-1/ai/) (spec, plan, ledger) |
 | Shipping a release | [`_template/release.md`](_template/release.md), then the checks in [`_template/release-check.md`](_template/release-check.md) |

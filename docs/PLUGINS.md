@@ -2,7 +2,7 @@
 
 Checked against Vencord's plugin list: 23.11.2026 (vencord.dev/plugins, 173 entries).
 
-**Goal: every Vencord plugin that makes sense on a native client, plus the owner's own userplugins.** This page maps each one to where it lives in PhoeCord. Names match Vencord's so settings import 1:1 (`phoecord import-vencord`); our ids are the `snake_case` form (`MessageLogger` → `message_logger`). Plugins are reimplemented on the PhoeCord Plugin API; no Vencord or third-party code is copied.
+**Goal: every Vencord plugin that makes sense on a native client, plus the owner's own userplugins.** This page maps each one to where it lives in PhoeCord. Names match Vencord's so settings import 1:1 (`phoecord import-vencord`); our ids are the `snake_case` form (`MessageLogger` → `message_logger`). Plugins are reimplemented on the PhoeCord Plugin API; no Vencord or third-party code is copied. How to port one: [`PORTING_PLUGINS.md`](PORTING_PLUGINS.md).
 
 **On by default:** `no_track` only, as in Vencord. Everything else is off until the user turns it on.
 
