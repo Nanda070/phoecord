@@ -6,7 +6,7 @@ in its plan's `ai/ledger.md` first, then rerun the script.
 
 ## Phase 1. Before the Phoenix Canary public beta
 
-Source: `docs/phase-1/ai/ledger.md`, decisions: 14.
+Source: `docs/phase-1/ai/ledger.md`, decisions: 15.
 
 - Ruling: the repository is public on Nanda070's account (owner Nanda, 2026-11-23, "Public" (translated)) — why: open-source MIT project — risk: everything pushed is published at once; secrets rules in AGENTS.md and SECRETS.md
 - Ruling: the copyright holder is Cheterin Group, next to the retained upstream MIT copyright line (owner Nanda, 2026-11-23, "Copyright in LICENSE" (translated)) — why: project ownership — risk: none
@@ -22,3 +22,4 @@ Source: `docs/phase-1/ai/ledger.md`, decisions: 14.
 - Ruling: plugin scope is everything Vencord has plus the owner's userplugins; only no_track is on by default; network parts ship in Phase 1 (tasks 1.2.10–1.2.19), on-screen parts in Phase 2, full parity through 1.x (owner Nanda, 2026-11-23, "priority is everything in Vencord" and "also the ones in my userplugins" (translated)) — why: users switching from Vencord expect the same plugins — risk: scope is large; v1.0 is cut at all network plugins + top 30 UI
 - Ruling: QuestMaster and TrustMeBro from the userplugins are not built (decided by Claude, 2026-11-23, reported to the owner) — why: QuestMaster fakes quest engagement for sponsors and claims rewards; TrustMeBro circumvents legally required age verification — risk: none
 - Ruling: PhoeCord is licensed GPL-3.0-or-later (matching Vencord, so its code can be adapted with attribution); plugin SDK, wit/ and templates stay MIT; the v0 code's MIT notice moves to LICENSES/MIT-v0.txt (owner Nanda, 2026-11-23, "make ours GPL 3.0 too" (translated); "or-later" and the SDK exception chosen by Claude) — why: Vencord parity without re-implementing every plugin blind; plugin authors keep license freedom — risk: contributors must accept GPL; downstream forks must stay GPL
+- Ruling: the in-client UI (settings tab, UI plugins, themes) is built only for Phoenix; today's Electron client stays network-only, controlled from the CLI and installer (owner Nanda, 2026-11-23, "UI only for Phoenix" (translated)) — why: Phoenix needs its own GPUI UI anyway, and Vencord already covers Electron — risk: users of today's client get no in-client settings until Phoenix

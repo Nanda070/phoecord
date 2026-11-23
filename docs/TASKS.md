@@ -59,11 +59,11 @@ Tasks: 61, plans with tasks: 1.
 | [phase-1](phase-1/README.md) | 1.5.5 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
 | [phase-1](phase-1/README.md) | 1.5.6 🟡 | Reinstall after a Discord update | Nanda | ⏳ |
 | [phase-1](phase-1/README.md) | 1.5.7 🔴 | Verify on 3 client versions | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.6.1 🔴 | A map of GPUI | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.6.2 🔴 | GPUI reference build | anyone | ⏳ |
-| [phase-1](phase-1/README.md) | 1.6.3 🟡 | What of GPUI is visible in a release binary | Nanda | ⏳ |
-| [phase-1](phase-1/README.md) | 1.6.4 🟡 | Themes in Zed and what to expect from Phoenix | anyone | ⏳ |
-| [phase-1](phase-1/README.md) | 1.6.5 🔴 | Report `docs/research/gpui.md` | Nanda | ⏳ |
+| [phase-1](phase-1/README.md) | 1.6.1 🔴 | A map of GPUI | Nanda | ✅ 23.11, PR #12 |
+| [phase-1](phase-1/README.md) | 1.6.2 🔴 | GPUI reference build | anyone | ✅ 23.11, PR #12 |
+| [phase-1](phase-1/README.md) | 1.6.3 🟡 | What of GPUI is visible in a release binary | Nanda | ✅ 23.11, PR #12 |
+| [phase-1](phase-1/README.md) | 1.6.4 🟡 | Themes in Zed and what to expect from Phoenix | anyone | ✅ 23.11, PR #12 |
+| [phase-1](phase-1/README.md) | 1.6.5 🔴 | Report `docs/research/gpui.md` | Nanda | ✅ 23.11, PR #12 |
 | [phase-1](phase-1/README.md) | 1.7.1 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ✅ 23.11, PR #9 |
 | [phase-1](phase-1/README.md) | 1.7.2 🔴 | `language` setting, OS default | Nanda | ⏳ |
 | [phase-1](phase-1/README.md) | 1.7.3 🔴 | Russian translation of CLI, notifications, installer | anyone | ⏳ |
@@ -109,9 +109,9 @@ Tasks: 61, plans with tasks: 1.
 | phase-1 | 1.5.5 🟡 | Loader ↔ proxy IPC | ⏳ |
 | phase-1 | 1.5.6 🟡 | Reinstall after a Discord update | ⏳ |
 | phase-1 | 1.5.7 🔴 | Verify on 3 client versions | ⏳ |
-| phase-1 | 1.6.1 🔴 | A map of GPUI | ⏳ |
-| phase-1 | 1.6.3 🟡 | What of GPUI is visible in a release binary | ⏳ |
-| phase-1 | 1.6.5 🔴 | Report `docs/research/gpui.md` | ⏳ |
+| phase-1 | 1.6.1 🔴 | A map of GPUI | ✅ 23.11, PR #12 |
+| phase-1 | 1.6.3 🟡 | What of GPUI is visible in a release binary | ✅ 23.11, PR #12 |
+| phase-1 | 1.6.5 🔴 | Report `docs/research/gpui.md` | ✅ 23.11, PR #12 |
 | phase-1 | 1.7.1 🔴 | `phoecord-i18n` on Fluent, fallback to English | ✅ 23.11, PR #9 |
 | phase-1 | 1.7.2 🔴 | `language` setting, OS default | ⏳ |
 | phase-1 | 1.7.4 🟡 | `Host::t()` and per-plugin `.ftl` | ⏳ |
@@ -133,8 +133,8 @@ Tasks: 61, plans with tasks: 1.
 | phase-1 | 1.2.17 🟡 | Translate, ReviewDB, VoiceMessages (data part), XSOverlay | ⏳ |
 | phase-1 | 1.3.6 🟡 | SDK: bindings, macro, `examples/hello-plugin` | ⏳ |
 | phase-1 | 1.3.7 🟡 | TypeScript plugin template | ⏳ |
-| phase-1 | 1.6.2 🔴 | GPUI reference build | ⏳ |
-| phase-1 | 1.6.4 🟡 | Themes in Zed and what to expect from Phoenix | ⏳ |
+| phase-1 | 1.6.2 🔴 | GPUI reference build | ✅ 23.11, PR #12 |
+| phase-1 | 1.6.4 🟡 | Themes in Zed and what to expect from Phoenix | ✅ 23.11, PR #12 |
 | phase-1 | 1.7.3 🔴 | Russian translation of CLI, notifications, installer | ⏳ |
 | phase-1 | 1.7.5 🟡 | CI check: every `en` key exists in `ru` | ✅ 23.11, PR #9 |
 

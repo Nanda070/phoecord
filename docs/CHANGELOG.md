@@ -22,6 +22,8 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - `phoecord-loader` builds as a proxy `version.dll`: lazy export forwarding to the system DLL, a `DllMain` that only starts a worker, client build detection (file version + `.text` SHA-256), `signatures/*.toml` with unique AOB matches and RIP resolution, inline detours with removal on unload (stages 1.5.1-1.5.4).
 - `silent_typing` plugin: your typing indicator is never sent (stage 1.2.1).
 
+- `docs/research/gpui.md`: GPUI map, a release + LTO reference build (`research/gpui-reference`), anchors that survive in a stripped binary, and ranked hook candidates (palette, settings tabs, message row) for Phase 2 (stage 1.6).
+
 ### Ported from the v0 proxy
 
 - `val`, `etf`, REST routes → `phoecord-core`.

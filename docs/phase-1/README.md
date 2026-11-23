@@ -19,6 +19,7 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 - Remove every mention of the original upstream project from the repository; the copyright lines and the MIT text in `LICENSE` stay because the license requires them (Nanda 23.11.2026: "remove all mentions of [the upstream project]", translated).
 - The repository is public, `nanda070/phoecord` (Nanda 23.11.2026: "Public", translated).
 - The copyright holder is Cheterin Group (Nanda 23.11.2026: "Copyright in LICENSE", translated).
+- The in-client UI (PhoeCord settings tab, UI plugins, themes) is built only for Phoenix; on today's Electron client PhoeCord stays network-only and is controlled from the CLI and the installer (Nanda 23.11.2026: "UI only for Phoenix", translated).
 - Hybrid architecture: the network is the base, the UI layer is targeted; dynamic plugins through an external runtime (Nanda 23.11.2026, project brief).
 - Plugin runtime: WASM (wasmtime + WIT), not Lua or QuickJS (Nanda 23.11.2026: "I don't know, decide yourself what's better", translated; decided by Claude, see `docs/DECISIONS.md`).
 - Installer GUI on egui, not GPUI (same delegation).
@@ -101,11 +102,11 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is coll
 | **1.5.5** 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
 | **1.5.6** 🟡 | Reinstall after a Discord update | Nanda | ⏳ |
 | **1.5.7** 🔴 | Verify on 3 client versions | Nanda | ⏳ |
-| **1.6.1** 🔴 | A map of GPUI | Nanda | ⏳ |
-| **1.6.2** 🔴 | GPUI reference build | anyone | ⏳ |
-| **1.6.3** 🟡 | What of GPUI is visible in a release binary | Nanda | ⏳ |
-| **1.6.4** 🟡 | Themes in Zed and what to expect from Phoenix | anyone | ⏳ |
-| **1.6.5** 🔴 | Report `docs/research/gpui.md` | Nanda | ⏳ |
+| **1.6.1** 🔴 | A map of GPUI | Nanda | ✅ 23.11, PR #12 |
+| **1.6.2** 🔴 | GPUI reference build | anyone | ✅ 23.11, PR #12 |
+| **1.6.3** 🟡 | What of GPUI is visible in a release binary | Nanda | ✅ 23.11, PR #12 |
+| **1.6.4** 🟡 | Themes in Zed and what to expect from Phoenix | anyone | ✅ 23.11, PR #12 |
+| **1.6.5** 🔴 | Report `docs/research/gpui.md` | Nanda | ✅ 23.11, PR #12 |
 | **1.7.1** 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ✅ 23.11, PR #9 |
 | **1.7.2** 🔴 | `language` setting, OS default | Nanda | ⏳ |
 | **1.7.3** 🔴 | Russian translation of CLI, notifications, installer | anyone | ⏳ |

@@ -12,6 +12,8 @@ Vencord patches the JavaScript of Discord's web client: the code arrives as text
 - **no stable ABI**: struct layout, symbol names, inlining and function order change from build to build, and symbols are stripped;
 - frequent updates, so anything tied to addresses lives until the next patch.
 
+The UI and theme layers target **Phoenix only**; on today's Electron client PhoeCord uses the network layer alone.
+
 So PhoeCord splits the work into two layers by one rule: **everything that can be done with data is done on the network; we go into the client process only for what is visible on screen.**
 
 | Layer | What it touches | Depends on | Breaks on a Discord update |

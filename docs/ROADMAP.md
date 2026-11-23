@@ -81,11 +81,11 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ### 1.6 GPUI (Zed) research
 
-- [ ] A map of GPUI: `App`, `Window`, elements, how a frame is built, where the theme palette lives
-- [ ] A test GPUI app built like Phoenix (release, LTO, strip) as a signature reference
-- [ ] Which GPUI functions survive LTO and are recognisable in the binary (strings, panics, `type_name`)
-- [ ] How Zed loads themes (JSON) and whether to expect the same from Phoenix
-- [ ] Report `docs/research/gpui.md` with hook candidates: palette, settings tab list, message render
+- [x] A map of GPUI: `App`, `Window`, elements, how a frame is built, where the theme palette lives
+- [x] A test GPUI app built like Phoenix (release, LTO, strip) as a signature reference
+- [x] Which GPUI functions survive LTO and are recognisable in the binary (strings, panics, `type_name`)
+- [x] How Zed loads themes (JSON) and whether to expect the same from Phoenix
+- [x] Report `docs/research/gpui.md` with hook candidates: palette, settings tab list, message render
 
 ### 1.7 Localization: English and Russian · `0.6`
 
@@ -117,7 +117,9 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 - [ ] CI check of signatures on `.text` dumps (dumps kept outside the repository)
 - [ ] Signature updates without rebuilding the loader; the rule "new Canary build → signatures within 48 hours"
 
-### 2.3 UI hooks and theme engine · `0.9`
+### 2.3 UI hooks and theme engine
+
+The in-client UI exists only on Phoenix. On today's Electron client PhoeCord stays network-only (CLI and installer for control); no Electron UI is planned. · `0.9`
 
 - [ ] Theme engine: `theme.toml` → GPUI palette, live switching
 - [ ] 3 built-in themes + import of Vencord themes where they translate to a palette

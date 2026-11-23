@@ -412,7 +412,7 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Files:** `docs/research/gpui.md` (draft)
 
-- [ ] `App`, `Window`, element tree, frame building, where theme colours are read; with source links.
+- [x] `App`, `Window`, element tree, frame building, where theme colours are read; with source links.
 
 **Done when:** the draft answers "where would a palette, a settings tab list and a message row be built".
 
@@ -420,7 +420,7 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Files:** `research/gpui-reference/**`
 
-- [ ] A small GPUI app with a themed list and a settings-like tab view, built release + LTO + strip like a shipping app; build script and the exact GPUI commit.
+- [x] A small GPUI app with a themed list and a settings-like tab view, built release + LTO + strip like a shipping app; build script and the exact GPUI commit.
 
 **Done when:** the binary builds reproducibly and is available to Nanda (not committed).
 
@@ -428,7 +428,7 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Files:** `docs/research/gpui.md`
 
-- [ ] What survives LTO: panic strings, `type_name`s, crate paths; draft AOB anchors for the 1.6.1 targets.
+- [x] What survives LTO: panic strings, `type_name`s, crate paths; draft AOB anchors for the 1.6.1 targets.
 
 **Done when:** at least one unique signature per target in the reference build.
 
@@ -436,7 +436,7 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Files:** `docs/research/gpui.md` (section)
 
-- [ ] How Zed loads JSON themes into GPUI; what Phoenix would need for themes-as-files.
+- [x] How Zed loads JSON themes into GPUI; what Phoenix would need for themes-as-files.
 
 **Done when:** the section says whether a file-based theme is plausible and what to check in 2.1.
 
@@ -444,7 +444,7 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Files:** `docs/research/gpui.md`, `docs/research/README.md`
 
-- [ ] Hook candidates with anchors and risks; what to do first in 2.2.
+- [x] Hook candidates with anchors and risks; what to do first in 2.2.
 
 **Done when:** the report is merged and referenced from `ROADMAP.md` 2.2.
 
