@@ -7,6 +7,7 @@
 
 use phoecord_core::Plugin;
 
+pub mod game_activity_toggle;
 pub mod no_track;
 pub mod silent_typing;
 
@@ -15,6 +16,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     vec![
         Box::new(no_track::NoTrack::new()),
         Box::new(silent_typing::SilentTyping::new()),
+        Box::new(game_activity_toggle::GameActivityToggle::new()),
     ]
 }
 
