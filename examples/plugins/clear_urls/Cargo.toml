@@ -1,0 +1,22 @@
+# Example third-party plugin: ClearURLs as a WASM component (built for wasm32-wasip2).
+# Its own workspace, not a member of the PhoeCord workspace.
+[package]
+name = "clear-urls-wasm"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "GPL-3.0-or-later"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.46"
+
+[workspace]
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1

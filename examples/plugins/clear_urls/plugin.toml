@@ -1,0 +1,15 @@
+id = "clear_urls_wasm"
+name = "ClearURLs (WASM example)"
+version = "0.1.0"
+description = "Strips tracking parameters from links you send; the WASM twin of the built-in clear_urls"
+authors = ["matvee", "Cheterin Group"]
+vencord = "ClearURLs"
+layers = ["network"]
+api = 1
+
+# Only the two message routes. No `rights`: the plugin reads its settings and nothing else.
+events = [
+    "rest_request:POST /channels/*/messages",
+    "rest_request:PATCH /channels/*/messages/*",
+]
+rights = []

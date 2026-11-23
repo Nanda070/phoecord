@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
-exclude = ["research"]
+exclude = ["research", "examples"]
 default-members = ["crates/phoecord-cli"]
 
 [workspace.package]
