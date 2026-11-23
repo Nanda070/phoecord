@@ -93,6 +93,8 @@ pub fn uninstall_all(env: &Env, sys: &dyn System) -> Result<UninstallReport> {
     let entries = log.read()?;
     let mut report = UninstallReport::default();
     let mut failed: Vec<Entry> = Vec::new(); // newest first
+    remove_own_ca_files(env, &entries, &mut report);
+    let had_log = log.path().exists();
     for (i, entry) in entries.iter().enumerate().rev() {
         // The log lives in the data folder: once nothing but folders and the log are left to undo,
         // it goes too, or the folder could never be removed.
@@ -101,8 +103,11 @@ pub fn uninstall_all(env: &Env, sys: &dyn System) -> Result<UninstallReport> {
             && entries[..i]
                 .iter()
                 .all(|e| matches!(e.step, Step::Dir { .. }))
+            && std::fs::remove_file(log.path()).is_ok()
         {
-            let _ = std::fs::remove_file(log.path());
+            report.removed.push(Step::File {
+                path: log.path().to_path_buf(),
+            });
         }
         let is_data_dir = matches!(&entry.step, Step::Dir { path } if *path == env.data_dir);
         let outcome = if is_data_dir && !failed.is_empty() {
@@ -132,7 +137,46 @@ pub fn uninstall_all(env: &Env, sys: &dyn System) -> Result<UninstallReport> {
             let _ = log.rewrite(&rest);
         }
     }
+    if failed.is_empty() {
+        remove_leftovers(env, &log, had_log, &mut report);
+    }
     Ok(report)
+}
+
+/// `ca.pem` and `ca.key` in the data folder are PhoeCord's by definition, whichever command made them
+/// (`launch`, `run` and `paths` create the CA too, and only `setup` logs). Files the log lists are
+/// undone by their own step.
+fn remove_own_ca_files(env: &Env, entries: &[Entry], report: &mut UninstallReport) {
+    for name in ["ca.pem", "ca.key"] {
+        let path = env.data_dir.join(name);
+        let logged = entries
+            .iter()
+            .any(|e| matches!(&e.step, Step::File { path: p } if *p == path));
+        if !logged && std::fs::remove_file(&path).is_ok() {
+            report.removed.push(Step::File { path });
+        }
+    }
+}
+
+/// With every step undone: drop `install.log` if still there and the data folder if it is empty
+/// (it may predate PhoeCord's log). `config.toml` and anything else the user put there stays.
+fn remove_leftovers(env: &Env, log: &InstallLog, had_log: bool, report: &mut UninstallReport) {
+    // The loop deletes the log itself once nothing is left to write to it; report it all the same.
+    let _ = std::fs::remove_file(log.path());
+    let already = report
+        .removed
+        .iter()
+        .any(|s| matches!(s, Step::File { path } if path == log.path()));
+    if had_log && !already {
+        report.removed.push(Step::File {
+            path: log.path().to_path_buf(),
+        });
+    }
+    if std::fs::remove_dir(&env.data_dir).is_ok() {
+        report.removed.push(Step::Dir {
+            path: env.data_dir.clone(),
+        });
+    }
 }
 
 #[cfg(test)]
@@ -239,6 +283,46 @@ mod tests {
         let r = uninstall_all(&e, &sys).unwrap();
         assert!(r.is_clean(), "{:?}", r.failed);
         assert!(!e.data_dir.exists());
+    }
+
+    #[test]
+    fn removes_ca_files_made_by_launch_and_keeps_the_users_config() {
+        let t = tempfile::tempdir().unwrap();
+        let e = env(Os::Linux, t.path());
+        // `launch` made the CA before `setup` ran, so the log never claimed it.
+        phoecord_proxy::ca::Authority::load_or_create(&e.data_dir).unwrap();
+        std::fs::write(e.data_dir.join("config.toml"), b"x").unwrap();
+        let sys = FakeSystem::default();
+        install(&e, &sys).unwrap();
+        let r = uninstall_all(&e, &sys).unwrap();
+        assert!(r.is_clean(), "{:?}", r.failed);
+        for gone in ["ca.pem", "ca.key", "install.log"] {
+            assert!(!e.data_dir.join(gone).exists(), "{gone} left");
+            assert!(
+                r.removed
+                    .iter()
+                    .any(|s| matches!(s, Step::File { path } if path.ends_with(gone))),
+                "{gone} not reported: {:?}",
+                r.removed
+            );
+        }
+        assert!(e.data_dir.join("config.toml").is_file());
+        assert!(e.data_dir.exists());
+    }
+
+    #[test]
+    fn removes_unlogged_ca_and_the_empty_folder_without_any_log() {
+        let t = tempfile::tempdir().unwrap();
+        let e = env(Os::Linux, t.path());
+        phoecord_proxy::ca::Authority::load_or_create(&e.data_dir).unwrap();
+        let r = uninstall_all(&e, &FakeSystem::default()).unwrap();
+        assert!(r.is_clean());
+        assert!(!e.data_dir.exists());
+        assert!(
+            r.removed
+                .iter()
+                .any(|s| matches!(s, Step::Dir { path } if *path == e.data_dir))
+        );
     }
 
     #[test]
