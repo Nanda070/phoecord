@@ -6,6 +6,7 @@ mod text;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use phoecord_i18n::{Args, Localizer, Resolved, resolve_language};
 use phoecord_plugin_runtime::Chain;
 use phoecord_plugin_runtime::package::PackageSet;
 use phoecord_plugin_runtime::wasm::WasmRuntime;
@@ -16,6 +17,9 @@ use std::time::{Duration, Instant};
 #[derive(Parser)]
 #[command(name = "phoecord", version, about = text::ABOUT)]
 struct Cli {
+    /// UI language: en or ru (default: `language` in config.toml, then the OS language)
+    #[arg(long, global = true, value_name = "CODE")]
+    lang: Option<String>,
     #[command(subcommand)]
     cmd: Option<Cmd>,
 }
@@ -71,11 +75,16 @@ fn main() -> Result<()> {
         .init();
     let cli = Cli::parse();
     let paths = Paths::resolve();
+    let resolved = language(&paths, cli.lang.as_deref());
+    for w in &resolved.warnings {
+        eprintln!("warning: {w}");
+    }
+    let l10n = Localizer::new(&resolved.lang);
     match cli.cmd.unwrap_or(Cmd::Run) {
         Cmd::Run => runtime()?.block_on(run(paths, None)),
         Cmd::Launch { command } => runtime()?.block_on(run(paths, Some(command))),
-        Cmd::Setup => setup(&paths),
-        Cmd::Uninstall => uninstall(),
+        Cmd::Setup => setup(&paths, &l10n),
+        Cmd::Uninstall => uninstall(&l10n),
         Cmd::Trust => {
             let ca = ca::Authority::load_or_create(&paths.data)?;
             trust::install(&ca.ca_pem_path)
@@ -88,16 +97,43 @@ fn main() -> Result<()> {
         Cmd::Log { n } => log::run(&paths, n),
         Cmd::Selftest => runtime()?.block_on(selftest::run(paths)),
         Cmd::Paths => {
-            for (label, p) in [
-                ("config", paths.config.clone()),
-                ("CA", paths.data.join("ca.pem")),
-                ("plugins", paths.data.join("plugins")),
+            for (key, p) in [
+                ("cli-paths-config", paths.config.clone()),
+                ("cli-paths-ca", paths.data.join("ca.pem")),
+                ("cli-paths-plugins", paths.data.join("plugins")),
             ] {
-                println!("{}", text::paths_line(label, &p.display().to_string()));
+                println!("{}", paths_line(&l10n.t(key), &p.display().to_string()));
             }
+            let source = l10n.t(&format!("lang-source-{}", resolved.source.id()));
+            println!(
+                "{}",
+                paths_line(
+                    &l10n.t("cli-paths-language"),
+                    &format!("{} ({source})", l10n.language())
+                )
+            );
             Ok(())
         }
     }
+}
+
+fn paths_line(label: &str, value: &str) -> String {
+    let pad = 10usize.saturating_sub(label.chars().count());
+    format!("{label}{}{value}", " ".repeat(pad))
+}
+
+/// `--lang`, then `language` in config.toml (read without creating the file), then the OS.
+fn language(paths: &Paths, flag: Option<&str>) -> Resolved {
+    let cfg = if paths.config.exists() {
+        Config::load(&paths.config).ok().and_then(|c| c.language)
+    } else {
+        None
+    };
+    resolve_language(
+        flag,
+        cfg.as_deref(),
+        phoecord_i18n::detect_os_language().as_deref(),
+    )
 }
 
 fn runtime() -> Result<tokio::runtime::Runtime> {
@@ -152,7 +188,7 @@ async fn run(paths: Paths, launch: Option<Vec<String>>) -> Result<()> {
     Ok(())
 }
 
-fn setup(paths: &Paths) -> Result<()> {
+fn setup(paths: &Paths, l10n: &Localizer) -> Result<()> {
     Config::load_or_init(&paths.config)?;
     println!("{}", text::config_line(&paths.config.display().to_string()));
     // CA, trust and autostart, each step recorded in `install.log` so `uninstall` can undo it.
@@ -166,31 +202,41 @@ fn setup(paths: &Paths) -> Result<()> {
             &ca::CONSTRAINED_TO.join(", ")
         )
     );
-    println!("{}", text::setup_steps(report.added));
-    println!("{}", text::SETUP_DONE);
+    let mut a = Args::new();
+    a.set("count", report.added);
+    println!("{}", l10n.t_args("cli-setup-steps", &a));
+    println!("\n{}", l10n.t("cli-setup-done"));
     Ok(())
 }
 
-fn uninstall() -> Result<()> {
+fn uninstall(l10n: &Localizer) -> Result<()> {
     let env = phoecord_installer::system::Env::system()?;
     let r = phoecord_installer::uninstall::uninstall_all(
         &env,
         &phoecord_installer::system::RealSystem,
     )?;
     for what in &r.removed {
-        println!("{}", text::uninstall_removed(what));
+        println!("{}", l10n.t_args("cli-uninstall-removed", &what_arg(what)));
     }
     for what in &r.kept {
-        println!("{}", text::uninstall_kept(what));
+        println!("{}", l10n.t_args("cli-uninstall-kept", &what_arg(what)));
     }
     for (what, why) in &r.failed {
-        eprintln!("{}", text::uninstall_failed(what, why));
+        let mut a = what_arg(what);
+        a.set("why", why.to_string());
+        eprintln!("{}", l10n.t_args("cli-uninstall-failed", &a));
     }
     if !r.is_clean() {
-        anyhow::bail!(text::UNINSTALL_INCOMPLETE);
+        anyhow::bail!(l10n.t("cli-uninstall-incomplete"));
     }
-    println!("{}", text::UNINSTALL_DONE);
+    println!("\n{}", l10n.t("cli-uninstall-done"));
     Ok(())
+}
+
+fn what_arg(what: &str) -> Args<'static> {
+    let mut a = Args::new();
+    a.set("what", what.to_string());
+    a
 }
 
 fn plugins(paths: &Paths) -> Result<()> {

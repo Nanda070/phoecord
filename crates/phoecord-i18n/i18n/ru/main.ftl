@@ -21,3 +21,20 @@ error-config-invalid = Файл конфигурации { $path } недейс�
 error-permission-denied = Доступ запрещён. Попробуйте запустить от имени администратора.
 
 lang-changed = Язык изменён на { $language }.
+
+# CLI: setup, uninstall, paths
+cli-setup-done = Готово. Полностью закройте Discord и запустите его командой `phoecord launch`.
+cli-uninstall-done = PhoeCord удалён. Перезапустите Discord без `phoecord launch`.
+cli-uninstall-incomplete = не все шаги удалось отменить; они остались в install.log, запустите `phoecord uninstall` ещё раз
+cli-setup-steps = Новых шагов установки записано в install.log: { $count }
+cli-uninstall-removed = удалено   { $what }
+cli-uninstall-kept = оставлено { $what }
+cli-uninstall-failed = ошибка    { $what }: { $why }
+cli-paths-config = конфиг
+cli-paths-ca = CA
+cli-paths-plugins = плагины
+cli-paths-language = язык
+lang-source-flag = флаг --lang
+lang-source-config = config.toml
+lang-source-os = язык системы
+lang-source-default = по умолчанию

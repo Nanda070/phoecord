@@ -46,26 +46,6 @@ pub fn config_line(path: &str) -> String {
 pub fn ca_line(path: &str, hosts: &str) -> String {
     format!("local CA: {path} (only valid for {hosts})")
 }
-pub const SETUP_DONE: &str = "\nDone. Quit Discord fully, then start it with `phoecord launch`.";
-pub const UNINSTALL_DONE: &str = "
-PhoeCord is removed. Restart Discord without `phoecord launch`.";
-pub const UNINSTALL_INCOMPLETE: &str =
-    "some steps could not be undone; they stay in install.log, run `phoecord uninstall` again";
-pub fn setup_steps(added: usize) -> String {
-    format!("{added} new install step(s) recorded in install.log")
-}
-pub fn uninstall_removed(what: &str) -> String {
-    format!("removed  {what}")
-}
-pub fn uninstall_kept(what: &str) -> String {
-    format!("kept     {what}")
-}
-pub fn uninstall_failed(what: &str, why: &str) -> String {
-    format!("failed   {what}: {why}")
-}
-pub fn paths_line(label: &str, path: &str) -> String {
-    format!("{label:<8}{path}")
-}
 pub fn log_empty(path: &str) -> String {
     format!("nothing logged yet ({path})")
 }

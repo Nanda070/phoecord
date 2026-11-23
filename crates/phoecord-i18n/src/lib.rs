@@ -35,6 +35,78 @@ pub fn normalize(tag: &str) -> Option<String> {
     SUPPORTED.contains(&lang).then(|| lang.to_string())
 }
 
+/// Where the language in effect came from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Source {
+    /// The `--lang` flag.
+    Flag,
+    /// `language` in `config.toml`.
+    Config,
+    /// The operating system language.
+    Os,
+    /// Nothing usable was set: English.
+    Default,
+}
+
+impl Source {
+    /// Stable id, also the suffix of the `lang-source-*` messages.
+    pub fn id(self) -> &'static str {
+        match self {
+            Source::Flag => "flag",
+            Source::Config => "config",
+            Source::Os => "os",
+            Source::Default => "default",
+        }
+    }
+}
+
+/// The result of [`resolve_language`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Resolved {
+    pub lang: String,
+    pub source: Source,
+    /// One line per value that was set but unusable and skipped.
+    pub warnings: Vec<String>,
+}
+
+/// Picks the language: `--lang` flag, then `language` in the config, then the OS language
+/// (`os`, see [`detect_os_language`]), then `en`. An unsupported or malformed flag or
+/// config value is skipped with a warning and the next source decides.
+pub fn resolve_language(flag: Option<&str>, config: Option<&str>, os: Option<&str>) -> Resolved {
+    let mut warnings = Vec::new();
+    for (value, source, name) in [
+        (flag, Source::Flag, "--lang"),
+        (config, Source::Config, "config.toml `language`"),
+    ] {
+        let Some(v) = value else { continue };
+        match normalize(v) {
+            Some(lang) => {
+                return Resolved {
+                    lang,
+                    source,
+                    warnings,
+                };
+            }
+            None => warnings.push(format!(
+                "{name}: unsupported language {v:?} (supported: {}); ignored",
+                SUPPORTED.join(", ")
+            )),
+        }
+    }
+    match os.and_then(normalize) {
+        Some(lang) => Resolved {
+            lang,
+            source: Source::Os,
+            warnings,
+        },
+        None => Resolved {
+            lang: "en".into(),
+            source: Source::Default,
+            warnings,
+        },
+    }
+}
+
 pub struct Localizer {
     lang: String,
     primary: Option<Bundle>,
@@ -171,5 +243,32 @@ mod tests {
         assert_eq!(Localizer::new("ru-RU").language(), "ru");
         assert_eq!(Localizer::new("ru_RU.UTF-8").language(), "ru");
         assert_eq!(normalize("de-DE"), None);
+    }
+
+    #[test]
+    fn resolution_order() {
+        let r = resolve_language;
+        let x = r(Some("ru"), Some("en"), Some("en"));
+        assert_eq!((x.lang.as_str(), x.source), ("ru", Source::Flag));
+        let x = r(None, Some("ru"), Some("en"));
+        assert_eq!((x.lang.as_str(), x.source), ("ru", Source::Config));
+        let x = r(None, None, Some("ru-RU"));
+        assert_eq!((x.lang.as_str(), x.source), ("ru", Source::Os));
+        let x = r(None, None, None);
+        assert_eq!((x.lang.as_str(), x.source), ("en", Source::Default));
+        assert!(x.warnings.is_empty());
+    }
+
+    #[test]
+    fn bad_values_fall_through_with_a_warning() {
+        let x = resolve_language(Some("de"), Some("ru"), None);
+        assert_eq!((x.lang.as_str(), x.source), ("ru", Source::Config));
+        assert_eq!(x.warnings.len(), 1);
+        let x = resolve_language(Some("??"), Some("fr"), Some("ru"));
+        assert_eq!((x.lang.as_str(), x.source), ("ru", Source::Os));
+        assert_eq!(x.warnings.len(), 2);
+        let x = resolve_language(Some("de"), None, Some("de"));
+        assert_eq!((x.lang.as_str(), x.source), ("en", Source::Default));
+        assert_eq!(x.warnings.len(), 1);
     }
 }

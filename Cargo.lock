@@ -1538,6 +1538,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "phoecord-core",
+ "phoecord-i18n",
  "phoecord-installer",
  "phoecord-plugin-runtime",
  "phoecord-plugins",
