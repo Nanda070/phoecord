@@ -71,7 +71,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.2.4** 🟡 | `relationship_notifier` | Nanda | ✅ 23.11, PR #21 |
 | **1.2.5** 🔴 | `fake_nitro` (emoji) | Nanda | ✅ 23.11, PR #21 |
 | **1.2.6** 🔴 | `message_logger` and `phoecord log` | Nanda | ✅ 23.11, PR #22 |
-| **1.2.7** 🔴 | `clear_urls` (new) | matvee | ✅ |
+| **1.2.7** 🔴 | `clear_urls` (new) | matvee | ✅ 23.11, PR #42 |
 | **1.2.8** 🟡 | `/phoecord` slash commands (new) | Nanda | ✅ 23.11, PR #22 |
 | **1.2.9** 🟢 | `phoecord import-vencord` | anyone | ⏳ |
 | **1.2.10** 🟡 | Message filters: iLoveSpam, ImageLink, NoBlockedMessages, NoPendingCount, NoReplyMention | anyone | ⏳ |
