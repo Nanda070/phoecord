@@ -160,14 +160,14 @@ impl Chain {
         })
     }
 
-    /// A REST answer through the chain (read-only: plugins observe it).
+    /// A REST answer through the chain (plugins may rewrite the body).
     pub fn rest_response(
         &self,
         host: &mut dyn Host,
         method: &str,
         route: &str,
         status: u16,
-        body: &Val,
+        body: &mut Val,
     ) -> Outcome {
         self.run(host, &EventKind::RestResponse { method, route }, |p, h| {
             p.on_event(
@@ -176,7 +176,7 @@ impl Chain {
                     method,
                     route,
                     status,
-                    body,
+                    body: &mut *body,
                 },
             )
         })
@@ -337,7 +337,7 @@ mod tests {
         assert_eq!(chain.enabled_ids(), vec!["a".to_string()]);
         // The crashed plugin stays out for the rest of the session.
         assert_eq!(
-            chain.rest_response(&mut h, "GET", "/x", 200, &Val::Null),
+            chain.rest_response(&mut h, "GET", "/x", 200, &mut Val::Null),
             Outcome::Changed
         );
         assert_eq!(chain.crashed_ids().len(), 1);

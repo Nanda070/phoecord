@@ -166,6 +166,7 @@ where
     let mut inflater = Inflater::new(codec.compression)?;
     let mut deflater = Deflater::new(codec.compression)?;
     let mut reloads = app.reloads.subscribe();
+    let mut locals = app.locals.subscribe();
     let send_codec = Codec {
         encoding: codec.encoding,
         compression: Compression::None,
@@ -250,6 +251,10 @@ where
                 for (op, payload) in sends {
                     u_tx.send(queued(send_codec, op, payload)?).await?;
                 }
+            }
+            Ok(v) = locals.recv() => {
+                // A payload a plugin made for this client alone (e.g. a slash command answer).
+                c_tx.send(frame(codec, Some(&mut deflater), codec.encode(&v))?).await?;
             }
             Ok(()) = reloads.changed() => {
                 let now = app.chain.enabled_ids();

@@ -22,7 +22,7 @@ use phoecord_plugin_runtime::{Chain, Outcome};
 use std::sync::atomic::AtomicU64;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, SystemTime};
-use tokio::sync::watch;
+use tokio::sync::{broadcast, watch};
 
 #[derive(Default)]
 pub struct Stats {
@@ -68,6 +68,9 @@ pub struct Proxy {
     pub upstream_tls: Arc<rustls::ClientConfig>,
     /// Bumped on every config reload.
     pub reloads: watch::Sender<u64>,
+    /// Server → client payloads made locally (`Host::emit_dispatch` from a REST event); every
+    /// gateway connection sends what it receives to its client.
+    pub locals: broadcast::Sender<Val>,
     /// Decode (and re-encode) the gateway even when no plugin needs it (self-test).
     pub force_decode: bool,
     pub stats: Stats,
@@ -96,7 +99,8 @@ impl Proxy {
     pub fn new(paths: Paths, cfg: Config, chain: Chain, force_decode: bool) -> Result<Arc<Proxy>> {
         let ca = Arc::new(Authority::load_or_create(&paths.data)?);
         let server_tls = ca.server_config();
-        let shared = Shared::new(paths.data.join("plugins"));
+        let mut shared = Shared::new(paths.data.join("plugins"));
+        shared.config_path = paths.config.clone();
         let proxy = Arc::new(Proxy {
             paths,
             config: RwLock::new(Arc::new(Config::default())),
@@ -106,6 +110,7 @@ impl Proxy {
             server_tls,
             upstream_tls: upstream_tls(None),
             reloads: watch::channel(0).0,
+            locals: broadcast::channel(64).0,
             force_decode,
             stats: Stats::default(),
         });
@@ -174,10 +179,11 @@ impl Proxy {
             .unwrap()
             .record_request(method, route, body.as_ref());
         let mut host = ProxyHost::new(&self.shared, &cfg);
-        match self
+        let outcome = self
             .chain
-            .rest_request(&mut host, method, route, body.as_mut())
-        {
+            .rest_request(&mut host, method, route, body.as_mut());
+        self.publish(host.locals);
+        match outcome {
             Outcome::Untouched => RequestOutcome::Forward { changed: false },
             Outcome::Changed => RequestOutcome::Forward { changed: true },
             Outcome::Replied { by, status, body } => {
@@ -194,11 +200,22 @@ impl Proxy {
         }
     }
 
-    pub fn on_response(&self, method: &str, route: &str, status: u16, body: &Val) {
+    /// A REST answer: plugins may rewrite `body`; returns whether they did.
+    pub fn on_response(&self, method: &str, route: &str, status: u16, body: &mut Val) -> bool {
         let cfg = self.cfg();
         let mut host = ProxyHost::new(&self.shared, &cfg);
-        self.chain
+        let outcome = self
+            .chain
             .rest_response(&mut host, method, route, status, body);
+        self.publish(host.locals);
+        outcome == Outcome::Changed
+    }
+
+    /// Hand local server → client payloads to the gateway connections (none open: dropped).
+    fn publish(&self, locals: Vec<Val>) {
+        for v in locals {
+            let _ = self.locals.send(v);
+        }
     }
 
     /// A server → client payload: learn from it, then let plugins change it.
@@ -231,6 +248,7 @@ impl Proxy {
             Outcome::Changed => (true, false),
             Outcome::Dropped { .. } | Outcome::Replied { .. } => (false, true),
         };
+        extra.append(&mut host.locals);
         DispatchResult {
             payload,
             extra,
@@ -252,6 +270,7 @@ impl Proxy {
         };
         let mut host = ProxyHost::new(&self.shared, &cfg);
         let outcome = self.chain.send(&mut host, op, payload);
+        self.publish(std::mem::take(&mut host.locals));
         SendResult {
             changed: outcome == Outcome::Changed,
             drop: matches!(outcome, Outcome::Dropped { .. } | Outcome::Replied { .. }),

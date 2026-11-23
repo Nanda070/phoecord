@@ -50,6 +50,30 @@ fn strip_hop_by_hop(h: &mut HeaderMap) {
     }
 }
 
+/// The `payload_json` part of a `multipart/form-data` body: how the client sends slash command
+/// interactions. `None` when the content type or the part is missing, or the part is not JSON.
+pub fn multipart_payload_json(content_type: &str, body: &[u8]) -> Option<Val> {
+    let ct = content_type.trim();
+    if !ct.to_ascii_lowercase().starts_with("multipart/form-data") {
+        return None;
+    }
+    let boundary = ct.split(';').skip(1).find_map(|p| {
+        let (k, v) = p.trim().split_once('=')?;
+        k.eq_ignore_ascii_case("boundary")
+            .then(|| v.trim_matches('"').to_string())
+    })?;
+    let delim = format!("--{boundary}");
+    let text = String::from_utf8_lossy(body);
+    text.split(delim.as_str()).find_map(|part| {
+        let (head, data) = part.split_once("\r\n\r\n")?;
+        if !head.contains("name=\"payload_json\"") {
+            return None;
+        }
+        let json = data.strip_suffix("\r\n").unwrap_or(data);
+        serde_json::from_str(json).ok().map(Val::from_json)
+    })
+}
+
 fn is_json(h: &HeaderMap) -> bool {
     h.get(header::CONTENT_TYPE)
         .and_then(|v| v.to_str().ok())
@@ -149,10 +173,25 @@ async fn forward(
     let mut kept: Option<Bytes> = None;
     let mut stream = Some(body);
     let mut json = None;
-    if app.wants_request(&method, &route) && is_json(&parts.headers) {
-        let b = stream.take().unwrap().collect().await?.to_bytes();
-        json = serde_json::from_slice(&b).ok().map(Val::from_json);
-        kept = Some(b);
+    let mut multipart = false;
+    if app.wants_request(&method, &route) {
+        let ct = parts
+            .headers
+            .get(header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("")
+            .to_string();
+        if is_json(&parts.headers) {
+            let b = stream.take().unwrap().collect().await?.to_bytes();
+            json = serde_json::from_slice(&b).ok().map(Val::from_json);
+            kept = Some(b);
+        } else if method == "POST" && route == "/interactions" && ct.starts_with("multipart/") {
+            // Slash command interactions: plugins read `payload_json`; the body is never edited.
+            let b = stream.take().unwrap().collect().await?.to_bytes();
+            json = multipart_payload_json(&ct, &b);
+            multipart = true;
+            kept = Some(b);
+        }
     }
 
     let changed = match app.on_request(&method, &route, &mut json) {
@@ -160,7 +199,7 @@ async fn forward(
         RequestOutcome::Forward { changed } => changed,
     };
 
-    let out: Body = match (changed, json, kept, stream) {
+    let out: Body = match (changed && !multipart, json, kept, stream) {
         (true, Some(v), _, _) => {
             let b = serde_json::to_vec(&v.to_json())?;
             parts
@@ -205,8 +244,12 @@ async fn forward(
         } else {
             raw
         };
+        let mut plain = plain;
         if let Ok(j) = serde_json::from_slice(&plain) {
-            app.on_response(&method, &route, status, &Val::from_json(j));
+            let mut v = Val::from_json(j);
+            if app.on_response(&method, &route, status, &mut v) {
+                plain = Bytes::from(serde_json::to_vec(&v.to_json())?);
+            }
         }
         rp.headers.remove(header::CONTENT_ENCODING);
         rp.headers
@@ -214,4 +257,26 @@ async fn forward(
         return Ok(Response::from_parts(rp, full(plain)));
     }
     Ok(Response::from_parts(rp, incoming(rb)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reads_payload_json_from_multipart() {
+        let body = "--xyz\r\nContent-Disposition: form-data; name=\"payload_json\"\r\n\r\n{\"type\":2,\"nonce\":\"1\"}\r\n--xyz--\r\n";
+        let v = multipart_payload_json("multipart/form-data; boundary=xyz", body.as_bytes())
+            .expect("payload_json");
+        assert_eq!(v.str_at(&["nonce"]), Some("1"));
+        assert!(multipart_payload_json("application/json", body.as_bytes()).is_none());
+        assert!(
+            multipart_payload_json("multipart/form-data; boundary=zzz", body.as_bytes()).is_none()
+        );
+        let other =
+            "--xyz\r\nContent-Disposition: form-data; name=\"file\"\r\n\r\nabc\r\n--xyz--\r\n";
+        assert!(
+            multipart_payload_json("multipart/form-data; boundary=xyz", other.as_bytes()).is_none()
+        );
+    }
 }

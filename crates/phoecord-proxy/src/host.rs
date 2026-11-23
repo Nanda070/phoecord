@@ -112,6 +112,9 @@ pub struct Shared {
     pub account: Mutex<Account>,
     kv: Mutex<KvStore>,
     plugins_dir: PathBuf,
+    /// `config.toml`, for `Host::set_plugin_enabled` (empty in tests that never toggle).
+    pub config_path: PathBuf,
+    config_lock: Mutex<()>,
     notify_limit: Mutex<RateLimiter>,
     rest_limit: Mutex<RateLimiter>,
     notifier: Notifier,
@@ -127,6 +130,8 @@ impl Shared {
             account: Mutex::new(Account::default()),
             kv: Mutex::new(KvStore::new(plugins_dir.clone())),
             plugins_dir,
+            config_path: PathBuf::new(),
+            config_lock: Mutex::new(()),
             // 5 notifications a minute per plugin.
             notify_limit: Mutex::new(RateLimiter::new(5, Duration::from_secs(60))),
             // 1 Discord API call a second per plugin.
@@ -143,6 +148,8 @@ pub struct ProxyHost<'a> {
     plugin: String,
     /// Client → server payloads queued by plugins; the gateway sends them after the current frame.
     pub sends: Vec<(i64, Val)>,
+    /// Server → client payloads queued by plugins with `Host::emit_dispatch`.
+    pub locals: Vec<Val>,
 }
 
 impl<'a> ProxyHost<'a> {
@@ -152,6 +159,7 @@ impl<'a> ProxyHost<'a> {
             config,
             plugin: String::new(),
             sends: Vec::new(),
+            locals: Vec::new(),
         }
     }
 }
@@ -207,6 +215,25 @@ impl Host for ProxyHost<'_> {
 
     fn emit_send(&mut self, op: i64, payload: Val) {
         self.sends.push((op, payload));
+    }
+
+    fn emit_dispatch(&mut self, payload: Val) {
+        self.locals.push(payload);
+    }
+
+    fn plugin_enabled(&self, id: &str) -> Option<bool> {
+        Some(self.config.is_enabled(id))
+    }
+
+    fn set_plugin_enabled(&mut self, id: &str, on: bool) -> Result<(), String> {
+        let path = &self.shared.config_path;
+        if path.as_os_str().is_empty() {
+            return Err("no config file".into());
+        }
+        let _guard = self.shared.config_lock.lock().unwrap();
+        let mut cfg = Config::load(path).map_err(|e| format!("{e:#}"))?;
+        cfg.set_enabled(id, on).map_err(|e| format!("{e:#}"))?;
+        cfg.save(path).map_err(|e| format!("{e:#}"))
     }
 
     fn guild_emojis(&self, guild_id: u64) -> Vec<u64> {
@@ -315,6 +342,28 @@ mod tests {
         );
         assert!(h.append_data("../x", "l").is_err());
         assert!(h.append_data(r"a\b", "l").is_err());
+    }
+
+    #[test]
+    fn plugins_can_be_switched_through_the_host() {
+        let dir = temp("toggle");
+        let cfg_path = dir.join("config.toml");
+        Config::default().save(&cfg_path).unwrap();
+        let mut shared = Shared::new(dir.clone());
+        shared.config_path = cfg_path.clone();
+        let cfg = Config::default();
+        let mut h = ProxyHost::new(&shared, &cfg);
+        assert_eq!(h.plugin_enabled("no_track"), Some(true));
+        assert_eq!(h.plugin_enabled("message_logger"), Some(false));
+        h.set_plugin_enabled("message_logger", true).unwrap();
+        assert!(
+            Config::load(&cfg_path)
+                .unwrap()
+                .is_enabled("message_logger")
+        );
+        assert!(h.set_plugin_enabled("../x", true).is_err());
+        h.emit_dispatch(Val::map());
+        assert_eq!(h.locals.len(), 1);
     }
 
     #[test]

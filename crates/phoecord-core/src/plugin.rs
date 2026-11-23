@@ -51,12 +51,13 @@ pub enum Event<'a> {
         route: &'a str,
         body: Option<&'a mut Val>,
     },
-    /// A REST answer from Discord (read-only in API v1).
+    /// A REST answer from Discord. A plugin may rewrite `body` in place and return
+    /// [`Verdict::Changed`]; the proxy then sends the rewritten JSON to the client.
     RestResponse {
         method: &'a str,
         route: &'a str,
         status: u16,
-        body: &'a Val,
+        body: &'a mut Val,
     },
     /// A server → client gateway dispatch (`op 0`). `extra` holds payloads to emit after this one.
     Dispatch {
@@ -128,6 +129,22 @@ pub trait Host {
     ) -> Result<HostResponse, String> {
         let _ = (method, route, body);
         Err("Host::rest is not available in this host".into())
+    }
+    /// Queue a server → client gateway payload (a whole frame such as `{"op":0,"t":"MESSAGE_CREATE",
+    /// "d":{…}}`) that only this client sees, e.g. a local answer to a slash command. Sent right
+    /// after the frame being handled; from a REST event it goes to the connected gateway at once.
+    fn emit_dispatch(&mut self, payload: Val) {
+        let _ = payload;
+    }
+    /// Whether the plugin with this id is switched on in the config (`None` for unknown ids).
+    fn plugin_enabled(&self, id: &str) -> Option<bool> {
+        let _ = id;
+        None
+    }
+    /// Switch a plugin on or off in the config file; the proxy applies it within seconds.
+    fn set_plugin_enabled(&mut self, id: &str, on: bool) -> Result<(), String> {
+        let _ = (id, on);
+        Err("Host::set_plugin_enabled is not available in this host".into())
     }
     /// Append one line to `data/plugins/<id>/<file>` (JSON lines logs). `file` is a bare file name.
     fn append_data(&mut self, file: &str, line: &str) -> Result<(), String> {

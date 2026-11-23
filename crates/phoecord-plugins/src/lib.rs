@@ -2,11 +2,12 @@
 //!
 //! Porting the v0 plugins (docs/ROADMAP.md, milestone 1.2): `no_track`, `silent_typing`,
 //! `message_logger`, `fake_nitro` (emoji), `relationship_notifier` and `game_activity_toggle` are
-//! done; `unindent` follows. Once the WASM runtime is stable, each one moves to its own WASM package and
-//! this crate shrinks to the few plugins that must stay native.
+//! done; `unindent` follows. Once the WASM runtime is stable, each one moves to its own WASM
+//! package and this crate shrinks to the few plugins that must stay native.
 
 use phoecord_core::Plugin;
 
+pub mod commands;
 pub mod fake_nitro;
 pub mod game_activity_toggle;
 pub mod message_logger;
@@ -16,14 +17,24 @@ pub mod silent_typing;
 
 /// Every built-in plugin, in default run order.
 pub fn builtin() -> Vec<Box<dyn Plugin>> {
-    vec![
+    let mut plugins: Vec<Box<dyn Plugin>> = vec![
         Box::new(no_track::NoTrack::new()),
         Box::new(silent_typing::SilentTyping::new()),
         Box::new(game_activity_toggle::GameActivityToggle::new()),
         Box::new(relationship_notifier::RelationshipNotifier::new()),
         Box::new(fake_nitro::FakeNitro::new()),
         Box::new(message_logger::MessageLogger::new()),
-    ]
+    ];
+    // `/phoecord plugins` lists everything above and the commands plugin itself. Register more
+    // `/phoecord` subcommands here with `Commands::with`.
+    let commands = commands::Commands::empty();
+    let mut infos: Vec<_> = plugins
+        .iter()
+        .map(|p| commands::PluginInfo::of(p.as_ref()))
+        .collect();
+    infos.push(commands::PluginInfo::of(&commands));
+    plugins.push(Box::new(commands::Commands::new(infos)));
+    plugins
 }
 
 #[cfg(test)]
