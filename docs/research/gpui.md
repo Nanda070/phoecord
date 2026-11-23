@@ -1,4 +1,4 @@
-Checked against code: Zed `f126950f9d3b62666f97437ae5d4ccac2272c4db` (2026-11-22), reference build in `research/gpui-reference` at PhoeCord `5fdf79c`, 2026-11-23.
+Checked against code: Zed `f126950f9d3b62666f97437ae5d4ccac2272c4db` (2026-11-22), reference build in `research/gpui-reference` at PhoeCord `79163b7`, 2026-11-23.
 
 # GPUI research (Phase 1, stage 1.6)
 
