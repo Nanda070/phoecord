@@ -20,4 +20,6 @@ pub mod signatures;
 pub mod version;
 
 #[cfg(windows)]
+pub mod hook;
+#[cfg(windows)]
 pub mod proxy_dll;
