@@ -103,6 +103,7 @@ plugin-desc-no_blocked_messages = Полностью скрывает сообщ
 plugin-desc-no_reply_mention = По умолчанию отключает уведомление автору при ответе
 plugin-desc-text_replace = Заменяет текст в отправляемых сообщениях по вашим правилам
 plugin-desc-send_timestamps = Превращает `12:34` в сообщениях в метку времени Discord
+plugin-desc-anonymise_file_names = Заменяет имена загружаемых файлов на случайные, расширение сохраняется
 
 # CLI: log
 cli-log-empty = пока ничего не записано ({ $path })

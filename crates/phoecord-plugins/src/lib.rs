@@ -7,6 +7,7 @@
 
 use phoecord_core::Plugin;
 
+pub mod anonymise_file_names;
 pub mod clear_urls;
 pub mod commands;
 pub mod fake_nitro;
@@ -39,6 +40,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(no_reply_mention::NoReplyMention::new()),
         Box::new(text_replace::TextReplace::new()),
         Box::new(send_timestamps::SendTimestamps::new()),
+        Box::new(anonymise_file_names::AnonymiseFileNames::new()),
     ];
     // `/phoecord plugins` lists everything above and the commands plugin itself. Register more
     // `/phoecord` subcommands here with `Commands::with`.
