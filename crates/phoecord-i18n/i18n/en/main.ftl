@@ -146,3 +146,7 @@ cli-arg-accept-terms = Skip the terms prompt: you have read TERMS.md and accept 
 # Bug fixes 1.4.8
 cli-uninstall-stopped = stopped  PhoeCord proxy (process { $pid })
 cli-uninstall-stop-failed = could not stop a running PhoeCord proxy: { $why }
+cli-arg-channel = Which Discord to start: stable, ptb or canary (needed when more than one is installed)
+cli-err-channel-not-installed = Discord { $channel } is not installed
+cli-err-several-clients = several Discord clients are installed, so none is picked for you. Pass --channel:
+    { $list }

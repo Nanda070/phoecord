@@ -34,10 +34,36 @@ struct Cli {
     cmd: Option<Cmd>,
 }
 
+/// The Discord channels `--channel` accepts.
+#[derive(Clone, Copy, clap::ValueEnum)]
+enum ChannelArg {
+    Stable,
+    Ptb,
+    Canary,
+}
+
+impl From<ChannelArg> for phoecord_installer::Channel {
+    fn from(c: ChannelArg) -> Self {
+        match c {
+            ChannelArg::Stable => Self::Stable,
+            ChannelArg::Ptb => Self::Ptb,
+            ChannelArg::Canary => Self::Canary,
+        }
+    }
+}
+
+/// What `launch` was asked to start: an explicit command, or a channel (none: the only client).
+struct Launch {
+    command: Vec<String>,
+    channel: Option<phoecord_installer::Channel>,
+}
+
 #[derive(Subcommand)]
 enum Cmd {
     Run,
     Launch {
+        #[arg(long, value_enum, conflicts_with = "command")]
+        channel: Option<ChannelArg>,
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         command: Vec<String>,
     },
@@ -109,6 +135,33 @@ fn main() {
 
 /// The error chain as one line; a few known errors get their localized text.
 fn describe_error(e: &anyhow::Error, l10n: &Localizer) -> String {
+    if let Some(c) = e.downcast_ref::<phoecord_installer::launch::ChooseError>() {
+        use phoecord_installer::launch::ChooseError;
+        return match c {
+            ChooseError::NotInstalled(ch) => tf(
+                l10n,
+                "cli-err-channel-not-installed",
+                &[("channel", ch.name())],
+            ),
+            ChooseError::Several(list) => {
+                let list: Vec<String> = list
+                    .iter()
+                    .map(|(ch, root)| format!("  --channel {:<6} {}", ch.name(), root.display()))
+                    .collect();
+                tf(
+                    l10n,
+                    "cli-err-several-clients",
+                    &[(
+                        "list",
+                        &list.join(
+                            "
+",
+                        ),
+                    )],
+                )
+            }
+        };
+    }
     if e.downcast_ref::<phoecord_installer::launch::NoDiscord>()
         .is_some()
     {
@@ -127,7 +180,13 @@ fn describe_error(e: &anyhow::Error, l10n: &Localizer) -> String {
 fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Result<()> {
     match cli.cmd.unwrap_or(Cmd::Run) {
         Cmd::Run => runtime()?.block_on(run(paths, None, l10n)),
-        Cmd::Launch { command } => runtime()?.block_on(run(paths, Some(command), l10n)),
+        Cmd::Launch { command, channel } => {
+            let launch = Launch {
+                command,
+                channel: channel.map(Into::into),
+            };
+            runtime()?.block_on(run(paths, Some(launch), l10n))
+        }
         Cmd::Setup { accept_terms } => setup(&paths, l10n, &resolved.lang, accept_terms),
         Cmd::Uninstall => uninstall(l10n),
         Cmd::Trust => {
@@ -185,9 +244,19 @@ fn runtime() -> Result<tokio::runtime::Runtime> {
     Ok(tokio::runtime::Runtime::new()?)
 }
 
-async fn run(paths: Paths, launch: Option<Vec<String>>, l10n: &Localizer) -> Result<()> {
+async fn run(paths: Paths, launch: Option<Launch>, l10n: &Localizer) -> Result<()> {
     let cfg = Config::load_or_init(&paths.config)?;
     let listen = cfg.listen.clone();
+    // Pick the client before anything starts: a wrong or missing choice must change nothing.
+    let client_cmd = match &launch {
+        Some(l) => Some(phoecord_installer::launch::command(
+            &l.command,
+            l.channel,
+            &phoecord_installer::discover::discover(),
+            &listen,
+        )?),
+        None => None,
+    };
     let proxy = Proxy::new(paths, cfg, chain(), false)?;
     // WASM plugin packages in `<data>/plugins/<id>/`: loaded now, and again on every folder scan.
     match WasmRuntime::new() {
@@ -211,8 +280,7 @@ async fn run(paths: Paths, launch: Option<Vec<String>>, l10n: &Localizer) -> Res
     );
     let server = tokio::spawn(server::serve(proxy.clone(), listener));
 
-    if let Some(args) = launch {
-        let cmd = phoecord_installer::launch::command(&args, &listen)?;
+    if let Some(cmd) = client_cmd {
         tracing::info!(
             "{}",
             tf(

@@ -151,3 +151,7 @@ cli-arg-accept-terms = Не спрашивать про условия: вы п�
 # Исправления 1.4.8
 cli-uninstall-stopped = остановлен прокси PhoeCord (процесс { $pid })
 cli-uninstall-stop-failed = не удалось остановить работающий прокси PhoeCord: { $why }
+cli-arg-channel = Какой Discord запустить: stable, ptb или canary (нужно, если установлено несколько)
+cli-err-channel-not-installed = Discord { $channel } не установлен
+cli-err-several-clients = установлено несколько клиентов Discord, поэтому ни один не выбран за вас. Укажите --channel:
+    { $list }
