@@ -142,6 +142,22 @@ Tasks are grouped by stage. Each has files, steps and "done when". Statuses and 
 
 **Done when:** p99 ≤ 1 ms per frame, or a ledger line explaining the gap and the plan.
 
+### 1.1.11. Upstream proxy (anyone)
+
+**Files:** `crates/phoecord-proxy/src/server.rs`, `crates/phoecord-proxy/src/config.rs`
+
+- `upstream = "socks5://127.0.0.1:1080"` or `"http://host:port"` in `config.toml`; every outgoing connection of the proxy (intercepted and tunnelled) goes through it; unset = direct, as today.
+
+**Done when:** with an upstream set, `phoecord selftest` passes through it (a test with a local fake SOCKS5 server), and a broken upstream gives a clear error.
+
+### 1.1.12. Transport boundary (Nanda)
+
+**Files:** `crates/phoecord-proxy/src/lib.rs`, a new trait in `crates/phoecord-plugin-runtime` or `phoecord-core`
+
+- One `Transport`-facing entry (on REST request, on REST response, on dispatch, on send) that owns `Chain` + host state; the proxy calls it, and a future in-process backend in the loader will call the same entry.
+
+**Done when:** the proxy goes through the boundary with no behaviour change (all tests green) and ARCHITECTURE "Two transports" names the entry points.
+
 ## Stage 1.2. Built-in plugins
 
 Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.rs`; tests for the matching rule and a chain test; a config section with defaults; its row in `docs/PLUGINS.md`; user-facing strings ready for 1.7.

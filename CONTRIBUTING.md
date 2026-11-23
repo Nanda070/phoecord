@@ -36,7 +36,7 @@ Branch prefixes: `feat/`, `fix/`, `refactor/`, `chore/`, `docs/` (example: `feat
    git push -u origin feat/my-feature
    ```
 
-   On GitHub: **Compare & pull request** → fill in the template → add the owners under **Reviewers**.
+   On GitHub: **Compare & pull request** → fill in the template. Every PR is assigned to **Nanda070** and requests Nanda070's review automatically (`.github/CODEOWNERS`, `.github/workflows/assign.yml`); nothing is merged without it.
 
 5. **Review and merge are done by the owners.** They read **Files changed**, leave comments and **Approve**, then **Squash and merge**; the branch is deleted.
 

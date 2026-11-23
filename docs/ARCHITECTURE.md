@@ -81,6 +81,22 @@ The Electron client honours `--proxy-server` and trusts the system store. How Ph
 
 The choice follows the research in ROADMAP 2.1.
 
+### Two transports: proxy today, in-process on Phoenix
+
+The plugin chain does not know where an event comes from, so the same `Chain`, native plugins and WASM sandbox run behind two transports:
+
+| | Proxy (today) | In-process (target on Phoenix) |
+|:---|:---|:---|
+| Where | `phoecord run`: a local proxy on `127.0.0.1` with a per-install CA | Inside `Discord.exe`: the plugin runtime is linked into the loader (`version.dll`) and hooks the client's own network read/write functions next to the UI hooks |
+| Clients | Today's Electron client on Windows, macOS, Linux; Phoenix as a fallback | Phoenix on Windows first |
+| Needs | A trusted local CA, a port, a background process | No CA, no port, no extra process; VPNs and zapret see only `Discord.exe` |
+| Survives client updates | Yes: only Discord's wire protocol matters | No: network hooks need fresh signatures after an update, like UI hooks |
+| Install | CA trust + autostart | Put `version.dll` and the config next to the client; uninstall deletes them |
+
+Why not in-process on today's client: Electron's network stack is Chromium's (BoringSSL) and the Gateway lives in the sandboxed renderer process, so hooks there are fragile and plugins could not read their config or data. Why not proxy-only on Phoenix: the loader is needed there anyway for the UI, so moving the network hooks into the same DLL removes the CA, the port and the extra process. Once 2.1 shows what Phoenix's network stack is, in-process becomes Phoenix's main transport and the proxy stays as the fallback when signatures for a new build are missing.
+
+For VPN and zapret users on the proxy transport, the proxy can send its upstream connections through an upstream proxy (SOCKS5 or HTTP), so Discord traffic takes the same tunnel it would without PhoeCord (task 1.1.11).
+
 ---
 
 ## Plugin API v1

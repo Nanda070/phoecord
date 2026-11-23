@@ -37,6 +37,8 @@ What each stage covers. Task status: the table in [`docs/phase-1/README.md`](pha
 - `selftest`: REST + Gateway (JSON/zlib, ETF/zstd) against the real Discord without logging in
 - Recorded Gateway payloads without personal data for tests (`tests/fixtures/`)
 - Benchmark: Gateway frame latency through the chain ≤ 1 ms p99 on a 5 MB READY
+- Upstream proxy (SOCKS5 / HTTP) for the proxy's outgoing connections, so VPN and zapret setups keep working
+- A transport boundary: the proxy is one backend of the plugin chain, so an in-process backend can be added without touching plugins
 
 ### 1.2 Built-in plugins on the Plugin API · `0.3`
 
@@ -109,11 +111,15 @@ What each stage covers. Task status: the table in [`docs/phase-1/README.md`](pha
 
 - Does Phoenix honour `HTTPS_PROXY` / the system proxy; does it trust the system store; does it pin
 - Gateway encoding and compression in Phoenix (ETF? zstd?), new events and fields
-- Choose how to reach the proxy (ARCHITECTURE.md, "Phoenix and the proxy") and implement it
+- Choose how to reach the proxy (ARCHITECTURE.md, "Phoenix and the proxy") and implement it as the fallback
+- Find Phoenix's network stack (TLS library, where Gateway frames and REST bodies are plain) for the in-process transport
 - Import table: `version.dll` or `winhttp.dll` for sideloading; install path and update scheme
 - `phoecord launch` and the installer find Phoenix
 
 ### 2.2 Reverse engineering and AOB signatures · `0.8`
+
+- In-process transport on Phoenix: the plugin runtime linked into `version.dll`, hooks on the client's network read/write next to the UI hooks; no CA, no port, no extra process; the proxy stays as the fallback (ARCHITECTURE.md, "Two transports")
+- The installer for Phoenix: put `version.dll` and the config in place, remove them on uninstall
 
 - A Ghidra (and IDA) project on Phoenix Canary: GPUI symbols imported from the reference build (1.6)
 - Signatures: theme palette, settings tab list, message render, HTTP client creation (if 2.1 needs it)

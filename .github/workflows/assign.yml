@@ -1,0 +1,29 @@
+name: assign
+# Every pull request is assigned to Nanda070, who reviews it (CODEOWNERS requests the review).
+# pull_request_target runs with the base repository's token so it also works for PRs from forks;
+# it never checks out or runs the PR's code.
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  assign:
+    name: assign Nanda070
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign and request review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          gh pr edit "$PR" --repo "$REPO" --add-assignee Nanda070
+          # GitHub cannot request a review from the PR's own author.
+          if [ "$AUTHOR" != "Nanda070" ]; then
+            gh pr edit "$PR" --repo "$REPO" --add-reviewer Nanda070 || true
+          fi

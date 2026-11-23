@@ -63,6 +63,8 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.1.8** 🟡 | `selftest` against the real Discord | Nanda | ✅ |
 | **1.1.9** 🟡 | Gateway fixtures without personal data | anyone | ⏳ |
 | **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ⏳ |
+| **1.1.11** 🟡 | Upstream proxy (SOCKS5 / HTTP) for outgoing connections, for VPN and zapret users | anyone | ⏳ |
+| **1.1.12** 🟡 | Transport boundary: the proxy as one backend of the plugin chain, ready for an in-process backend | Nanda | ⏳ |
 | **1.2.1** 🔴 | `silent_typing` | matvee | ✅ |
 | **1.2.2** 🟡 | `unindent` | matvee | ⏳ |
 | **1.2.3** 🟡 | `game_activity_toggle` | Nanda | ✅ 23.11, PR #21 |
