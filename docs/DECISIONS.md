@@ -6,7 +6,7 @@ in its plan's `ai/ledger.md` first, then rerun the script.
 
 ## Phase 1. Before the Phoenix Canary public beta
 
-Source: `docs/phase-1/ai/ledger.md`, decisions: 16.
+Source: `docs/phase-1/ai/ledger.md`, decisions: 19.
 
 - Ruling: the repository is public on Nanda070's account (owner Nanda, 2026-11-23, "Public" (translated)) — why: open-source MIT project — risk: everything pushed is published at once; secrets rules in AGENTS.md and SECRETS.md
 - Ruling: the copyright holder is Cheterin Group, next to the retained upstream MIT copyright line (owner Nanda, 2026-11-23, "Copyright in LICENSE" (translated)) — why: project ownership — risk: none
@@ -24,3 +24,6 @@ Source: `docs/phase-1/ai/ledger.md`, decisions: 16.
 - Ruling: PhoeCord is licensed GPL-3.0-or-later (matching Vencord, so its code can be adapted with attribution); plugin SDK, wit/ and templates stay MIT; the v0 code's MIT notice moves to LICENSES/MIT-v0.txt (owner Nanda, 2026-11-23, "make ours GPL 3.0 too" (translated); "or-later" and the SDK exception chosen by Claude) — why: Vencord parity without re-implementing every plugin blind; plugin authors keep license freedom — risk: contributors must accept GPL; downstream forks must stay GPL
 - Ruling: the in-client UI (settings tab, UI plugins, themes) is built only for Phoenix; today's Electron client stays network-only, controlled from the CLI and installer (owner Nanda, 2026-11-23, "UI only for Phoenix" (translated)) — why: Phoenix needs its own GPUI UI anyway, and Vencord already covers Electron — risk: users of today's client get no in-client settings until Phoenix
 - Ruling: docs are trimmed: PROJECT_MAP, SUPPORT, incidents/, reports/, release/incident/plan templates, phase-1/CLAUDE.md and TASKS.md are deleted, SECRETS merges into GOVERNANCE, and task status lives only in the phase-1 README table (owner Nanda, 2026-11-23, "yes, delete", "yes, merge" (translated)) — why: duplicates had to be updated by hand on every merge and were already stale — risk: none; files can be recreated when needed
+- Ruling: the installer GUI (1.4.3) gets a Plugins tab: install from a file or a link with the plugin's rights shown before install, on/off switches, remove; the Phoenix settings tab (2.3) does the same (owner Nanda, 2026-11-23, "yes, add it" (translated)) — why: userplugins must be easier to add than in Vencord, with no terminal and no rebuild — risk: installing from a link fetches third-party code; mitigated by HTTPS only, the rights dialog and the WASM sandbox
+- Ruling: the goal includes porting Vencord's visual plugins and panels, not only network ones; v1.0 is a release cut, not a scope limit (owner Nanda, 2026-11-23, "our goal is to port visual plugins and panels too" (translated)) — why: full Vencord parity — risk: every UI plugin needs Phoenix hooks that can break with client updates
+- Ruling: Vencord source is reused while porting by default: logic, routes, data tables, setting names, with attribution (owner Nanda, 2026-11-23, "take it as you go" (translated)) — why: GPL-compatible and faster than reimplementing blind — risk: none beyond keeping attribution headers

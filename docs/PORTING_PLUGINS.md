@@ -12,7 +12,9 @@ Related: [`PLUGINS.md`](PLUGINS.md) (which plugin goes where), [`ARCHITECTURE.md
 
 ## 0. Licenses
 
-PhoeCord is GPL-3.0-or-later, like Vencord, so Vencord code (and GPL or MIT userplugins) can be reused as is: translate it, copy its regexes, tables and constants. Keep the original copyright line in a comment at the top of the file, which GPL and MIT require. The plugin SDK and templates are MIT, so third-party plugins may use any license.
+PhoeCord is GPL-3.0-or-later, like Vencord, so Vencord code (and GPL or MIT userplugins) can be reused as is: translate it, copy its regexes, tables and constants. Keep the original copyright line in a comment at the top of the file, which GPL and MIT require.
+
+**Start from Vencord's source by default.** Before writing a plugin, read its Vencord implementation (`src/plugins/<name>/` in the Vencord repository) and take what carries over: which routes and payload fields it changes, regexes, tables and constants (for example ClearURLs' parameter lists), and setting names and defaults, kept 1:1 so `phoecord import-vencord` maps them. React components, webpack patches and CSS do not carry over to GPUI; take their behaviour, not their code. The plugin SDK and templates are MIT, so third-party plugins may use any license.
 
 ---
 

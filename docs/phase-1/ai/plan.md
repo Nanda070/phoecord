@@ -328,8 +328,9 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 **Files:** `crates/phoecord-installer-gui/**`
 
 - `eframe` (egui) app with an embedded font that has Cyrillic glyphs; one window: client list, Install / Uninstall / Repair, status; English and Russian (needs 1.7.1).
+- **Plugins tab**, so userplugins are easier to add than in Vencord (no rebuild, no terminal): a list of built-in plugins and installed packages with an on/off switch each; "Install from file" (a `.zip` or folder with `plugin.toml` + `plugin.wasm`) and "Install from link" (HTTPS only); before installing, a dialog shows the plugin's name, version, author, `events` and `rights` in plain words and installs only after the user confirms; "Remove" deletes the package folder and its data after a confirm. Packages go into the data folder's `plugins/`, where the proxy picks them up without a restart (1.3.4).
 
-**Done when:** a non-developer installs and removes PhoeCord without a terminal.
+**Done when:** a non-developer installs and removes PhoeCord without a terminal, and installs, switches off and removes a WASM plugin from a file without a terminal.
 
 ### 1.4.4. Full rollback (Nanda)
 

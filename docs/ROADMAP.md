@@ -68,6 +68,7 @@ What each stage covers. Task status: the table in [`docs/phase-1/README.md`](pha
 - `phoecord-installer`: find Stable / PTB / Canary on Windows, macOS, Linux (Flatpak, Snap)
 - Install and remove the CA, autostart the proxy (service / LaunchAgent / systemd user unit)
 - GUI on egui: a client list and "Install", "Uninstall", "Repair" buttons
+- A "Plugins" tab in the GUI: install a plugin from a file or a link (rights shown before install), switch plugins on and off, remove them; no terminal and no rebuild
 - Full rollback: CA, DLL, autostart, folders, one button
 - Releases with `SHA256SUMS` on GitHub Releases (unsigned, like Vencord)
 
@@ -125,13 +126,13 @@ The in-client UI exists only on Phoenix. On today's Electron client PhoeCord sta
 
 - Theme engine: `theme.toml` → GPUI palette, live switching
 - 3 built-in themes + import of Vencord themes where they translate to a palette
-- A "PhoeCord" tab in the client's settings: enable plugins and edit their settings (English and Russian)
+- A "PhoeCord" tab in the client's settings: enable plugins, edit their settings, install and remove plugin packages with their rights shown first (English and Russian)
 - `MessageLogger` in the UI: deleted messages struck through, edit history on hover
 - Degradation verified: unknown build → network only, no crashes
 
 ### 2.4 Release v1.0 · `1.0`
 
-Scope: every 🌐 and 🌐 + 🎨 plugin of [`docs/PLUGINS.md`](PLUGINS.md) complete (network and on-screen parts), the theme engine, and the 30 most-used 🎨 plugins. The remaining 🎨 plugins follow in 1.x releases until full Vencord parity. The top 10, which must work first:
+The goal is full Vencord parity on Phoenix, visual plugins and panels included: every 🎨 plugin and every Vencord panel (settings, plugin list, plugin settings, modals) gets a Phoenix implementation. v1.0 is a release cut, not a scope limit: every 🌐 and 🌐 + 🎨 plugin of [`docs/PLUGINS.md`](PLUGINS.md) complete (network and on-screen parts), the theme engine, the PhoeCord settings panels, and the 30 most-used 🎨 plugins. The remaining 🎨 plugins follow in 1.x releases. The top 10, which must work first:
 
 | # | Plugin | Layer | Status |
 |---:|:---|:---|:---|

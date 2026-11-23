@@ -4,6 +4,8 @@ Checked against Vencord's plugin list: 23.11.2026 (vencord.dev/plugins, 173 entr
 
 **Goal: every Vencord plugin that makes sense on a native client, plus the owner's own userplugins.** This page maps each one to where it lives in PhoeCord. Names match Vencord's so settings import 1:1 (`phoecord import-vencord`); our ids are the `snake_case` form (`MessageLogger` → `message_logger`). Plugins are rebuilt on the PhoeCord Plugin API; Vencord code may be adapted with attribution, since both projects are GPL-3.0-or-later. How to port one: [`PORTING_PLUGINS.md`](PORTING_PLUGINS.md).
 
+Visual plugins and panels are in scope, not only network ones: every 🎨 plugin and every Vencord panel gets a Phoenix implementation (Phase 2 and 1.x). ⛔ is only for what does not exist on a native client (DevTools, CSS fixes, web-only features), and ♻️ for what PhoeCord replaces with its own version.
+
 **On by default:** `no_track` only, as in Vencord. Everything else is off until the user turns it on.
 
 | Layer | What it means | When | Count |

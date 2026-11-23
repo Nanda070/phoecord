@@ -92,7 +92,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ⏳ |
 | **1.4.1** 🔴 | Client discovery on 3 OSes | Nanda | ✅ 23.11, PR #23 (library; real machines not checked) |
 | **1.4.2** 🔴 | CA and proxy autostart | Nanda | 🔄 code in PR #23; manual "runs after reboot" check pending |
-| **1.4.3** 🟡 | Installer GUI | Nanda | ⏳ |
+| **1.4.3** 🟡 | Installer GUI, with a Plugins tab (install from file or link, rights shown first, on/off, remove) | Nanda | ⏳ |
 | **1.4.4** 🔴 | Full rollback | Nanda | 🔄 code in PR #23; manual check on 3 OSes pending |
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
 | **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ✅ 23.11, PR #10 |
