@@ -95,6 +95,7 @@ plugin-desc-clear_urls = Strip tracking parameters from links you send
 plugin-desc-commands = The /phoecord slash command: plugins, toggle
 plugin-desc-i_love_spam = Do not hide messages from 'likely spammers'
 plugin-desc-no_blocked_messages = Hide all blocked/ignored messages from chat completely
+plugin-desc-no_reply_mention = Disables reply pings by default
 
 # CLI: log
 cli-log-empty = nothing logged yet ({ $path })
