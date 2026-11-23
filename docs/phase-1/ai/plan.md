@@ -382,6 +382,22 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Done when:** all three OSes pass, or each failure has an issue.
 
+### 1.4.8. Fixes from the Windows check (Nanda)
+
+**Files:** `crates/phoecord-installer/src/{install,uninstall,launch,ca}.rs`, `crates/phoecord-cli/src/main.rs`
+
+Found on 23.11 while checking 1.4.6 on Windows (Discord Canary on D:, the owner's Stable with Vencord untouched):
+
+1. `uninstall` left `ca.pem` and `ca.key`: the CA had been created by `launch` before `setup`, and `setup` logs only what it creates. PhoeCord's own CA files belong to PhoeCord whoever made them: `uninstall` removes them (and `install.log`), keeps `config.toml`.
+2. `uninstall` did not stop a running proxy (it kept listening on 18463): stop PhoeCord's own proxy processes first.
+3. `launch` without arguments picks Stable, then Canary, then PTB, so it silently runs the main client through the proxy: add `--channel stable|ptb|canary`; with no flag and more than one client installed, list them and ask.
+4. `launch` fails with "address in use" when the proxy already runs from autostart: detect PhoeCord on the port and only start the client with the proxy flag.
+5. The autostarted proxy is useless on its own, because the client's own shortcut does not pass `--proxy-server`: `setup` adds a Start-menu shortcut "Discord (PhoeCord)" for the chosen channel that runs `phoecord launch --channel …`; `uninstall` removes it (logged).
+
+Also learnt: commands started from a packaged (MSIX) app such as the Claude desktop app write AppData and HKCU into the app's private cache, so manual checks must run from a normal terminal.
+
+**Done when:** each item has a test over the fake `System` and temp dirs, and a repeat of the Windows check passes all five.
+
 ### 1.4.5. Releases (Nanda)
 
 **Files:** `.github/workflows/release.yml`, `docs/GOVERNANCE.md`
