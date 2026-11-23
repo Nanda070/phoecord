@@ -1,6 +1,6 @@
 # PhoeCord roadmap
 
-The plan from rebuilding the v0 codebase to a v1.0 release on Project Phoenix. How it all fits together: [`ARCHITECTURE.md`](ARCHITECTURE.md). Tick a box in the same PR that does the work. Task-level detail for the current phase: [`docs/phase-1/`](docs/phase-1/README.md).
+The plan from rebuilding the v0 codebase to a v1.0 release on Project Phoenix. How it all fits together: [`ARCHITECTURE.md`](ARCHITECTURE.md). Tick a box in the same PR that does the work. Task-level detail for the current phase: [`docs/phase-1/`](phase-1/README.md).
 
 | Phase | When | Goal | Versions |
 |:---|:---|:---|:---|
@@ -14,7 +14,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ## Phase 0. Foundation ✅
 
-- [x] Audit of the v0 codebase and migration map: [`docs/phase-1/ai/spec.md`](docs/phase-1/ai/spec.md)
+- [x] Audit of the v0 codebase and migration map: [`docs/phase-1/ai/spec.md`](phase-1/ai/spec.md)
 - [x] Cargo workspace: `core`, `proxy`, `plugin-runtime`, `plugin-sdk`, `plugins`, `loader`, `installer`, `cli`
 - [x] Ported `val`, `etf`, routes, `codec`, `ca`, `trust`, keeping the copyright
 - [x] Plugin API v1 (`Manifest`, `Event`, `Verdict`, `Host`) and `Chain`
@@ -48,7 +48,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 - [ ] New: `clear_urls`, strip tracking parameters from outgoing messages
 - [ ] New: PhoeCord slash commands (`/phoecord plugins`, `/phoecord toggle`), a local reply to `POST /interactions`
 - [ ] `phoecord import-vencord` via the `vencord` field in manifests
-- [ ] Vencord parity, network parts: every 🌐 plugin and the data part of every 🌐 + 🎨 plugin in [`docs/PLUGINS.md`](docs/PLUGINS.md), including the owner's userplugins (tasks 1.2.10–1.2.19)
+- [ ] Vencord parity, network parts: every 🌐 plugin and the data part of every 🌐 + 🎨 plugin in [`docs/PLUGINS.md`](PLUGINS.md), including the owner's userplugins (tasks 1.2.10–1.2.19)
 
 ### 1.3 Dynamic plugin engine (WASM) · `0.4`
 
@@ -127,7 +127,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ### 2.4 Release v1.0 · `1.0`
 
-Scope: every 🌐 and 🌐 + 🎨 plugin of [`docs/PLUGINS.md`](docs/PLUGINS.md) complete (network and on-screen parts), the theme engine, and the 30 most-used 🎨 plugins. The remaining 🎨 plugins follow in 1.x releases until full Vencord parity. The top 10, which must work first:
+Scope: every 🌐 and 🌐 + 🎨 plugin of [`docs/PLUGINS.md`](PLUGINS.md) complete (network and on-screen parts), the theme engine, and the 30 most-used 🎨 plugins. The remaining 🎨 plugins follow in 1.x releases until full Vencord parity. The top 10, which must work first:
 
 | # | Plugin | Layer | Status |
 |---:|:---|:---|:---|

@@ -4,29 +4,15 @@ Checked against code: `6d1821c`, 23.11.2026. Whoever re-checks this guide agains
 
 A step-by-step guide to moving any plugin (a Vencord built-in, a Vencord userplugin, or your own idea) onto PhoeCord. Follow the steps in order; every step ends with something you can check.
 
-Related: [`PLUGINS.md`](PLUGINS.md) (which plugin goes where), [`ARCHITECTURE.md`](../ARCHITECTURE.md) "Plugin API v1", the templates [`_template/code/plugin.rs`](_template/code/plugin.rs) and [`_template/code/plugin.toml`](_template/code/plugin.toml).
+Related: [`PLUGINS.md`](PLUGINS.md) (which plugin goes where), [`ARCHITECTURE.md`](ARCHITECTURE.md) "Plugin API v1", the templates [`_template/code/plugin.rs`](_template/code/plugin.rs) and [`_template/code/plugin.toml`](_template/code/plugin.toml).
 
 > **Status.** Native plugins work today. Items marked *(1.1)* arrive with stage 1.1 (the proxy on the new API), *(1.3)* with the WASM runtime, *(2)* with Phase 2 UI hooks. Until then, write the plugin against the API that exists and leave a `// needs: …` note.
 
 ---
 
-## 0. Licenses: what you may reuse
+## 0. Licenses
 
-PhoeCord is **GPL-3.0-or-later**, the same as Vencord. So you may adapt Vencord code (its logic, regexes, constants, lists of tracking parameters, and so on) when porting, as long as you credit it:
-
-- Put this header at the top of a file that contains adapted Vencord code:
-
-  ```rust
-  // Adapted from Vencord, src/plugins/<plugin>/index.ts
-  // Copyright (c) Vendicated and contributors, GPL-3.0-or-later.
-  ```
-
-- Most Vencord code is TypeScript that patches React, so in practice you translate the *idea* into Rust events; copy only what carries over (patterns, tables, constants).
-- Userplugins: check their `LICENSE`. GPL-3.0 and MIT are fine (keep an MIT author's copyright line in the header); no license means all rights reserved, so re-implement from behaviour only.
-- Names of plugins and settings stay the same, so `phoecord import-vencord` can map them.
-- The plugin SDK (`crates/phoecord-plugin-sdk`, `wit/`) and the templates in `docs/_template/code/` are MIT, so third-party WASM plugins may use any license. A plugin that adapts Vencord code is GPL-3.0 itself.
-
-**Check:** every file with adapted code has the header, and its license is GPL-compatible.
+PhoeCord is GPL-3.0-or-later, like Vencord, so Vencord code (and GPL or MIT userplugins) can be reused as is: translate it, copy its regexes, tables and constants. Keep the original copyright line in a comment at the top of the file, which GPL and MIT require. The plugin SDK and templates are MIT, so third-party plugins may use any license.
 
 ---
 
@@ -204,4 +190,3 @@ Tests: `matches("POST", "/channels/1/typing")` is true; `GET` on the same route 
 - **Both encodings.** Never assume JSON: `Val` covers ETF too, and `Val::str_like` keeps a rewritten string in the same shape (atom vs binary).
 - **Your own actions.** Plugins that react to removals (RelationshipNotifier) must ignore what the user did themselves.
 - **Bulk actions.** Anything that sends many requests goes through `host.rest` and its rate limiter, and its description says it can get an account flagged.
-- **What we do not port:** anything that fakes engagement or rewards, gets around legally required checks (age verification), spams, or evades bans or moderation. See "Not included" in [`PLUGINS.md`](PLUGINS.md).

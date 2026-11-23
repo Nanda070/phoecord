@@ -3,7 +3,7 @@
 **Goal:** PhoeCord works end-to-end on today's Discord with ≥ 8 plugins, WASM plugins, English and Russian, a GUI installer and a proven loader, before Phoenix Canary ships.
 **Spec:** [`spec.md`](spec.md) · **Ledger:** [`ledger.md`](ledger.md) · **For people:** [`../README.md`](../README.md)
 
-Tasks are grouped by stage. Each has files, steps and "done when". Statuses and owners are in the "Tasks" table of [`README.md`](../README.md), which also feeds the root `TASKS.md`. Every task PR also does the living-docs steps from the root `AGENTS.md`; they are not repeated below.
+Tasks are grouped by stage. Each has files, steps and "done when". Statuses and owners are in the "Tasks" table of [`README.md`](../README.md), which also feeds the root `TASKS.md`. Every task PR also does the living-docs steps from `docs/AGENTS.md`; they are not repeated below.
 
 ## Areas
 

@@ -13,7 +13,6 @@ These rules apply to everyone who takes part in PhoeCord: in the repository, in 
 
 - Insults, harassment, threats, discrimination of any kind.
 - Publishing other people's personal data, tokens or chat logs without consent.
-- Plugins and PRs for spying on people, spam, or evading bans and moderation.
 - Deliberately damaging the code, releases or the project's infrastructure.
 
 ## If something goes wrong

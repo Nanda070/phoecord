@@ -1,12 +1,19 @@
 //! PhoeCord native loader (UI layer). Windows first.
 //!
 //! Built as a `cdylib` named like a system DLL the client loads from its own folder (`version.dll`
+<<<<<<< HEAD
 //! or `winhttp.dll`). Every export is forwarded to the system copy ([`proxy_dll`]); on a worker
 //! thread ([`entry`]) the loader identifies the client build ([`version`]), loads the signature
 //! tables ([`signatures`]), finds client functions by AOB signature ([`aob`]) and installs hooks
 //! ([`hook`]). Nothing here is needed for network plugins: if a signature misses after a Discord
 //! update, the loader turns the UI layer off and the proxy keeps working (ARCHITECTURE.md,
 //! "Degradation").
+=======
+//! or `winhttp.dll`). On load it forwards every real export to the system copy, then, on a worker
+//! thread, finds client functions by AOB signature ([`aob`]) and installs the theme and UI hooks.
+//! Nothing here is needed for network plugins: if a signature misses after a Discord update, the
+//! loader turns the UI layer off and the proxy keeps working (docs/ARCHITECTURE.md, "Degradation").
+>>>>>>> origin/main
 //!
 //! Everything that touches Win32 is `#[cfg(windows)]`; the parsing and resolution logic is
 //! platform-independent and tested on every OS.

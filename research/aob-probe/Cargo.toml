@@ -1,0 +1,11 @@
+# Throwaway research tool (stage 1.6.3). Not a member of the PhoeCord workspace.
+[package]
+name = "aob-probe"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+phoecord-loader = { path = "../../crates/phoecord-loader" }
+
+[workspace]
