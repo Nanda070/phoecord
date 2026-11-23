@@ -15,10 +15,13 @@
 //! signatures, detours. IPC and survival of client updates are 1.5.5 and 1.5.6.
 
 pub mod aob;
+pub mod log;
 pub mod pe;
 pub mod signatures;
 pub mod version;
 
+#[cfg(windows)]
+pub mod entry;
 #[cfg(windows)]
 pub mod hook;
 #[cfg(windows)]
