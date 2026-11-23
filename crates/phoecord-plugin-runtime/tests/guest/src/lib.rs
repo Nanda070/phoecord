@@ -31,6 +31,26 @@ fn touched() -> Tree {
     }
 }
 
+fn denied(e: String) -> Outcome {
+    outcome(Verdict::Reply(Reply {
+        status: 403,
+        body: Some(Tree {
+            nodes: vec![Node::String(e)],
+        }),
+    }))
+}
+
+/// 200 when the host call worked, 403 with the error otherwise.
+fn answer(r: Result<(), String>) -> Outcome {
+    match r {
+        Ok(()) => outcome(Verdict::Reply(Reply {
+            status: 200,
+            body: None,
+        })),
+        Err(e) => denied(e),
+    }
+}
+
 fn dispatch(name: &str) -> Outcome {
     match name {
         // No host call, no change: measures the cost of the WASM path alone.
@@ -62,6 +82,16 @@ fn dispatch(name: &str) -> Outcome {
             let _ = host::notify("title", "body");
             outcome(Verdict::Pass)
         }
+        "DISPATCH" => answer(host::emit_dispatch(&touched())),
+        "TOGGLE" => answer(host::set_plugin_enabled("other", true)),
+        "ENABLED" => match host::plugin_enabled("other") {
+            Ok(on) => outcome(Verdict::Reply(Reply {
+                status: if on == Some(true) { 200 } else { 404 },
+                body: None,
+            })),
+            Err(e) => denied(e),
+        },
+        "DATA" => answer(host::append_data("log.jsonl", "{}")),
         "KV" => {
             let _ = host::kv_set("seen", &touched());
             let got = host::kv_get("seen");

@@ -238,6 +238,10 @@ enum HostCall {
     ChannelGuild(u64),
     Fetch(String, String, Option<Val>),
     Rest(String, String, Option<Val>),
+    EmitDispatch(Val),
+    PluginEnabled(String),
+    SetPluginEnabled(String, bool),
+    AppendData(String, String),
 }
 
 enum HostReply {
@@ -246,6 +250,8 @@ enum HostReply {
     Id(Option<u64>),
     Ids(Vec<u64>),
     Response(Result<HostResponse, String>),
+    Flag(Option<bool>),
+    Done(Result<(), String>),
 }
 
 /// Caller to worker.
@@ -321,6 +327,14 @@ impl State {
 
     fn call_unit(&mut self, call: HostCall) -> Result<(), String> {
         self.call(call).map(|_| ())
+    }
+
+    /// A call whose answer is the host's own `Result`.
+    fn call_done(&mut self, call: HostCall) -> Result<(), String> {
+        match self.call(call)? {
+            HostReply::Done(r) => r,
+            _ => Err("unexpected host reply".into()),
+        }
     }
 
     fn call_response(&mut self, call: HostCall) -> Result<wit::HostResponse, String> {
@@ -404,6 +418,25 @@ impl wit_host::Host for State {
         let body = body.as_ref().map(tree_to_val).transpose()?;
         self.call_response(HostCall::Rest(method, route, body))
     }
+    fn emit_dispatch(&mut self, payload: wit::Tree) -> Result<(), String> {
+        self.allow(Right::EmitDispatch)?;
+        self.call_done(HostCall::EmitDispatch(tree_to_val(&payload)?))
+    }
+    fn plugin_enabled(&mut self, id: String) -> Result<Option<bool>, String> {
+        self.allow(Right::Plugins)?;
+        match self.call(HostCall::PluginEnabled(id))? {
+            HostReply::Flag(on) => Ok(on),
+            _ => Err("unexpected host reply".into()),
+        }
+    }
+    fn set_plugin_enabled(&mut self, id: String, on: bool) -> Result<(), String> {
+        self.allow(Right::Plugins)?;
+        self.call_done(HostCall::SetPluginEnabled(id, on))
+    }
+    fn append_data(&mut self, file: String, line: String) -> Result<(), String> {
+        self.allow(Right::Data)?;
+        self.call_done(HostCall::AppendData(file, line))
+    }
 }
 
 /// Start the clock for one guest call.
@@ -440,6 +473,13 @@ fn serve(host: &mut dyn Host, call: HostCall) -> HostReply {
         HostCall::ChannelGuild(c) => HostReply::Id(host.channel_guild(c)),
         HostCall::Fetch(m, u, b) => HostReply::Response(host.fetch(&m, &u, b.as_ref())),
         HostCall::Rest(m, r, b) => HostReply::Response(host.rest(&m, &r, b.as_ref())),
+        HostCall::EmitDispatch(p) => {
+            host.emit_dispatch(p);
+            HostReply::Done(Ok(()))
+        }
+        HostCall::PluginEnabled(id) => HostReply::Flag(host.plugin_enabled(&id)),
+        HostCall::SetPluginEnabled(id, on) => HostReply::Done(host.set_plugin_enabled(&id, on)),
+        HostCall::AppendData(f, l) => HostReply::Done(host.append_data(&f, &l)),
     }
 }
 
@@ -569,16 +609,25 @@ pub enum Right {
     Fetch,
     /// `rest`.
     Rest,
+    /// `emit_dispatch`.
+    EmitDispatch,
+    /// `plugin_enabled`, `set_plugin_enabled`: reading and toggling other plugins.
+    Plugins,
+    /// `append_data`.
+    Data,
 }
 
 impl Right {
-    pub const ALL: [Right; 6] = [
+    pub const ALL: [Right; 9] = [
         Right::Kv,
         Right::Notify,
         Right::EmitSend,
         Right::Guilds,
         Right::Fetch,
         Right::Rest,
+        Right::EmitDispatch,
+        Right::Plugins,
+        Right::Data,
     ];
 
     /// The name used in `plugin.toml`.
@@ -590,6 +639,9 @@ impl Right {
             Right::Guilds => "guilds",
             Right::Fetch => "fetch",
             Right::Rest => "rest",
+            Right::EmitDispatch => "emit_dispatch",
+            Right::Plugins => "plugins",
+            Right::Data => "data",
         }
     }
 

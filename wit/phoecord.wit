@@ -164,6 +164,15 @@ interface host {
     fetch: func(method: string, url: string, body: option<tree>) -> result<host-response, string>;
     /// A Discord API call on the user's behalf. Right `rest`.
     rest: func(method: string, route: string, body: option<tree>) -> result<host-response, string>;
+    /// Queue a whole server to client gateway frame that only this client sees, such as a local
+    /// answer to a slash command. Right `emit_dispatch`.
+    emit-dispatch: func(payload: tree) -> result<_, string>;
+    /// Whether a plugin is switched on in the config; `none` for an unknown id. Right `plugins`.
+    plugin-enabled: func(id: string) -> result<option<bool>, string>;
+    /// Switch another plugin on or off in the config file. Right `plugins`.
+    set-plugin-enabled: func(id: string, on: bool) -> result<_, string>;
+    /// Append one line to `data/plugins/<id>/<file>`; `file` is a bare file name. Right `data`.
+    append-data: func(file: string, line: string) -> result<_, string>;
 }
 
 world plugin {

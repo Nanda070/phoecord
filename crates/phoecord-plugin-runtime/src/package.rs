@@ -18,6 +18,21 @@
 //! rights = ["notify"]          # which `Host` methods it may call (see `wasm::Right`)
 //! ```
 //!
+//! Rights (`rights = [...]`): a call without its right is an error for the guest and one log line
+//! per right. `setting`, `self_id` and `log` need none.
+//!
+//! | right           | `Host` methods                                    |
+//! |:----------------|:--------------------------------------------------|
+//! | `kv`            | `kv_get`, `kv_set`                                |
+//! | `notify`        | `notify`                                          |
+//! | `emit_send`     | `emit_send` (client to server frames)             |
+//! | `emit_dispatch` | `emit_dispatch` (server to client frames, local)  |
+//! | `guilds`        | `guild_emojis`, `channel_guild`                   |
+//! | `fetch`         | `fetch` (HTTPS to external services)              |
+//! | `rest`          | `rest` (Discord API on the user's behalf)         |
+//! | `plugins`       | `plugin_enabled`, `set_plugin_enabled`            |
+//! | `data`          | `append_data` (`data/plugins/<id>/<file>`)        |
+//!
 //! A [`PackagePlugin`] watches its two files and swaps in a changed package between events.
 
 use crate::wasm::{Setup, WasmPlugin, WasmRuntime};

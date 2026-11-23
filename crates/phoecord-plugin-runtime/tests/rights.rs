@@ -56,6 +56,75 @@ fn a_granted_right_goes_through() {
     assert_eq!(host.logs, vec!["notify: title: body".to_string()]);
 }
 
+/// Dispatch `event` to a package with `rights`; the reply status (200 worked, 403 denied) and body.
+fn call(rights: &str, event: &str, host: &mut NullHost) -> (u16, Option<Val>) {
+    let (_root, plugin) = load(&format!("events = [\"dispatch\"]\nrights = [{rights}]"));
+    let chain = Chain::new(vec![Box::new(plugin) as Box<dyn Plugin>]);
+    match chain.dispatch(host, event, &mut Val::map(), &mut vec![]) {
+        Outcome::Replied { status, body, .. } => (status, body),
+        other => panic!("expected a reply, got {other:?}"),
+    }
+}
+
+fn denial(body: Option<Val>) -> String {
+    body.and_then(|b| b.as_str().map(str::to_string))
+        .unwrap_or_default()
+}
+
+fn count(host: &NullHost, needle: &str) -> usize {
+    host.logs.iter().filter(|l| l.contains(needle)).count()
+}
+
+#[test]
+fn emit_dispatch_needs_its_right() {
+    let mut host = NullHost::default();
+    let (status, body) = call("\"kv\"", "DISPATCH", &mut host);
+    assert_eq!(status, 403);
+    assert!(denial(body).contains("no `emit_dispatch` right"));
+    assert!(host.dispatched.is_empty());
+    assert_eq!(count(&host, "no `emit_dispatch` right"), 1);
+
+    let (status, _) = call("\"emit_dispatch\"", "DISPATCH", &mut host);
+    assert_eq!(status, 200);
+    assert_eq!(host.dispatched.len(), 1);
+}
+
+#[test]
+fn toggling_plugins_needs_the_plugins_right() {
+    let mut host = NullHost::default();
+    host.plugins.insert("other".into(), false);
+    for event in ["TOGGLE", "ENABLED"] {
+        let (status, body) = call("\"kv\", \"data\"", event, &mut host);
+        assert_eq!(status, 403);
+        assert!(denial(body).contains("no `plugins` right"));
+    }
+    assert!(!host.plugins["other"]);
+
+    let (status, _) = call("\"plugins\"", "TOGGLE", &mut host);
+    assert_eq!(status, 200);
+    assert!(host.plugins["other"]);
+    let (status, _) = call("\"plugins\"", "ENABLED", &mut host);
+    assert_eq!(status, 200);
+    // The host's own error (unknown id) reaches the guest as an error.
+    host.plugins.clear();
+    let (status, body) = call("\"plugins\"", "TOGGLE", &mut host);
+    assert_eq!(status, 403);
+    assert!(denial(body).contains("unknown plugin"));
+}
+
+#[test]
+fn append_data_needs_the_data_right() {
+    let mut host = NullHost::default();
+    let (status, body) = call("\"plugins\"", "DATA", &mut host);
+    assert_eq!(status, 403);
+    assert!(denial(body).contains("no `data` right"));
+    assert!(host.data.is_empty());
+
+    let (status, _) = call("\"data\"", "DATA", &mut host);
+    assert_eq!(status, 200);
+    assert_eq!(host.data, vec![("log.jsonl".to_string(), "{}".to_string())]);
+}
+
 #[test]
 fn unknown_rights_are_refused() {
     let root = TempDir::new();

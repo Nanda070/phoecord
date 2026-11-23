@@ -217,6 +217,12 @@ impl Chain {
 #[derive(Default)]
 pub struct NullHost {
     pub logs: Vec<String>,
+    /// Frames passed to `emit_dispatch`.
+    pub dispatched: Vec<Val>,
+    /// Known plugin ids and whether they are on (`set_plugin_enabled` changes known ones only).
+    pub plugins: std::collections::HashMap<String, bool>,
+    /// `(file, line)` pairs passed to `append_data`.
+    pub data: Vec<(String, String)>,
 }
 
 impl Host for NullHost {
@@ -242,6 +248,25 @@ impl Host for NullHost {
     }
     fn channel_guild(&self, _channel_id: u64) -> Option<u64> {
         None
+    }
+    fn emit_dispatch(&mut self, payload: Val) {
+        self.dispatched.push(payload);
+    }
+    fn plugin_enabled(&self, id: &str) -> Option<bool> {
+        self.plugins.get(id).copied()
+    }
+    fn set_plugin_enabled(&mut self, id: &str, on: bool) -> Result<(), String> {
+        match self.plugins.get_mut(id) {
+            Some(slot) => {
+                *slot = on;
+                Ok(())
+            }
+            None => Err(format!("unknown plugin {id}")),
+        }
+    }
+    fn append_data(&mut self, file: &str, line: &str) -> Result<(), String> {
+        self.data.push((file.into(), line.into()));
+        Ok(())
     }
 }
 
