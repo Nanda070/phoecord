@@ -13,8 +13,11 @@
 //!
 //! Status: stage 1.5.1–1.5.4 (prototype): export forwarding, `DllMain` + worker, version detection,
 //! signatures, detours. IPC and survival of client updates are 1.5.5 and 1.5.6.
+
 pub mod aob;
 pub mod pe;
+pub mod signatures;
+pub mod version;
 
 #[cfg(windows)]
 pub mod proxy_dll;
