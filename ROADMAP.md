@@ -48,6 +48,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 - [ ] New: `clear_urls`, strip tracking parameters from outgoing messages
 - [ ] New: PhoeCord slash commands (`/phoecord plugins`, `/phoecord toggle`), a local reply to `POST /interactions`
 - [ ] `phoecord import-vencord` via the `vencord` field in manifests
+- [ ] Vencord parity, network parts: every 🌐 plugin and the data part of every 🌐 + 🎨 plugin in [`docs/PLUGINS.md`](docs/PLUGINS.md), including the owner's userplugins (tasks 1.2.10–1.2.19)
 
 ### 1.3 Dynamic plugin engine (WASM) · `0.4`
 
@@ -66,7 +67,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 - [ ] Install and remove the CA, autostart the proxy (service / LaunchAgent / systemd user unit)
 - [ ] GUI on egui: a client list and "Install", "Uninstall", "Repair" buttons
 - [ ] Full rollback: CA, DLL, autostart, folders, one button
-- [ ] Releases with `SHA256SUMS` on GitHub Releases (unsigned in Phase 1, like Vencord); SignPath Foundation application sent
+- [ ] Releases with `SHA256SUMS` on GitHub Releases (unsigned, like Vencord)
 
 ### 1.5 DLL sideloading prototype · `0.6`
 
@@ -126,7 +127,7 @@ Phase 2 has no dates: it starts when Discord releases Phoenix Canary. Until then
 
 ### 2.4 Release v1.0 · `1.0`
 
-The top 10 Vencord plugins by popularity (our estimate); all of them must work:
+Scope: every 🌐 and 🌐 + 🎨 plugin of [`docs/PLUGINS.md`](docs/PLUGINS.md) complete (network and on-screen parts), the theme engine, and the 30 most-used 🎨 plugins. The remaining 🎨 plugins follow in 1.x releases until full Vencord parity. The top 10, which must work first:
 
 | # | Plugin | Layer | Status |
 |---:|:---|:---|:---|
@@ -142,11 +143,12 @@ The top 10 Vencord plugins by popularity (our estimate); all of them must work:
 | 10 | ViewIcons | UI | ⏳ |
 
 - [ ] All 10 plugins above work on Phoenix Canary, and the network ones on today's client too
+- [ ] The rest of the v1.0 scope above
 - [ ] Docs for third-party developers in `docs/plugins/`: quick start (Rust and TypeScript), event reference, rights, publishing, localizing a plugin
 - [ ] Plugin API stabilization: `API_VERSION = 1` is frozen, changes are minor-only
 - [ ] Installer 1.0 for Windows; macOS and Linux with the network layer
 - [ ] Security audit of the CA, the proxy and the loader before release
-- [ ] A GitHub release with signed binaries and `docs/CHANGELOG.md`
+- [ ] A GitHub release with binaries, `SHA256SUMS` and `docs/CHANGELOG.md`
 
 ---
 
@@ -156,4 +158,4 @@ The top 10 Vencord plugins by popularity (our estimate); all of them must work:
 - UI plugins through WASM: declarative elements the loader turns into GPUI.
 - The UI layer on macOS and Linux.
 - More languages after English and Russian.
-- The remaining network and UI plugins: FixYoutubeEmbeds, MessageLinkEmbeds, ServerInfo, MemberCount and others.
+- The remaining 🎨 plugins of `docs/PLUGINS.md` until full Vencord parity.

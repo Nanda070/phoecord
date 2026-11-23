@@ -8,7 +8,7 @@ Checked against code: `6b3a7f5`, 23.11.2026.
 
 At the end of Phase 1, on today's Discord (Stable, PTB, Canary) on Windows, macOS and Linux:
 
-1. `phoecord setup` + `phoecord launch` (or the GUI installer) gives a working client with **≥ 8 network plugins**: `no_track`, `silent_typing`, `unindent`, `game_activity_toggle`, `relationship_notifier`, `fake_nitro`, `message_logger`, `clear_urls` (+ `/phoecord` commands).
+1. `phoecord setup` + `phoecord launch` (or the GUI installer) gives a working client with **every 🌐 plugin of `docs/PLUGINS.md`, and the data part of every 🌐 + 🎨 plugin** (69 in total, Vencord plugins plus the owner's userplugins); `no_track` is on by default, the rest off.
 2. `phoecord selftest` passes for JSON/zlib-stream and ETF/zstd-stream.
 3. A third-party **WASM plugin** dropped into `plugins/` runs without rebuilding PhoeCord, limited to its manifest's events and rights; `clear_urls` ships as one.
 4. Gateway frame latency through the chain is **≤ 1 ms p99** on a 5 MB READY, native and WASM.
@@ -74,6 +74,8 @@ Known v0 defects fixed while porting: an unused `PathBuf` import broke `-D warni
 - `Host::emit_send(op, Val)`: queue a client → server payload (needed by `game_activity_toggle` to re-send presence). The proxy flushes the queue after the current frame.
 - `Host::guild_emojis(guild_id) -> Vec<u64>` and `Host::channel_guild(channel_id) -> Option<u64>`: read-only account facts (needed by `fake_nitro`).
 - `Host::t(key, args) -> String` (1.7.4).
+- `Host::fetch(request) -> Response`: HTTPS to an external service, only to hosts listed in the plugin's manifest (`fetch = ["api.dearrow.ajay.app"]`), with a timeout and size cap (needed by Dearrow, GifProviderSwitcher, MusicRichPresence, USRBG, Decor, Translate, ReviewDB).
+- `Host::rest(method, route, body) -> Response`: a Discord API call on the user's behalf through the proxy's own upstream, with a shared rate limiter (at most 1 request/second per plugin by default, Discord's own `429` respected) (needed by ValidUser, ValidReply, NewGuildSettings, FriendInvites, VoiceChatUtilities, rmcord). Plugins using it show a warning that heavy automation can get an account flagged.
 - Every addition: an `api` PR by Nanda, a CHANGELOG line, the WIT file updated in the same PR once it exists.
 
 ### 3.2 Proxy (`phoecord-proxy`)
@@ -131,5 +133,5 @@ Known v0 defects fixed while porting: an unused `PathBuf` import broke `-D warni
 - `docs/CODE_MAP.md`: every new module, the config keys and env variables of §3.2, `data/` layout.
 - `docs/PROJECT_MAP.md`: plugin statuses.
 - `docs/RUNBOOK.md`: remove the *(1.1)* markers as commands land; add WASM and loader failure rows.
-- `docs/SECRETS.md`: the code signing key once it exists.
+- `docs/SECRETS.md`: any new repository secret (none planned; releases are unsigned).
 - `ROADMAP.md`, `docs/CHANGELOG.md`, `TASKS.md` (generated) in every task PR.

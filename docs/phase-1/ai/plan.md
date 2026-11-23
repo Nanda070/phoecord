@@ -219,6 +219,25 @@ Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.
 
 **Done when:** a Vencord user's matching plugins are enabled with one command.
 
+### 1.2.10–1.2.19. Vencord parity, network parts
+
+Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a task from 1.2.10 to 1.2.19 is built in that task, one PR per task (one plugin per commit). Each plugin follows the same steps as 1.2.1: Plugin API v1, the plugin template, matching-rule tests, a chain test, default config, `docs/PLUGINS.md` "Where" cell changed to ✅.
+
+| Task | Needs from the host (spec §3.1) | Owner |
+|:---|:---|:---|
+| 1.2.10 Message filters | `RestResponse` and `Dispatch` rewriting only | anyone |
+| 1.2.11 Outgoing text | `RestRequest` body rewriting; multipart file names for AnonymiseFileNames | anyone |
+| 1.2.12 Commands | the `/phoecord` command framework from 1.2.8; `Host::rest` for FriendInvites and UnsuppressEmbeds | anyone |
+| 1.2.13 Presence | `Send` op 3 rewriting; `Host::emit_send`; `Host::fetch` for MusicRichPresence (Last.fm, ListenBrainz) | anyone |
+| 1.2.14 Profiles | `RestResponse` rewriting of profile responses; `Host::fetch` for USRBG and Decor | anyone |
+| 1.2.15 External services | `Host::fetch` (DeArrow API, Tenor/Giphy) | anyone |
+| 1.2.16 Data parts | `Host::rest` (ValidUser, ValidReply, NewGuildSettings); `Dispatch` `extra` payloads | Nanda |
+| 1.2.17 Translate etc. | `Host::fetch` (translation backend, ReviewDB API); XSOverlay over a local UDP right | anyone |
+| 1.2.18 Hidden things | `Dispatch` `READY` / `GUILD_CREATE` rewriting; experiment assignments | Nanda |
+| 1.2.19 Userplugins | `Host::rest` with the rate limiter (VoiceChatUtilities, rmcord); `Send` op 4 (FakeDeafen, FollowUser) | Nanda |
+
+**Done when:** every 🌐 row of `docs/PLUGINS.md` is ✅ and every 🌐 + 🎨 row has its data part ✅ (on-screen part waits for Phase 2).
+
 ## Stage 1.3. Dynamic plugin engine (WASM)
 
 ### 1.3.1. `wit/phoecord.wit` (Nanda)
@@ -324,8 +343,7 @@ Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.
 
 **Files:** `.github/workflows/release.yml`, `docs/SECRETS.md`
 
-- [ ] Tag-triggered build for the three OSes; `SHA256SUMS`; no Authenticode signing yet; release notes from `docs/_template/release.md` with the SmartScreen note.
-- [ ] Send the SignPath Foundation application; record the answer in the ledger and `docs/SECRETS.md`.
+- [ ] Tag-triggered build for the three OSes; `SHA256SUMS`; unsigned; release notes from `docs/_template/release.md` with the SmartScreen note.
 - [ ] Submit the loader DLL to Microsoft Defender's false-positive portal for each release.
 
 **Done when:** pushing tag `v0.5.0` produces a GitHub release with binaries and checksums.

@@ -189,8 +189,7 @@ Process: Ghidra/IDA + the open GPUI (Zed) sources → find the function → make
 ## Installer and releases
 
 - **GUI toolkit: [egui](https://github.com/emilk/egui) (`eframe`).** Pure Rust, one small static binary, mature on Windows, macOS and Linux, no runtime to install. GPUI was considered for practice before Phase 2, but it is heavier and its API still moves; GPUI knowledge comes from the research stage (1.6) instead. The GUI is a thin layer over `phoecord-installer`, so the toolkit can change later without touching install logic. Cyrillic needs an embedded font with Cyrillic glyphs (egui's default font has none).
-- **Code signing, Phase 1: unsigned, like Vencord.** Vencord's Windows installer is not signed either; its download page explains the SmartScreen warning and cites a cost of over 300 € a year. Our releases ship `SHA256SUMS`, reproducible CI builds and a "SmartScreen warning" note in the README and release notes.
-- **Code signing, before 1.0: apply to SignPath Foundation** (free code signing for open-source projects, through GitHub Actions). Reason: unlike Vencord, which patches Discord's `app.asar`, PhoeCord installs a proxy `version.dll` next to the client, a pattern antivirus engines treat with suspicion. If the application is refused, revisit a paid certificate before 1.0. Until then, the loader is submitted to Microsoft Defender's false-positive portal with each release.
+- **No code signing.** PhoeCord ships unsigned, like Vencord's installer (Vencord cites a cost of over 300 € a year). Users get a SmartScreen warning on first run; releases carry `SHA256SUMS` from reproducible CI builds and a README note on the warning. Because a proxy `version.dll` next to the client is a pattern antivirus engines watch, the loader is submitted to Microsoft Defender's false-positive portal with each release.
 
 ## Localization
 

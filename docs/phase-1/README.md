@@ -10,7 +10,7 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 
 ## What we get
 
-- **A user** installs PhoeCord with one button, starts Discord and gets NoTrack, SilentTyping, MessageLogger, FakeNitro, ClearURLs and four more plugins, on today's client, without Vencord, in English or Russian. Uninstalling is one button too and leaves nothing behind.
+- **A user** installs PhoeCord with one button, starts Discord and gets every Vencord plugin that works on the network (69 of them, fully or in their data part, including the owner's userplugins; see [`docs/PLUGINS.md`](../PLUGINS.md)), on today's client, without Vencord, in English or Russian. Uninstalling is one button too and leaves nothing behind.
 - **A plugin author** writes a plugin in Rust or TypeScript, builds a `.wasm`, drops it into the `plugins/` folder, and it runs without rebuilding PhoeCord, in a sandbox, with the rights its manifest asks for.
 - **The team**, when Phoenix Canary ships, has: a working loader (`version.dll`) proven on today's client; a signature format; a GPUI reference build for reverse engineering; a report on which GPUI functions to look for.
 
@@ -22,7 +22,8 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 - Hybrid architecture: the network is the base, the UI layer is targeted; dynamic plugins through an external runtime (Nanda 23.11.2026, project brief).
 - Plugin runtime: WASM (wasmtime + WIT), not Lua or QuickJS (Nanda 23.11.2026: "I don't know, decide yourself what's better", translated; decided by Claude, see `docs/DECISIONS.md`).
 - Installer GUI on egui, not GPUI (same delegation).
-- No code signing in Phase 1, like Vencord; apply to SignPath Foundation (free for open source) before 1.0 (same delegation, after checking that Vencord's installer is unsigned).
+- No code signing, now or at 1.0, like Vencord (Nanda 23.11.2026: "we build the project without signing", translated).
+- Plugin scope: everything Vencord has, plus the owner's userplugins, is the priority; `no_track` is the only plugin on by default (Nanda 23.11.2026: "priority is everything in Vencord" and "also the ones in my userplugins", translated). QuestMaster and TrustMeBro are excluded (see `docs/PLUGINS.md`).
 - Git history stays as it is; no force-push to `main` (Nanda 23.11.2026: "keep the history", translated).
 - Docs, plans and templates follow the VALORANT repository's structure (Nanda 23.11.2026: "like VALORANT", translated).
 - All documentation is English-only; the app must support Russian later (Nanda 23.11.2026: "translate all docs to English, no Russian at all, though the program should support Russian in the future", translated). Localization becomes stage 1.7.
@@ -69,6 +70,16 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is coll
 | **1.2.7** 🔴 | `clear_urls` (new) | anyone | ⏳ |
 | **1.2.8** 🟡 | `/phoecord` slash commands (new) | Nanda | ⏳ |
 | **1.2.9** 🟢 | `phoecord import-vencord` | anyone | ⏳ |
+| **1.2.10** 🟡 | Message filters: iLoveSpam, ImageLink, NoBlockedMessages, NoPendingCount, NoReplyMention | anyone | ⏳ |
+| **1.2.11** 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, BetterGifAltText, SilentMessageToggle (`/silent`) | anyone | ⏳ |
+| **1.2.12** 🟡 | Commands: CustomCommands, FriendInvites, petpet, SpotifyShareCommands, ServerInfo, ViewRaw, UnsuppressEmbeds | anyone | ⏳ |
+| **1.2.13** 🟡 | Presence: CustomRPC, MusicRichPresence, IgnoreActivities, AutoDNDWhilePlaying, CustomIdle | anyone | ⏳ |
+| **1.2.14** 🟡 | Profiles: NoProfileThemes, FakeProfileThemes, USRBG, Decor (data part) | anyone | ⏳ |
+| **1.2.15** 🟡 | External services: Dearrow, GifProviderSwitcher, FixImagesQuality | anyone | ⏳ |
+| **1.2.16** 🟡 | Data parts of UI plugins: ValidUser, ValidReply, NewGuildSettings, OverrideForumDefaults, MessageLinkEmbeds, PlatformIndicators, TypingIndicator, MemberCount, MutualGroupDMs, WhoReacted, and the other 🌐 + 🎨 rows of `docs/PLUGINS.md` marked 1.2.16 | Nanda | ⏳ |
+| **1.2.17** 🟡 | Translate, ReviewDB, VoiceMessages (data part), XSOverlay | anyone | ⏳ |
+| **1.2.18** 🟢 | ShowHiddenChannels, ShowHiddenThings, Experiments (data part) | Nanda | ⏳ |
+| **1.2.19** 🟡 | Owner's userplugins: SilentDelete, FakeDeafen, FakeDeafenDetector, localDevBadges, FollowUser, VoiceChatUtilities, rmcord, AntiRickroll (network parts) | Nanda | ⏳ |
 | **1.3.1** 🔴 | `wit/phoecord.wit` | Nanda | ⏳ |
 | **1.3.2** 🔴 | WASM backend for `Chain` on wasmtime | Nanda | ⏳ |
 | **1.3.3** 🔴 | Limits: time, memory, disable on panic | Nanda | ⏳ |
@@ -81,7 +92,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is coll
 | **1.4.2** 🔴 | CA and proxy autostart | Nanda | ⏳ |
 | **1.4.3** 🟡 | Installer GUI | Nanda | ⏳ |
 | **1.4.4** 🔴 | Full rollback | Nanda | ⏳ |
-| **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, signing | Nanda | ⏳ |
+| **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
 | **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ⏳ |
 | **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ⏳ |
 | **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ⏳ |
@@ -106,7 +117,7 @@ Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do 
 
 - **Phoenix Canary ships before the phase ends.** Drop 1.4.3 and 1.2.9, bring 1.5 and 1.6 to a minimum, and start Phase 2 (2.1 reconnaissance) in parallel.
 - **Phoenix ignores the proxy or pins certificates.** The network layer then depends on the loader (ARCHITECTURE.md, "Phoenix and the proxy", option 3); 1.5 becomes required for every plugin, not just UI ones.
-- **Antivirus flags `version.dll` as malware.** SignPath Foundation signing before 1.0, open source, submitting samples to Microsoft and major vendors before release.
+- **Antivirus flags `version.dll` as malware.** Open source, reproducible builds with `SHA256SUMS`, submitting samples to Microsoft and major vendors before release.
 - **Discord changes the Gateway protocol.** Caught by `selftest` (1.1.8) and fixtures; the fix goes into `phoecord-proxy::codec`, plugins stay untouched.
 - **WASM is slow on the hot path.** Run the 1.1.10 benchmark on a WASM chain too; if p99 > 1 ms, `message_logger` and `fake_nitro` stay native.
 - **Account bans.** Client modification breaks Discord's Terms. Plugins do nothing the server would see as bot activity (mass requests, self-bots); this rule applies to every PR review.

@@ -115,7 +115,7 @@ Not yet ported (Phase 1, 1.1): `proxy.rs`, `rest.rs`, `gateway.rs`, `state.rs`, 
 
 ## 5. Docs
 
-See [`README.md`](README.md) in this folder.
+See [`README.md`](README.md) in this folder. [`PLUGINS.md`](PLUGINS.md) is the plugin catalogue (every Vencord plugin and userplugin mapped to a layer and a task).
 
 ## 6. Config, environment and files on disk
 

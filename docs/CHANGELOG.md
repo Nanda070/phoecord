@@ -24,7 +24,8 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 ### Changed
 
 - All documentation is English-only.
-- Decided: WASM plugin runtime, egui installer GUI, unsigned Phase 1 releases with SignPath Foundation signing before 1.0.
+- `docs/PLUGINS.md`: every Vencord plugin and the owner's userplugins mapped to a layer and a task; Phase 1 tasks 1.2.10–1.2.19 for Vencord parity on the network.
+- Decided: WASM plugin runtime, egui installer GUI, no code signing (like Vencord).
 
 ### Fixed
 

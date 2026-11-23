@@ -24,5 +24,5 @@ Changes to the CA, TLS, trust stores, the proxy and the loader always need the o
 ## Access
 
 - The repository is public under MIT; write access is granted and revoked by Nanda.
-- Release signing keys and repository secrets: only Nanda ([`SECRETS.md`](SECRETS.md)).
+- Repository secrets: only Nanda ([`SECRETS.md`](SECRETS.md)).
 - When someone leaves, their access is revoked the same day.

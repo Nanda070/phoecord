@@ -15,7 +15,6 @@ Copy the "Record" block into the GitHub release notes. Delete the comments befor
 | `prev` | `<previous version and sha>` | the previous GitHub release |
 | `ci` | `<link to the green CI run on this sha>` | GitHub Actions |
 | `artifacts` | Windows / macOS / Linux binaries, installer, `SHA256SUMS` | release workflow |
-| `signed` | yes / no, with which certificate | `docs/SECRETS.md` |
 | `api` | `API_VERSION` and whether it changed | `crates/phoecord-core/src/plugin.rs` |
 | `languages` | `en`, `ru`, missing keys: none / list | `.ftl` check (1.7) |
 | `checked_on` | Discord clients and versions from the release check | `release-check.md` |

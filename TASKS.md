@@ -2,7 +2,7 @@
 
 Generated from the "Tasks" tables in `docs/<plan>/README.md` by `python scripts/gen_tasks.py`; never edit by hand. Change a task in its plan's README, then rerun the script. CI fails if this file is stale.
 
-Tasks: 51, plans with tasks: 1.
+Tasks: 61, plans with tasks: 1.
 
 ## All tasks
 
@@ -29,6 +29,16 @@ Tasks: 51, plans with tasks: 1.
 | [phase-1](docs/phase-1/README.md) | 1.2.7 🔴 | `clear_urls` (new) | anyone | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.2.8 🟡 | `/phoecord` slash commands (new) | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.2.9 🟢 | `phoecord import-vencord` | anyone | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.10 🟡 | Message filters: iLoveSpam, ImageLink, NoBlockedMessages, NoPendingCount, NoReplyMention | anyone | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.11 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, BetterGifAltText, SilentMessageToggle (`/silent`) | anyone | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.12 🟡 | Commands: CustomCommands, FriendInvites, petpet, SpotifyShareCommands, ServerInfo, ViewRaw, UnsuppressEmbeds | anyone | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.13 🟡 | Presence: CustomRPC, MusicRichPresence, IgnoreActivities, AutoDNDWhilePlaying, CustomIdle | anyone | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.14 🟡 | Profiles: NoProfileThemes, FakeProfileThemes, USRBG, Decor (data part) | anyone | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.15 🟡 | External services: Dearrow, GifProviderSwitcher, FixImagesQuality | anyone | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.16 🟡 | Data parts of UI plugins: ValidUser, ValidReply, NewGuildSettings, OverrideForumDefaults, MessageLinkEmbeds, PlatformIndicators, TypingIndicator, MemberCount, MutualGroupDMs, WhoReacted, and the other 🌐 + 🎨 rows of `docs/PLUGINS.md` marked 1.2.16 | Nanda | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.17 🟡 | Translate, ReviewDB, VoiceMessages (data part), XSOverlay | anyone | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.18 🟢 | ShowHiddenChannels, ShowHiddenThings, Experiments (data part) | Nanda | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.2.19 🟡 | Owner's userplugins: SilentDelete, FakeDeafen, FakeDeafenDetector, localDevBadges, FollowUser, VoiceChatUtilities, rmcord, AntiRickroll (network parts) | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.3.1 🔴 | `wit/phoecord.wit` | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.3.2 🔴 | WASM backend for `Chain` on wasmtime | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.3.3 🔴 | Limits: time, memory, disable on panic | Nanda | ⏳ |
@@ -41,7 +51,7 @@ Tasks: 51, plans with tasks: 1.
 | [phase-1](docs/phase-1/README.md) | 1.4.2 🔴 | CA and proxy autostart | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.4.3 🟡 | Installer GUI | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.4.4 🔴 | Full rollback | Nanda | ⏳ |
-| [phase-1](docs/phase-1/README.md) | 1.4.5 🟡 | Releases: builds, `SHA256SUMS`, signing | Nanda | ⏳ |
+| [phase-1](docs/phase-1/README.md) | 1.4.5 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.5.1 🔴 | `version.dll`: export forwarding | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.5.2 🔴 | `DllMain` and the worker thread | Nanda | ⏳ |
 | [phase-1](docs/phase-1/README.md) | 1.5.3 🔴 | Client version detection and `signatures/*.toml` | Nanda | ⏳ |
@@ -78,6 +88,9 @@ Tasks: 51, plans with tasks: 1.
 | phase-1 | 1.2.5 🔴 | `fake_nitro` (emoji) | ⏳ |
 | phase-1 | 1.2.6 🔴 | `message_logger` and `phoecord log` | ⏳ |
 | phase-1 | 1.2.8 🟡 | `/phoecord` slash commands (new) | ⏳ |
+| phase-1 | 1.2.16 🟡 | Data parts of UI plugins: ValidUser, ValidReply, NewGuildSettings, OverrideForumDefaults, MessageLinkEmbeds, PlatformIndicators, TypingIndicator, MemberCount, MutualGroupDMs, WhoReacted, and the other 🌐 + 🎨 rows of `docs/PLUGINS.md` marked 1.2.16 | ⏳ |
+| phase-1 | 1.2.18 🟢 | ShowHiddenChannels, ShowHiddenThings, Experiments (data part) | ⏳ |
+| phase-1 | 1.2.19 🟡 | Owner's userplugins: SilentDelete, FakeDeafen, FakeDeafenDetector, localDevBadges, FollowUser, VoiceChatUtilities, rmcord, AntiRickroll (network parts) | ⏳ |
 | phase-1 | 1.3.1 🔴 | `wit/phoecord.wit` | ⏳ |
 | phase-1 | 1.3.2 🔴 | WASM backend for `Chain` on wasmtime | ⏳ |
 | phase-1 | 1.3.3 🔴 | Limits: time, memory, disable on panic | ⏳ |
@@ -88,7 +101,7 @@ Tasks: 51, plans with tasks: 1.
 | phase-1 | 1.4.2 🔴 | CA and proxy autostart | ⏳ |
 | phase-1 | 1.4.3 🟡 | Installer GUI | ⏳ |
 | phase-1 | 1.4.4 🔴 | Full rollback | ⏳ |
-| phase-1 | 1.4.5 🟡 | Releases: builds, `SHA256SUMS`, signing | ⏳ |
+| phase-1 | 1.4.5 🟡 | Releases: builds, `SHA256SUMS`, no signing | ⏳ |
 | phase-1 | 1.5.1 🔴 | `version.dll`: export forwarding | ⏳ |
 | phase-1 | 1.5.2 🔴 | `DllMain` and the worker thread | ⏳ |
 | phase-1 | 1.5.3 🔴 | Client version detection and `signatures/*.toml` | ⏳ |
@@ -114,6 +127,13 @@ Tasks: 51, plans with tasks: 1.
 | phase-1 | 1.2.4 🟡 | `relationship_notifier` | ⏳ |
 | phase-1 | 1.2.7 🔴 | `clear_urls` (new) | ⏳ |
 | phase-1 | 1.2.9 🟢 | `phoecord import-vencord` | ⏳ |
+| phase-1 | 1.2.10 🟡 | Message filters: iLoveSpam, ImageLink, NoBlockedMessages, NoPendingCount, NoReplyMention | ⏳ |
+| phase-1 | 1.2.11 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, BetterGifAltText, SilentMessageToggle (`/silent`) | ⏳ |
+| phase-1 | 1.2.12 🟡 | Commands: CustomCommands, FriendInvites, petpet, SpotifyShareCommands, ServerInfo, ViewRaw, UnsuppressEmbeds | ⏳ |
+| phase-1 | 1.2.13 🟡 | Presence: CustomRPC, MusicRichPresence, IgnoreActivities, AutoDNDWhilePlaying, CustomIdle | ⏳ |
+| phase-1 | 1.2.14 🟡 | Profiles: NoProfileThemes, FakeProfileThemes, USRBG, Decor (data part) | ⏳ |
+| phase-1 | 1.2.15 🟡 | External services: Dearrow, GifProviderSwitcher, FixImagesQuality | ⏳ |
+| phase-1 | 1.2.17 🟡 | Translate, ReviewDB, VoiceMessages (data part), XSOverlay | ⏳ |
 | phase-1 | 1.3.6 🟡 | SDK: bindings, macro, `examples/hello-plugin` | ⏳ |
 | phase-1 | 1.3.7 🟡 | TypeScript plugin template | ⏳ |
 | phase-1 | 1.6.2 🔴 | GPUI reference build | ⏳ |

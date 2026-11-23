@@ -47,7 +47,7 @@ Phoenix is a compiled Rust binary: no JavaScript to patch, no stable ABI between
 | `fake_nitro` · `message_logger` · `clear_urls` · `/phoecord` | The headline features | ⏳ |
 | Themes · settings tab · deleted-message view | UI layer on Phoenix | ⏳ Phase 2 |
 
-Full list: [`docs/PROJECT_MAP.md`](docs/PROJECT_MAP.md). Languages: English, Russian planned.
+Goal: every Vencord plugin that works on a native client, mapped one by one in [`docs/PLUGINS.md`](docs/PLUGINS.md). Languages: English, Russian planned.
 
 ## Build
 

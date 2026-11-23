@@ -21,6 +21,8 @@ Statuses: ✅ works · 🔄 in progress · ⏳ planned.
 
 ## 2. Plugins
 
+The full map of every Vencord plugin (and the owner's userplugins) to PhoeCord is in [`PLUGINS.md`](PLUGINS.md). This table lists what is already built or next.
+
 | Plugin | Layer | What it does | Status |
 |:---|:---|:---|:---|
 | `no_track` | Network | Blocks Discord's analytics and crash reports. On by default | ✅ |

@@ -20,7 +20,7 @@ All other traffic (CDN, media, voice, other sites) goes through a plain tunnel: 
 
 ## The loader (UI layer)
 
-Status: in development (ROADMAP, 1.5). Requirements the loader must meet: `phoecord-loader` is placed next to the client as a proxy DLL; it loads only signed plugins from PhoeCord's folder, never downloads code from the network and has no function that reads the token. The installer puts the DLL in place only on an explicit user command and can remove it.
+Status: in development (ROADMAP, 1.5). Requirements the loader must meet: `phoecord-loader` is placed next to the client as a proxy DLL; it loads only plugins installed in PhoeCord's own folder, never downloads code from the network and has no function that reads the token. The installer puts the DLL in place only on an explicit user command and can remove it.
 
 ## Third-party plugins
 

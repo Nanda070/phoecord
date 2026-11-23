@@ -20,7 +20,7 @@ A change that leaves these documents wrong is not done. Update them in the same 
 | The Plugin API, the runtime choice, how we reach Phoenix | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | A new secret, key or place where one is stored | [`docs/SECRETS.md`](docs/SECRETS.md) (never the value) |
 | A new kind of breakage or a new diagnostic | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) |
-| A plugin added or its behaviour changed | [`docs/PROJECT_MAP.md`](docs/PROJECT_MAP.md) and the plugin table in `ROADMAP.md` |
+| A plugin added or its behaviour changed | its row in [`docs/PLUGINS.md`](docs/PLUGINS.md), [`docs/PROJECT_MAP.md`](docs/PROJECT_MAP.md) and the plugin table in `ROADMAP.md` |
 | A decision by the owner | a `Ruling:` line in the plan's `ai/ledger.md`, then `python scripts/gen_decisions.py` |
 
 `TASKS.md` and `docs/DECISIONS.md` are generated: never edit them by hand. `scripts/check.sh` fails if they are stale.
