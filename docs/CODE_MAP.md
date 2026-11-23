@@ -66,6 +66,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/lib.rs` | Module list and status | |
 | `src/config.rs`, `src/account.rs` | Live plugin configuration and account state available to plugins | Config reload must re-enable the chain and preserve the last live state |
 | `src/host.rs` | `ProxyHost`: scoped settings, KV, account, rate-limited notifications and REST/fetch hooks | Host state must be bound to the plugin currently running in `Chain` |
+| `GET /__phoecord` (in `src/server.rs`) | Identity answer (`phoecord <version>`) for loopback peers, so `launch` can reuse a running proxy | |
 | `src/server.rs`, `src/rest.rs`, `src/gateway.rs` | Proxy loop, REST and Gateway traffic routed through `Chain` | Keep REST decisions and Gateway encode/compress round-trips lossless |
 | `src/codec.rs` | `Codec` from the Gateway query (`encoding`, `compress`), `Inflater` / `Deflater` for zlib-stream and zstd-stream | Compression context is per connection: once a frame changes, everything after must use our context |
 | `src/ca.rs` | `Authority`: local CA load-or-create, name constraint (`CONSTRAINED_TO`), leaf certificates per SNI, rustls `ServerConfig` | `CA_NAME` is what `untrust` looks for; tests check the constraint blocks other domains |
@@ -136,7 +137,10 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/discover.rs` | `discover()`: Stable/PTB/Canary on Windows, macOS, Linux (PATH, Flatpak, Snap); `discover_in(&Roots)` for tests |
 | `src/system.rs` | `Os`, `Env`, the `System` trait (trust store, Run key, launchctl, systemd); `RealSystem` is the only code that touches the machine |
 | `src/ca.rs`, `src/autostart.rs` | Install steps: local CA + trust; Run key / LaunchAgent / systemd user unit |
+| `src/shortcut.rs` | Start-menu shortcut "Discord … (PhoeCord)" that runs `phoecord launch --channel …`: Windows `.lnk` (PowerShell + WScript.Shell, every value quoted), Linux `.desktop` | Created and removed through `System`, logged in `install.log` |
+| `src/launch.rs` | `choose` (the client for `--channel`, or the only one installed; several without `--channel` is an error), `client_command`, `probe_proxy` (is PhoeCord already on the port: `GET /__phoecord`) | `launch` never defaults silently to Stable |
 | `src/terms.rs` | `TERMS_VERSION`, both terms texts (`include_str!` of `TERMS.md` / `TERMS.ru.md`), `needs_acceptance`, `accept` (stored in the data folder and logged so `uninstall` removes it) | Bump `TERMS_VERSION` whenever the text changes, so users are asked again |
+| `src/system.rs` additions | `stop_proxies` (only `run`/`launch` processes of PhoeCord's own binaries, never the calling process; `select_proxy_pids` is tested), `shortcut_create`, `Env.start_menu`, `Env.applications_dir` | |
 | `src/install.rs`, `src/uninstall.rs` | `install()` (idempotent) and `uninstall_all()` (undoes the log newest-first, `UninstallReport`) |
 | `src/log.rs` | `install.log` (JSON lines in the data folder): every step the installer made, so rollback removes only what it created |
 

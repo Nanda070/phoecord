@@ -99,7 +99,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
 | **1.4.6** 🔴 | Manual check on real Windows, macOS and Linux machines: `setup` → reboot → proxy runs and Discord connects; `uninstall` leaves no file, trust entry or autostart entry | Nanda | 🔄 Windows 23.11: setup, repeat setup, client through the proxy, proxy as autostart would run it, uninstall checked; real reboot not done; 5 bugs found (1.4.8); macOS and Linux not checked |
 | **1.4.7** 🔴 | Terms of use (`TERMS.md`, English and Russian) that must be accepted before install, in the GUI and in `phoecord setup` | Nanda | ✅ 23.11, PR #38; text approved by the owner (the GUI screen is part of 1.4.3) |
-| **1.4.8** 🔴 | Fixes from the Windows check (1.4.6): `uninstall` removes a CA made by any command and stops a running proxy; `launch --channel stable/ptb/canary` (no silent default to Stable); `launch` reuses a running proxy; a Start-menu shortcut that starts the client through the proxy, so autostart is useful | Nanda | ⏳ |
+| **1.4.8** 🔴 | Fixes from the Windows check (1.4.6): `uninstall` removes a CA made by any command and stops a running proxy; `launch --channel stable/ptb/canary` (no silent default to Stable); `launch` reuses a running proxy; a Start-menu shortcut that starts the client through the proxy, so autostart is useful | Nanda | ✅ 24.11, PR #52 (all five fixed with tests; the Windows re-check is part of 1.4.6) |
 | **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ✅ 23.11, PR #10 |
 | **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ✅ 23.11, PR #10 |
 | **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ✅ 23.11, PR #10 |

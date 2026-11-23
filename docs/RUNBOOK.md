@@ -47,6 +47,13 @@ Write down right away: when it started (UTC), Discord client and version, PhoeCo
 | UI plugins are off, notice "waiting for a signature update" | Expected degradation: the client build is unknown. New signatures go into `signatures/*.toml` (Phase 2, 2.2) |
 | Client crashes on start with the loader installed | Remove the loader (`phoecord-installer`, "Uninstall") and file a bug with the client version: a hook is wrong |
 
+## 3b. Starting Discord through PhoeCord
+
+- `phoecord launch --channel canary` (or `stable`, `ptb`). With several clients installed and no `--channel`, `launch` lists them and stops: it never picks one silently.
+- If the proxy already runs (autostart), `launch` only starts the client with the proxy flag.
+- "address used by another program, not PhoeCord": something else holds the port; change `listen` in `config.toml`.
+- `phoecord setup --channel canary` adds a Start-menu shortcut "Discord Canary (PhoeCord)"; `phoecord uninstall` removes it.
+
 ## 3a. Running checks from inside another app
 
 If you start `phoecord` from a packaged (MSIX / Store) app, for example the Claude desktop app's terminal, Windows redirects its AppData and HKCU writes into that app's private cache: setup seems to work but nothing lands in your real profile. Run PhoeCord from a normal terminal (Windows Terminal, PowerShell from the Start menu).
