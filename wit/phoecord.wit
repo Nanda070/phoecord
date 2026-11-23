@@ -1,0 +1,178 @@
+// PhoeCord Plugin API v1 as a WebAssembly component-model contract.
+// License: MIT (plugin authors build against this file).
+//
+// Mirrors `crates/phoecord-core/src/plugin.rs` (`Manifest`, `Event`, `EventKind`, `Verdict`, `Host`).
+// Change one, change the other, and bump `API_VERSION` when the change is not additive.
+
+package phoecord:plugin@1.0.0;
+
+interface types {
+    /// A value tree, the counterpart of `phoecord_core::Val`.
+    ///
+    /// WIT cannot express a recursive type, so a tree is an arena: `nodes[0]` is the root and a
+    /// container refers to its children by index into `nodes`. A child index is always larger than
+    /// its parent's, so there are no cycles and a decoder can walk the arena back to front.
+    record tree {
+        nodes: list<node>,
+    }
+
+    /// One node of a [`tree`]. `u32` fields are indices into `tree.nodes`.
+    variant node {
+        null,
+        %bool(bool),
+        int(s64),
+        /// `Val::Big` (an `i128`): high 64 bits (signed), then low 64 bits.
+        big(tuple<s64, u64>),
+        float(f64),
+        %string(string),
+        /// An Erlang atom (gateway ETF only).
+        atom(string),
+        bin(list<u8>),
+        charlist(list<u8>),
+        %list(list<u32>),
+        %tuple(list<u32>),
+        /// Key and value index pairs, in order.
+        %map(list<tuple<u32, u32>>),
+    }
+
+    enum layer {
+        network,
+        theme,
+        ui,
+    }
+
+    record manifest {
+        id: string,
+        name: string,
+        version: string,
+        description: string,
+        authors: list<string>,
+        /// The Vencord plugin this one mirrors, if any.
+        vencord: option<string>,
+        layers: list<layer>,
+        /// The Plugin API version the plugin was built against.
+        api: u32,
+    }
+
+    /// An event without its data, for `wants`.
+    variant event-kind {
+        rest-request(rest-kind),
+        rest-response(rest-kind),
+        dispatch(string),
+        send(s64),
+    }
+
+    record rest-kind {
+        method: string,
+        /// No `/api/vN` prefix.
+        route: string,
+    }
+
+    /// One thing a plugin may react to. Payloads are copies; changes come back in `outcome`.
+    variant event {
+        /// A REST call on its way to Discord.
+        rest-request(rest-request),
+        /// A REST answer from Discord (read-only).
+        rest-response(rest-response),
+        /// A server to client gateway dispatch (`op 0`).
+        dispatch(dispatch),
+        /// A client to server gateway payload.
+        send(send),
+    }
+
+    record rest-request {
+        method: string,
+        route: string,
+        body: option<tree>,
+    }
+
+    record rest-response {
+        method: string,
+        route: string,
+        status: u16,
+        body: tree,
+    }
+
+    record dispatch {
+        name: string,
+        payload: tree,
+    }
+
+    record send {
+        op: s64,
+        payload: tree,
+    }
+
+    record reply {
+        status: u16,
+        body: option<tree>,
+    }
+
+    variant verdict {
+        /// Not interested or nothing changed.
+        pass,
+        /// The payload in `outcome.payload` replaces the event's payload.
+        changed,
+        /// Swallow the event. Stops the plugin chain.
+        drop,
+        /// Answer a REST request locally. Stops the chain.
+        reply(reply),
+    }
+
+    /// What `on-event` returns.
+    record outcome {
+        verdict: verdict,
+        /// The changed payload (the request body, or the dispatch or send payload). Read only when
+        /// `verdict` is `changed`.
+        payload: option<tree>,
+        /// Gateway payloads to emit after this dispatch. Read only for `dispatch` events.
+        extra: list<tree>,
+    }
+
+    record host-response {
+        status: u16,
+        /// The JSON body, if there was one and it parsed.
+        body: option<tree>,
+    }
+}
+
+/// Services the host gives a plugin: the only door to the outside world.
+///
+/// A call the plugin has no right to (the `rights` list of its `plugin.toml`) returns `err`.
+interface host {
+    use types.{tree, host-response};
+
+    /// This plugin's settings, e.g. `setting("emoji_size")`. Always allowed.
+    setting: func(key: string) -> option<tree>;
+    /// Right `kv`.
+    kv-get: func(key: string) -> result<option<tree>, string>;
+    /// Right `kv`.
+    kv-set: func(key: string, value: tree) -> result<_, string>;
+    /// The signed-in user's id, once the gateway READY has been seen. Always allowed.
+    self-id: func() -> option<u64>;
+    /// Right `notify`.
+    notify: func(title: string, body: string) -> result<_, string>;
+    /// Always allowed.
+    log: func(message: string);
+    /// Queue a client to server gateway payload. Right `emit-send`.
+    emit-send: func(op: s64, payload: tree) -> result<_, string>;
+    /// Custom emoji ids of a guild the user is in. Right `guilds`.
+    guild-emojis: func(guild-id: u64) -> result<list<u64>, string>;
+    /// The guild a channel belongs to. Right `guilds`.
+    channel-guild: func(channel-id: u64) -> result<option<u64>, string>;
+    /// HTTPS to an external service. Right `fetch`.
+    fetch: func(method: string, url: string, body: option<tree>) -> result<host-response, string>;
+    /// A Discord API call on the user's behalf. Right `rest`.
+    rest: func(method: string, route: string, body: option<tree>) -> result<host-response, string>;
+}
+
+world plugin {
+    use types.{manifest as manifest-info, event-kind as kind, event as plugin-event, outcome as plugin-outcome};
+
+    import host;
+
+    export manifest: func() -> manifest-info;
+    /// Cheap pre-filter, asked once per event the manifest's `events` already lets through.
+    export wants: func(kind: kind) -> bool;
+    export on-event: func(event: plugin-event) -> plugin-outcome;
+}
