@@ -398,6 +398,17 @@ Also learnt: commands started from a packaged (MSIX) app such as the Claude desk
 
 **Done when:** each item has a test over the fake `System` and temp dirs, and a repeat of the Windows check passes all five.
 
+### 1.4.9. Trust the CA that is in use (Nanda)
+
+**Files:** `crates/phoecord-installer/src/ca.rs`, `crates/phoecord-installer/src/system.rs`
+
+Found in the 1.4.6 re-check on 24.11: `ca.pem` had been recreated after it was trusted, and `setup` skipped trusting because `install.log` already had a `ca_trusted` line for the same path. The proxy then signed with an untrusted CA and Discord Canary restarted in a loop. `phoecord trust` fixed it by hand.
+
+- Record the certificate's fingerprint in the `ca_trusted` step; `ensure_ca` trusts again when the fingerprint differs or the store no longer holds it (a `System::is_trusted(fingerprint)` check: Windows `certutil -user -verifystore Root <thumbprint>`, macOS `security find-certificate -Z`, Linux NSS `certutil -L`).
+- `run` and `launch` warn once when the CA they load is not trusted, and say `phoecord trust` fixes it.
+
+**Done when:** a test over the fake `System` recreates the CA between two `setup` runs and the second run trusts the new one; the warning has a test.
+
 ### 1.4.5. Releases (Nanda)
 
 **Files:** `.github/workflows/release.yml`, `docs/GOVERNANCE.md`
