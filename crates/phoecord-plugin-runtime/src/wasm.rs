@@ -14,8 +14,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 use wasmtime::component::{Component, HasSelf, Linker};
-use wasmtime::{Config, Engine, Store};
+use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder, Trap, UpdateDeadline};
 
 mod bindings {
     wasmtime::component::bindgen!({
@@ -266,14 +267,23 @@ struct Job {
 struct State {
     up: Sender<Up>,
     down: Receiver<Down>,
+    limits: StoreLimits,
+    /// When the current job started, and how long it has spent waiting for the host since.
+    started: Instant,
+    host_wait: Duration,
+    timeout: Duration,
 }
 
 impl State {
     /// Ask the caller to run a host call and wait for its answer.
     fn call(&mut self, call: HostCall) -> Result<HostReply, String> {
         const GONE: &str = "the host went away";
+        let asked = Instant::now();
         self.up.send(Up::Host(call)).map_err(|_| GONE)?;
-        match self.down.recv() {
+        let reply = self.down.recv();
+        // Time the host spends answering is not the guest's.
+        self.host_wait += asked.elapsed();
+        match reply {
             Ok(Down::Reply(r)) => Ok(r),
             _ => Err(GONE.into()),
         }
@@ -365,6 +375,14 @@ impl wit_host::Host for State {
     }
 }
 
+/// Start the clock for one guest call.
+fn begin_job(store: &mut Store<State>) {
+    let s = store.data_mut();
+    s.started = Instant::now();
+    s.host_wait = Duration::ZERO;
+    store.set_epoch_deadline(1);
+}
+
 /// Answer one host call with the real [`Host`].
 fn serve(host: &mut dyn Host, call: HostCall) -> HostReply {
     match call {
@@ -398,18 +416,72 @@ fn serve(host: &mut dyn Host, call: HostCall) -> HostReply {
 // Runtime and plugin
 // ---------------------------------------------------------------------------------------------
 
-/// One wasmtime engine shared by all WASM plugins.
+/// Limits applied to every WASM plugin.
+#[derive(Clone, Copy, Debug)]
+pub struct WasmLimits {
+    /// CPU time one event may take in the guest (time spent in host calls does not count).
+    /// Enforced with epoch interruption, so it is accurate to about a millisecond.
+    pub event_timeout: Duration,
+    /// Most linear memory a guest may grow to, in bytes.
+    pub memory: usize,
+}
+
+impl Default for WasmLimits {
+    fn default() -> Self {
+        WasmLimits {
+            event_timeout: Duration::from_millis(5),
+            memory: 32 << 20,
+        }
+    }
+}
+
+/// How often the engine's epoch advances. The event timeout is checked on every tick.
+const TICK: Duration = Duration::from_millis(1);
+
+/// One wasmtime engine shared by all WASM plugins, and the clock that drives epoch interruption.
 pub struct WasmRuntime {
     engine: Engine,
+    limits: WasmLimits,
+    stop: Arc<AtomicBool>,
 }
 
 impl WasmRuntime {
     pub fn new() -> Result<Arc<WasmRuntime>, Error> {
+        Self::with_limits(WasmLimits::default())
+    }
+
+    pub fn with_limits(limits: WasmLimits) -> Result<Arc<WasmRuntime>, Error> {
         let mut config = Config::new();
         config.wasm_component_model(true);
+        config.epoch_interruption(true);
+        let engine = Engine::new(&config)?;
+        let stop = Arc::new(AtomicBool::new(false));
+        {
+            let (engine, stop) = (engine.clone(), stop.clone());
+            std::thread::Builder::new()
+                .name("phoecord-wasm-clock".into())
+                .spawn(move || {
+                    while !stop.load(Ordering::Relaxed) {
+                        std::thread::sleep(TICK);
+                        engine.increment_epoch();
+                    }
+                })?;
+        }
         Ok(Arc::new(WasmRuntime {
-            engine: Engine::new(&config)?,
+            engine,
+            limits,
+            stop,
         }))
+    }
+
+    pub fn limits(&self) -> WasmLimits {
+        self.limits
+    }
+}
+
+impl Drop for WasmRuntime {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
     }
 }
 
@@ -440,6 +512,8 @@ impl Worker {
 
 /// A plugin that is a WASM component.
 pub struct WasmPlugin {
+    /// Keeps the epoch clock running for as long as the plugin lives.
+    _runtime: Arc<WasmRuntime>,
     manifest: Manifest,
     worker: Mutex<Worker>,
     disabled: AtomicBool,
@@ -457,6 +531,7 @@ impl WasmPlugin {
         wit_host::add_to_linker::<State, HasSelf<State>>(&mut linker, |s| s)?;
         let pre = bindings::PluginPre::new(linker.instantiate_pre(&component)?)?;
         let engine = runtime.engine.clone();
+        let limits = runtime.limits;
 
         let (down_tx, down_rx) = channel();
         let (up_tx, up_rx) = channel();
@@ -469,8 +544,27 @@ impl WasmPlugin {
                     State {
                         up: up_tx,
                         down: down_rx,
+                        limits: StoreLimitsBuilder::new()
+                            .memory_size(limits.memory)
+                            .trap_on_grow_failure(true)
+                            .build(),
+                        started: Instant::now(),
+                        host_wait: Duration::ZERO,
+                        timeout: limits.event_timeout,
                     },
                 );
+                store.limiter(|s| &mut s.limits);
+                // Runs on every epoch tick the guest is executing through: trap once the guest
+                // itself has used up its time.
+                store.epoch_deadline_callback(|ctx| {
+                    let s = ctx.data();
+                    if s.started.elapsed().saturating_sub(s.host_wait) > s.timeout {
+                        Err(Trap::Interrupt.into())
+                    } else {
+                        Ok(UpdateDeadline::Continue(1))
+                    }
+                });
+                begin_job(&mut store);
                 let instance = match pre.instantiate(&mut store) {
                     Ok(i) => i,
                     Err(e) => {
@@ -478,6 +572,7 @@ impl WasmPlugin {
                         return;
                     }
                 };
+                begin_job(&mut store);
                 match instance.call_manifest(&mut store) {
                     Ok(m) => {
                         let _ = ready_tx.send(Ok(m));
@@ -488,6 +583,7 @@ impl WasmPlugin {
                     }
                 }
                 while let Ok(Down::Job(job)) = store.data().down.recv() {
+                    begin_job(&mut store);
                     let result = instance
                         .call_wants(&mut store, &job.kind)
                         .and_then(|wanted| {
@@ -520,6 +616,7 @@ impl WasmPlugin {
             )));
         }
         Ok(WasmPlugin {
+            _runtime: runtime.clone(),
             manifest,
             worker: Mutex::new(Worker {
                 down: Some(down_tx),
