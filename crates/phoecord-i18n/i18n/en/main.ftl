@@ -150,3 +150,5 @@ cli-arg-channel = Which Discord to start: stable, ptb or canary (needed when mor
 cli-err-channel-not-installed = Discord { $channel } is not installed
 cli-err-several-clients = several Discord clients are installed, so none is picked for you. Pass --channel:
     { $list }
+cli-proxy-reused = A PhoeCord proxy (version { $version }) already runs on { $listen }; starting Discord through it.
+cli-err-port-taken = { $listen } is used by another program, not by PhoeCord. Close it or change `listen` in config.toml.

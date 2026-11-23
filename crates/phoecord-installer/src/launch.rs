@@ -84,6 +84,61 @@ pub fn choose(clients: &[Client], want: Option<Channel>) -> Result<Client> {
     }
 }
 
+/// What answers on the proxy's address.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Occupant {
+    /// Nothing listens there.
+    Nobody,
+    /// A PhoeCord proxy, with its version.
+    PhoeCord(String),
+    /// Something else holds the port.
+    Other,
+}
+
+/// `phoecord <version>` from an answer to `GET /__phoecord`.
+fn parse_identity(answer: &str) -> Option<String> {
+    let (head, body) = answer.split_once("\r\n\r\n")?;
+    if !head.starts_with("HTTP/1.1 200") {
+        return None;
+    }
+    let version = body.trim().strip_prefix("phoecord ")?;
+    (!version.is_empty() && !version.contains(char::is_whitespace)).then(|| version.to_string())
+}
+
+/// Ask whoever listens on `addr` (a loopback `host:port`) whether it is a PhoeCord proxy.
+pub fn probe_proxy(addr: &str) -> Occupant {
+    use std::io::{Read, Write};
+    use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
+    use std::time::Duration;
+    let timeout = Duration::from_secs(2);
+    let Some(sock) = addr
+        .to_socket_addrs()
+        .ok()
+        .and_then(|mut a| a.find(|a: &SocketAddr| a.ip().is_loopback()))
+    else {
+        // Not a loopback address: the proxy never serves it, so there is nothing to reuse.
+        return Occupant::Other;
+    };
+    let Ok(mut s) = TcpStream::connect_timeout(&sock, timeout) else {
+        return Occupant::Nobody;
+    };
+    let _ = s.set_read_timeout(Some(timeout));
+    let _ = s.set_write_timeout(Some(timeout));
+    let ask = format!(
+        "GET {} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n",
+        phoecord_proxy::server::IDENTITY_PATH
+    );
+    let mut answer = Vec::new();
+    // Read what comes (a stalled or non-HTTP peer ends at the timeout): it is not ours then.
+    if s.write_all(ask.as_bytes()).is_ok() {
+        let _ = s.take(4096).read_to_end(&mut answer);
+    }
+    match parse_identity(&String::from_utf8_lossy(&answer)) {
+        Some(v) => Occupant::PhoeCord(v),
+        None => Occupant::Other,
+    }
+}
+
 fn proxy_env(cmd: &mut Command, url: &str) {
     // Native (non-Chromium) clients usually honour these instead of --proxy-server.
     for k in ["HTTPS_PROXY", "https_proxy"] {
@@ -174,6 +229,56 @@ mod tests {
         c.get_args()
             .map(|a| a.to_string_lossy().into_owned())
             .collect()
+    }
+
+    /// Serve `answer` to one connection on a loopback port; returns the port.
+    fn one_shot(answer: String) -> u16 {
+        use std::io::{Read, Write};
+        let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = l.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            if let Ok((mut s, _)) = l.accept() {
+                let mut buf = [0u8; 512];
+                let _ = s.read(&mut buf);
+                let _ = s.write_all(answer.as_bytes());
+            }
+        });
+        port
+    }
+
+    #[test]
+    fn a_phoecord_proxy_is_recognised_by_its_answer() {
+        let ours = format!(
+            "HTTP/1.1 200 OK\r\ncontent-length: 14\r\n\r\n{}",
+            phoecord_proxy::server::identity_body()
+        );
+        let port = one_shot(ours);
+        match probe_proxy(&format!("127.0.0.1:{port}")) {
+            Occupant::PhoeCord(v) => assert_eq!(v, env!("CARGO_PKG_VERSION")),
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn another_program_on_the_port_is_not_mistaken_for_phoecord() {
+        for answer in [
+            "HTTP/1.1 200 OK\r\n\r\nhello\r\n",
+            "HTTP/1.1 405 Method Not Allowed\r\n\r\nphoecord 1\r\n",
+            "",
+        ] {
+            let port = one_shot(answer.to_string());
+            assert_eq!(probe_proxy(&format!("127.0.0.1:{port}")), Occupant::Other);
+        }
+    }
+
+    #[test]
+    fn a_free_port_has_nobody_and_a_remote_address_is_never_reused() {
+        let port = {
+            let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            l.local_addr().unwrap().port()
+        };
+        assert_eq!(probe_proxy(&format!("127.0.0.1:{port}")), Occupant::Nobody);
+        assert_eq!(probe_proxy("192.0.2.1:18463"), Occupant::Other);
     }
 
     #[test]

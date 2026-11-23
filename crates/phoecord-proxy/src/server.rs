@@ -20,6 +20,15 @@ pub async fn bind(addr: &str) -> Result<TcpListener> {
     Ok(TcpListener::bind(addr).await?)
 }
 
+/// `GET` this path on the listener to learn that a PhoeCord proxy (and which version) is there. Like
+/// everything the listener serves, it answers loopback peers only.
+pub const IDENTITY_PATH: &str = "/__phoecord";
+
+/// What [`IDENTITY_PATH`] answers: `phoecord <version>`.
+pub fn identity_body() -> String {
+    format!("phoecord {}\n", env!("CARGO_PKG_VERSION"))
+}
+
 /// Only this computer may use the proxy.
 fn allowed(peer: &SocketAddr) -> bool {
     peer.ip().is_loopback()
@@ -52,6 +61,12 @@ async fn front(
     req: Request<Incoming>,
     _peer: SocketAddr,
 ) -> Result<Response<Body>, Infallible> {
+    if req.method() == Method::GET
+        && req.uri().authority().is_none()
+        && req.uri().path() == IDENTITY_PATH
+    {
+        return Ok(Response::new(full(identity_body())));
+    }
     if req.method() != Method::CONNECT {
         let mut r = Response::new(full(
             "PhoeCord is an HTTPS proxy: use it as the client's proxy (CONNECT).\n",
@@ -220,5 +235,37 @@ mod tests {
             .unwrap();
         let out = String::from_utf8_lossy(&buf[..n]).into_owned();
         assert!(out.starts_with("HTTP/1.1 405"), "{out}");
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn the_listener_says_who_it_is() {
+        let dir =
+            std::env::temp_dir().join(format!("phoecord-test-server3-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let paths = Paths {
+            config: dir.join("config.toml"),
+            data: dir.join("data"),
+        };
+        let proxy = Proxy::new(paths, Config::default(), Chain::default(), false).unwrap();
+        let listener = bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(serve(proxy, listener));
+        let mut c = TcpStream::connect(addr).await.unwrap();
+        c.write_all(
+            format!("GET {IDENTITY_PATH} HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n")
+                .as_bytes(),
+        )
+        .await
+        .unwrap();
+        let mut out = String::new();
+        tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            c.read_to_string(&mut out),
+        )
+        .await
+        .expect("proxy answered")
+        .unwrap();
+        assert!(out.starts_with("HTTP/1.1 200"), "{out}");
+        assert!(out.ends_with(&identity_body()), "{out}");
     }
 }

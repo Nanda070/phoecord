@@ -9,6 +9,7 @@ mod selftest;
 use anyhow::{Context, Result};
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
 use phoecord_i18n::{Args, Localizer, Resolved, resolve_language};
+use phoecord_installer::launch::Occupant;
 use phoecord_installer::log::Step;
 use phoecord_installer::uninstall::Kept;
 use phoecord_plugin_runtime::Chain;
@@ -62,7 +63,12 @@ struct Launch {
 enum Cmd {
     Run,
     Launch {
-        #[arg(long, value_enum, conflicts_with = "command")]
+        #[arg(
+            long,
+            value_enum,
+            conflicts_with = "command",
+            hide_possible_values = true
+        )]
         channel: Option<ChannelArg>,
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         command: Vec<String>,
@@ -247,6 +253,17 @@ fn runtime() -> Result<tokio::runtime::Runtime> {
 async fn run(paths: Paths, launch: Option<Launch>, l10n: &Localizer) -> Result<()> {
     let cfg = Config::load_or_init(&paths.config)?;
     let listen = cfg.listen.clone();
+    if let Some(l) = &launch {
+        match phoecord_installer::launch::probe_proxy(&listen) {
+            Occupant::PhoeCord(version) => {
+                return reuse_proxy(l, &listen, &version, l10n);
+            }
+            Occupant::Other => {
+                anyhow::bail!(tf(l10n, "cli-err-port-taken", &[("listen", &listen)]))
+            }
+            Occupant::Nobody => {}
+        }
+    }
     // Pick the client before anything starts: a wrong or missing choice must change nothing.
     let client_cmd = match &launch {
         Some(l) => Some(phoecord_installer::launch::command(
@@ -312,6 +329,27 @@ async fn run(paths: Paths, launch: Option<Launch>, l10n: &Localizer) -> Result<(
         r = server => r??,
         _ = tokio::signal::ctrl_c() => {}
     }
+    Ok(())
+}
+
+/// A PhoeCord proxy already serves `listen` (autostart, another `launch`): only start the client.
+fn reuse_proxy(launch: &Launch, listen: &str, version: &str, l10n: &Localizer) -> Result<()> {
+    let mut cmd = phoecord_installer::launch::command(
+        &launch.command,
+        launch.channel,
+        &phoecord_installer::discover::discover(),
+        listen,
+    )?;
+    println!(
+        "{}",
+        tf(
+            l10n,
+            "cli-proxy-reused",
+            &[("listen", listen), ("version", version)]
+        )
+    );
+    cmd.spawn()
+        .with_context(|| l10n.t("cli-err-start-discord"))?;
     Ok(())
 }
 

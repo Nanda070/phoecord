@@ -155,3 +155,5 @@ cli-arg-channel = Какой Discord запустить: stable, ptb или cana
 cli-err-channel-not-installed = Discord { $channel } не установлен
 cli-err-several-clients = установлено несколько клиентов Discord, поэтому ни один не выбран за вас. Укажите --channel:
     { $list }
+cli-proxy-reused = Прокси PhoeCord (версия { $version }) уже работает на { $listen }; запускаю Discord через него.
+cli-err-port-taken = Адрес { $listen } занят другой программой, не PhoeCord. Закройте её или измените `listen` в config.toml.
