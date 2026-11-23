@@ -7,6 +7,8 @@ mod text;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use phoecord_plugin_runtime::Chain;
+use phoecord_plugin_runtime::package::PackageSet;
+use phoecord_plugin_runtime::wasm::WasmRuntime;
 use phoecord_proxy::config::{Config, Paths};
 use phoecord_proxy::{Proxy, ca, server, trust};
 use std::time::{Duration, Instant};
@@ -103,6 +105,11 @@ async fn run(paths: Paths, launch: Option<Vec<String>>) -> Result<()> {
     let cfg = Config::load_or_init(&paths.config)?;
     let listen = cfg.listen.clone();
     let proxy = Proxy::new(paths, cfg, chain(), false)?;
+    // WASM plugin packages in `<data>/plugins/<id>/`: loaded now, and again on every folder scan.
+    match WasmRuntime::new() {
+        Ok(rt) => proxy.watch_packages(PackageSet::new(rt, proxy.paths.data.join("plugins"))),
+        Err(e) => tracing::warn!("WASM plugins are off: {e:#}"),
+    }
     proxy.spawn_reloader();
     let listener = server::bind(&listen)
         .await
@@ -178,7 +185,7 @@ fn plugins(paths: &Paths) -> Result<()> {
 
 fn switch(paths: &Paths, name: &str, to: Option<bool>) -> Result<()> {
     let chain = chain();
-    if !chain.ids().any(|id| id == name) {
+    if !chain.ids().iter().any(|id| id == name) {
         anyhow::bail!(text::no_such_plugin(name));
     }
     let mut cfg = Config::load_or_init(&paths.config)?;

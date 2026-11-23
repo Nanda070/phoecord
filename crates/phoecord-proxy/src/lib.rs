@@ -18,9 +18,10 @@ use ca::Authority;
 use config::{Config, Paths};
 use host::{ProxyHost, Shared};
 use phoecord_core::{EventKind, Val};
+use phoecord_plugin_runtime::package::PackageSet;
 use phoecord_plugin_runtime::{Chain, Outcome};
 use std::sync::atomic::AtomicU64;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, SystemTime};
 use tokio::sync::{broadcast, watch};
 
@@ -63,6 +64,8 @@ pub struct Proxy {
     config: RwLock<Arc<Config>>,
     pub shared: Shared,
     pub chain: Chain,
+    /// Keeps the chain's dynamic segment in step with `data/plugins/` (WASM packages).
+    packages: Mutex<Option<PackageSet>>,
     pub ca: Arc<Authority>,
     pub server_tls: Arc<rustls::ServerConfig>,
     pub upstream_tls: Arc<rustls::ClientConfig>,
@@ -106,6 +109,7 @@ impl Proxy {
             config: RwLock::new(Arc::new(Config::default())),
             shared,
             chain,
+            packages: Mutex::new(None),
             ca,
             server_tls,
             upstream_tls: upstream_tls(None),
@@ -124,17 +128,47 @@ impl Proxy {
 
     /// Make `cfg` the live config and switch the chain to the plugins it enables.
     pub fn apply(&self, cfg: Config) {
-        let enabled: Vec<String> = self
-            .chain
-            .ids()
-            .filter(|id| cfg.is_enabled(id))
-            .map(str::to_string)
-            .collect();
-        self.chain.set_enabled(enabled);
+        self.set_enabled_from(&cfg);
         *self.config.write().unwrap() = Arc::new(cfg);
     }
 
-    /// Re-read config.toml whenever it changes (checked every 2 s). A broken file keeps the old config.
+    fn set_enabled_from(&self, cfg: &Config) {
+        let enabled: Vec<String> = self
+            .chain
+            .ids()
+            .into_iter()
+            .filter(|id| cfg.is_enabled(id))
+            .collect();
+        self.chain.set_enabled(enabled);
+    }
+
+    /// Follow `data/plugins/` with `packages`: load what is new now and on every later
+    /// [`Proxy::sync_packages`].
+    pub fn watch_packages(&self, packages: PackageSet) {
+        *self.packages.lock().unwrap() = Some(packages);
+        self.sync_packages();
+    }
+
+    /// Load new packages and unload removed ones, then switch the chain to what the config
+    /// enables. Does nothing when no packages are watched or nothing changed. Compiling a WASM
+    /// package takes a while, so call this off the async executor's threads.
+    pub fn sync_packages(&self) {
+        let logs = match self.packages.lock().unwrap().as_mut() {
+            Some(set) => set.sync(&self.chain),
+            None => return,
+        };
+        if logs.is_empty() {
+            return;
+        }
+        for line in &logs {
+            tracing::info!("{line}");
+        }
+        self.set_enabled_from(&self.cfg());
+        // Gateway tasks replay their state through the chain when this changes.
+        self.reloads.send_modify(|n| *n += 1);
+    }
+
+    /// Re-read config.toml whenever it changes (checked every 2 s, together with the `plugins/` folder). A broken file keeps the old config.
     pub fn spawn_reloader(self: &Arc<Self>) {
         let proxy = self.clone();
         tokio::spawn(async move {
@@ -142,6 +176,8 @@ impl Proxy {
             let mut last: Option<SystemTime> = mtime(&proxy.paths.config);
             loop {
                 tokio::time::sleep(Duration::from_secs(2)).await;
+                let p = proxy.clone();
+                let _ = tokio::task::spawn_blocking(move || p.sync_packages()).await;
                 let now = mtime(&proxy.paths.config);
                 if now == last {
                     continue;

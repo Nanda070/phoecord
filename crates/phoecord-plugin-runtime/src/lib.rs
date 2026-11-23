@@ -9,15 +9,20 @@ pub mod wasm;
 use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashSet;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 /// Plugins in the order they run. Order matters: the first `Drop` or `Reply` wins.
+///
+/// The chain has two segments: the plugins it was built with, and a *dynamic* segment after them
+/// that [`Chain::replace_dynamic`] swaps while the chain is live (plugin packages that appear and
+/// disappear on disk). An id is unique across both; a built-in always wins.
 ///
 /// Only *enabled* plugins run (all of them until [`Chain::set_enabled`] is called). A plugin that
 /// panics is disabled for the rest of the session and the chain carries on without it.
 #[derive(Default)]
 pub struct Chain {
-    plugins: Vec<Box<dyn Plugin>>,
+    plugins: Vec<Arc<dyn Plugin>>,
+    dynamic: RwLock<Vec<Arc<dyn Plugin>>>,
     /// `None` = every plugin is enabled.
     enabled: RwLock<Option<HashSet<String>>>,
     crashed: RwLock<HashSet<String>>,
@@ -41,17 +46,52 @@ pub enum Outcome {
 impl Chain {
     pub fn new(plugins: Vec<Box<dyn Plugin>>) -> Chain {
         Chain {
-            plugins,
+            plugins: plugins.into_iter().map(Arc::from).collect(),
             ..Chain::default()
         }
     }
 
-    pub fn ids(&self) -> impl Iterator<Item = &str> {
-        self.plugins.iter().map(|p| p.manifest().id.as_str())
+    /// Every plugin, in run order: the built-in segment, then the dynamic one.
+    fn all(&self) -> Vec<Arc<dyn Plugin>> {
+        let mut all = self.plugins.clone();
+        all.extend(self.dynamic.read().unwrap().iter().cloned());
+        all
     }
 
-    pub fn manifests(&self) -> impl Iterator<Item = &Manifest> {
-        self.plugins.iter().map(|p| p.manifest())
+    /// The plugins of the dynamic segment, for a caller that wants to keep the ones that stay.
+    pub fn dynamic_plugins(&self) -> Vec<Arc<dyn Plugin>> {
+        self.dynamic.read().unwrap().clone()
+    }
+
+    /// Replace the dynamic segment (plugins that run after the built-in ones). A plugin whose id
+    /// is already taken by a built-in or by an earlier one in `plugins` is left out; the ids left
+    /// out are returned. Events already running finish with the plugins they started with.
+    pub fn replace_dynamic(&self, plugins: Vec<Arc<dyn Plugin>>) -> Vec<String> {
+        let mut taken: HashSet<String> = self
+            .plugins
+            .iter()
+            .map(|p| p.manifest().id.clone())
+            .collect();
+        let mut kept = Vec::new();
+        let mut skipped = Vec::new();
+        for p in plugins {
+            let id = p.manifest().id.clone();
+            if taken.insert(id.clone()) {
+                kept.push(p);
+            } else {
+                skipped.push(id);
+            }
+        }
+        *self.dynamic.write().unwrap() = kept;
+        skipped
+    }
+
+    pub fn ids(&self) -> Vec<String> {
+        self.all().iter().map(|p| p.manifest().id.clone()).collect()
+    }
+
+    pub fn manifests(&self) -> Vec<Manifest> {
+        self.all().iter().map(|p| p.manifest().clone()).collect()
     }
 
     /// Replace the set of enabled plugin ids (called on every config reload).
@@ -61,7 +101,10 @@ impl Chain {
 
     /// Ids that currently run, in chain order.
     pub fn enabled_ids(&self) -> Vec<String> {
-        self.active().map(|p| p.manifest().id.clone()).collect()
+        self.active()
+            .iter()
+            .map(|p| p.manifest().id.clone())
+            .collect()
     }
 
     /// Ids of plugins disabled for the session after a panic.
@@ -71,28 +114,30 @@ impl Chain {
         v
     }
 
-    fn active(&self) -> impl Iterator<Item = &dyn Plugin> {
+    fn active(&self) -> Vec<Arc<dyn Plugin>> {
         let enabled = self.enabled.read().unwrap().clone();
         let crashed = self.crashed.read().unwrap().clone();
-        self.plugins.iter().map(|p| p.as_ref()).filter(move |p| {
+        let mut all = self.all();
+        all.retain(|p| {
             let id = &p.manifest().id;
             !crashed.contains(id) && enabled.as_ref().is_none_or(|e| e.contains(id))
-        })
+        });
+        all
     }
 
     /// Whether any enabled plugin wants this kind of event (lets the proxy skip decoding).
     pub fn wants(&self, kind: &EventKind) -> bool {
-        self.active().any(|p| p.wants(kind))
+        self.active().iter().any(|p| p.wants(kind))
     }
 
     /// Whether any enabled plugin may want gateway events at all.
     pub fn wants_gateway(&self) -> bool {
-        self.active().any(|p| p.wants_gateway())
+        self.active().iter().any(|p| p.wants_gateway())
     }
 
     /// Whether the plugin with this id may want gateway events (enabled or not).
     pub fn uses_gateway(&self, id: &str) -> bool {
-        self.plugins
+        self.all()
             .iter()
             .any(|p| p.manifest().id == id && p.wants_gateway())
     }
@@ -106,7 +151,12 @@ impl Chain {
         mut call: impl FnMut(&dyn Plugin, &mut dyn Host) -> Verdict,
     ) -> Outcome {
         let mut changed = false;
-        for p in self.active().filter(|p| p.wants(kind)) {
+        for p in self
+            .active()
+            .iter()
+            .map(Arc::as_ref)
+            .filter(|p| p.wants(kind))
+        {
             host.begin_plugin(&p.manifest().id);
             let verdict = match catch_unwind(AssertUnwindSafe(|| call(p, host))) {
                 Ok(v) => v,

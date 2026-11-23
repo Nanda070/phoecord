@@ -39,6 +39,7 @@ use crate::wasm::{Setup, WasmPlugin, WasmRuntime};
 use phoecord_core::plugin::API_VERSION;
 use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};
@@ -421,6 +422,89 @@ pub fn load_dir(runtime: &Arc<WasmRuntime>, root: &Path) -> Loaded {
         }
     }
     out
+}
+
+/// Keeps a live [`crate::Chain`] in step with a `plugins/` folder: a package copied in is loaded,
+/// a folder removed is unloaded, a package that is already running is left alone (it follows its
+/// own files, see [`PackagePlugin`]). Call [`PackageSet::sync`] on every config reload or folder
+/// scan; it is cheap when nothing changed.
+pub struct PackageSet {
+    runtime: Arc<WasmRuntime>,
+    root: PathBuf,
+    /// Packages that failed to load, with the files they had then: tried again only when the
+    /// files change, so a half-copied package is picked up once it is complete and a broken one
+    /// is reported once.
+    failed: HashMap<String, Stamp>,
+}
+
+impl PackageSet {
+    pub fn new(runtime: Arc<WasmRuntime>, root: PathBuf) -> PackageSet {
+        PackageSet {
+            runtime,
+            root,
+            failed: HashMap::new(),
+        }
+    }
+
+    /// Load new packages and drop removed ones. Returns the lines to log, empty when nothing
+    /// changed. A broken package never affects the plugins that are running.
+    pub fn sync(&mut self, chain: &crate::Chain) -> Vec<String> {
+        let mut dirs: Vec<PathBuf> = std::fs::read_dir(&self.root)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.join("plugin.toml").is_file())
+            .collect();
+        dirs.sort();
+        let present: Vec<String> = dirs
+            .iter()
+            .filter_map(|d| d.file_name()?.to_str().map(str::to_string))
+            .collect();
+        let running = chain.dynamic_plugins();
+        let mut logs = Vec::new();
+        let mut next: Vec<Arc<dyn Plugin>> = Vec::new();
+        for (dir, name) in dirs.iter().zip(&present) {
+            if let Some(p) = running.iter().find(|p| &p.manifest().id == name) {
+                next.push(p.clone());
+                continue;
+            }
+            let now = stamp(dir);
+            if self.failed.get(name) == Some(&now) {
+                continue;
+            }
+            match PackagePlugin::load(&self.runtime, dir) {
+                Ok(p) => {
+                    self.failed.remove(name);
+                    logs.push(format!("plugin {name} loaded from {}", dir.display()));
+                    next.push(Arc::new(p));
+                }
+                Err(e) => {
+                    self.failed.insert(name.clone(), now);
+                    logs.push(format!("plugin package {} not loaded: {e}", dir.display()));
+                }
+            }
+        }
+        self.failed.retain(|name, _| present.contains(name));
+        for p in &running {
+            if !present.contains(&p.manifest().id) {
+                logs.push(format!(
+                    "plugin {} unloaded: its folder is gone",
+                    p.manifest().id
+                ));
+            }
+        }
+        let unchanged = next.len() == running.len()
+            && next.iter().zip(&running).all(|(a, b)| Arc::ptr_eq(a, b));
+        if !unchanged {
+            for id in chain.replace_dynamic(next) {
+                logs.push(format!(
+                    "plugin {id} not loaded: a plugin with this id already exists"
+                ));
+            }
+        }
+        logs
+    }
 }
 
 #[cfg(test)]
