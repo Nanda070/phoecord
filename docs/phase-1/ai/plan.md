@@ -476,6 +476,17 @@ Found in the 1.4.6 re-check on 24.11: `ca.pem` had been recreated after it was t
 
 **Done when:** zero crashes across the three versions, report merged.
 
+### 1.5.8. Loader cost (Nanda)
+
+**Files:** `crates/phoecord-loader/src/entry.rs`, `crates/phoecord-loader/src/version.rs`
+
+Found in 1.5.7 on 24.11 (Discord Canary 1.0.1355): Electron starts 7 processes, every one loads `version.dll`, and the worker reads the whole exe (224 MB) from disk in each to detect the build, about 140 ms per process; one sandboxed child could not read it.
+
+- Do nothing in child processes (command line has `--type=`): the UI hooks only matter in the main process for Electron, and Phoenix is one process.
+- Detect the build from the image already mapped in memory (`GetModuleHandleW(null)` + the PE headers), not from the file.
+
+**Done when:** the log shows one worker per client start, and build detection takes under 20 ms.
+
 ## Stage 1.6. GPUI (Zed) research
 
 ### 1.6.1. A map of GPUI (Nanda)
