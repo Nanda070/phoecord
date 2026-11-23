@@ -97,6 +97,7 @@ plugin-desc-i_love_spam = Do not hide messages from 'likely spammers'
 plugin-desc-no_blocked_messages = Hide all blocked/ignored messages from chat completely
 plugin-desc-no_reply_mention = Disables reply pings by default
 plugin-desc-text_replace = Replace text in the messages you send
+plugin-desc-send_timestamps = Turn `12:34` in your messages into a Discord timestamp
 
 # CLI: log
 cli-log-empty = nothing logged yet ({ $path })

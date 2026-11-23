@@ -102,6 +102,7 @@ plugin-desc-i_love_spam = Не скрывает сообщения «вероя�
 plugin-desc-no_blocked_messages = Полностью скрывает сообщения заблокированных и игнорируемых пользователей
 plugin-desc-no_reply_mention = По умолчанию отключает уведомление автору при ответе
 plugin-desc-text_replace = Заменяет текст в отправляемых сообщениях по вашим правилам
+plugin-desc-send_timestamps = Превращает `12:34` в сообщениях в метку времени Discord
 
 # CLI: log
 cli-log-empty = пока ничего не записано ({ $path })
