@@ -30,10 +30,10 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | AlwaysAnimate | Animate everything that can be animated | 🎨 UI | 2 |
 | AlwaysExpandRoles | Expand the role list in profile popouts | 🎨 UI | 2 |
 | AlwaysTrust | Skip untrusted-domain and suspicious-file warnings | 🎨 UI | 2 |
-| AnonymiseFileNames | Anonymise uploaded file names | 🌐 Network | 1.2.11 |
+| AnonymiseFileNames | Anonymise uploaded file names | 🌐 Network | done (cloud uploads; the per-file toggle button is Phase 2) |
 | AutoDNDWhilePlaying | Set your status automatically while a game runs | 🌐 Network | 1.2.13 |
 | BetterFolders | Server folders in their own sidebar | 🎨 UI | 2 |
-| BetterGifAltText | GIF alt text from tags or file name | 🌐 Network | 1.2.11 |
+| BetterGifAltText | GIF alt text from tags or file name | 🎨 UI | 2 (Vencord only changes how the client renders the image; nothing is sent) |
 | BetterGifPicker | Open the GIF picker on favourites | 🎨 UI | 2 |
 | BetterRoleContext | Copy colour, edit role, view icon in role menus | 🎨 UI | 2 |
 | BetterRoleDot | Copy role colour on click; dot and colour together | 🎨 UI | 2 |
@@ -144,7 +144,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | ReviewDB | Reviews on user profiles | 🌐 + 🎨 | 1.2.17 / 2 |
 | RoleColorEverywhere | Top role colour everywhere | 🎨 UI | 2 |
 | SecretRingToneEnabler | Always the secret ringtone | 🎨 UI | 2 |
-| SendTimestamps | Send timestamps with shortcuts | 🌐 Network | 1.2.11 |
+| SendTimestamps | Send timestamps with shortcuts | 🌐 Network | done (the picker button is Phase 2) |
 | ServerInfo | Server info view | 🌐 + 🎨 | 1.2.12 / 2 |
 | ServerListIndicators | Online friends or server count in the list | 🎨 UI | 2 |
 | ShikiCodeblocks | VS Code-style code blocks | 🎨 UI | 2 |
@@ -154,7 +154,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | ShowHiddenThings | Show hidden and moderator-only things | 🌐 + 🎨 | 1.2.18 / 2 |
 | ShowMeYourName | Usernames next to nicknames | 🎨 UI | 2 |
 | ShowTimeoutDuration | How long a timeout lasts | 🎨 UI | 2 |
-| SilentMessageToggle | Button for silent messages | 🌐 + 🎨 | 1.2.11 / 2 |
+| SilentMessageToggle | Button for silent messages | 🌐 + 🎨 | done: data and `/phoecord silent` / 2 (chat bar button) |
 | SilentTyping | Hide that you are typing | 🌐 Network | done |
 | SortFriendRequests | Sort friend requests by date | 🎨 UI | 2 |
 | SpotifyControls | Spotify player above the account panel | 🎨 UI | 2 |
@@ -164,7 +164,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | StickerPaste | Insert stickers instead of sending | 🎨 UI | 2 |
 | StreamerModeOnStream | Streamer mode while streaming | 🎨 UI | 2 |
 | SuperReactionTweaks | Super reaction limits and default | 🎨 UI | 2 |
-| TextReplace | Replace text in your messages by rules | 🌐 Network | 1.2.11 |
+| TextReplace | Replace text in your messages by rules | 🌐 Network | done |
 | ThemeAttributes | Data attributes for CSS themes | ♻️ Replaced | theme engine (no CSS in Phoenix) |
 | Translate | Translate messages | 🌐 + 🎨 | 1.2.17 / 2 |
 | TypingIndicator | Who is typing, per channel | 🌐 + 🎨 | 1.2.16 / 2 |

@@ -55,3 +55,5 @@ Ruling: every pull request is assigned to Nanda070 and requests Nanda070's revie
 2026-11-23 19:55 | 1.2.7 | review | matvee | native `clear_urls` with 8 tests, branch feat/clear-urls; the WASM build stays in 1.3
 2026-11-23 23:00 | 1.2.7 | complete | matvee | clear_urls merged after the owner's review; rebased over #43 by the coordinator, PR #42
 2026-11-24 00:00 | 1.2.10 | complete | filters-1-2-10/Claude | i_love_spam, no_blocked_messages (history filtering opt-in after the coordinator's review), no_reply_mention; ImageLink and NoPendingCount moved to Phase 2 as UI-only; PR #45
+2026-11-24 01:00 | 1.3.8 | complete | wasm-clear-urls-1-3-8/Claude | clear_urls as a WASM package example with runtime tests and hot load; PR #48
+2026-11-24 01:00 | 1.2.11 | complete | outgoing-1-2-11/Claude | text_replace, send_timestamps, anonymise_file_names, silent_message_toggle; BetterGifAltText moved to Phase 2 as UI-only; PR #49

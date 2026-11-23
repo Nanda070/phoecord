@@ -87,6 +87,8 @@ Which `Verdict` to return:
 
 ### 3.2 WASM (third-party) plugin
 
+A complete, tested example: [`examples/plugins/clear_urls/`](../examples/plugins/clear_urls/) (build and install steps in its README).
+
 Same logic, different packaging: a crate built for `wasm32-wasip2` against `wit/phoecord.wit` (with `wit-bindgen` until the SDK and its macro land in 1.3.6), plus a `plugin.toml` from [`_template/code/plugin.toml`](_template/code/plugin.toml) listing `events`, `rights` and `fetch` hosts. The host only delivers the events and allows the `Host` calls the manifest lists. Drop the `plugin.toml` + `plugin.wasm` into the `plugins/<id>/` data folder: a running proxy loads it within 2 seconds. Switch it on with `[plugins.<id>] enabled = true` in `config.toml` (`phoecord enable` knows built-ins only for now).
 
 **Check:** the build passes and the proxy log shows the package loaded.

@@ -81,6 +81,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/wasm.rs` | `WasmRuntime` (engine + epoch clock), `WasmLimits`, `WasmPlugin`, `Right`, `Setup`, `tree` ↔ `Val` | Guest trees are untrusted: keep the bounds, depth and single-use checks |
 | `src/package.rs` | `plugin.toml` format and rights table (documented at the top), `PackagePlugin` with reload, `load_dir`, `PackageSet::sync` (load new folders, unload removed ones) | A broken new version must leave the old one running |
 | `tests/guest/` | A separate workspace: the test guest, built for `wasm32-wasip2` by the tests (CI installs the target) | Slow-event tests use a zero soft limit so they do not depend on machine speed |
+| `tests/clear_urls_wasm.rs` | Builds `examples/plugins/clear_urls`, loads it as a package (also into a running chain) and checks it behaves like the native plugin | Needs the `wasm32-wasip2` target |
 | `benches/overhead.rs` | Per-event cost of a WASM plugin vs a native one on a MESSAGE_CREATE payload (`cargo bench`) | Input for benchmark task 1.1.10 |
 | `wit/phoecord.wit` (repo root) | The `plugin` world and `host` interface; mirrors `phoecord-core::plugin` | Change together with `plugin.rs` |
 
@@ -101,6 +102,11 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/i_love_spam.rs` | iLoveSpam: clears the likely-spammer bit (`1<<20`) from user `flags` / `public_flags` in messages, history and member events | Keep every other bit |
 | `src/no_blocked_messages.rs` | NoBlockedMessages: learns blocked (type 2) and ignored users, drops their live messages; settings `apply_to_ignored_users` (true), `filter_history` (false) | Filtering history makes pages shorter than `limit`, which can stop the client loading older messages; that is why it is off by default |
 | `src/no_reply_mention.rs` | NoReplyMention: sets `allowed_mentions.replied_user = false` on replies per Vencord's rules; settings `user_list`, `role_list`, `should_ping_listed`; remembers authors of 5000 messages | An unknown replied-to message counts as "not listed" |
+| `src/text_replace.rs` | TextReplace: string and regex rules on outgoing `content` (send and edit), JavaScript replacement syntax emulated; uses `regex` | JS-only regex syntax makes a rule invalid; invalid rules are skipped and logged once |
+| `src/send_timestamps.rs` | SendTimestamps: `` `12:34` `` → `<t:unix:t>`; local offset from the `time` crate, `utc_offset_minutes` fallback on Unix | DST: the next occurrence is computed per calendar day |
+| `src/anonymise_file_names.rs` | AnonymiseFileNames: renames `files[].filename` in `POST /channels/{id}/attachments` and the matching `attachments[].filename` in the message | Files inside a multipart message body are not renamed (the proxy never rewrites multipart) |
+| `src/silent_message_toggle.rs` | SilentMessageToggle: `flags \|= 1<<12` on outgoing messages; `/phoecord silent [on\|off]` | The toggle is in memory and starts off |
+| `src/testutil.rs` | Test helpers shared by the plugin tests | |
 | `src/game_activity_toggle.rs` | GameActivityToggle: removes "Playing" activities from op 3 presence updates | The proxy re-sends the last presence on toggle |
 | `src/relationship_notifier.rs` | RelationshipNotifier: `notify` on unfriend, server and group removal; your own actions in the last 60 s are ignored | Own-action memory must match the REST routes |
 | `src/fake_nitro.rs` | FakeNitro (emoji): rewrites unusable emoji in outgoing messages as CDN links; `premium_type` 2 in `READY` only for tier 0 | Learns the real tier from `READY`; needs Ctrl+R after enabling |
@@ -155,6 +161,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 |:---|:---|
 | `scripts/check.sh`, `scripts/check.ps1` | All checks in order, stop at first failure (see `AGENTS.md`) |
 | `scripts/check_i18n.py` | Every key of `crates/*/i18n/en/*.ftl` exists in the `ru` file with the same variables; exit 1 otherwise |
+| `examples/plugins/clear_urls/` | The first third-party plugin example: `clear_urls` as a WASM package (`plugin.toml` id `clear_urls_wasm`, `wit-bindgen`), its own cargo workspace, excluded from the main one; README shows build and install |
 | `scripts/dev/New-TestVm.ps1` | Creates a throwaway Hyper-V VM (Gen 2, Secure Boot, vTPM, Default Switch) for the manual checks 1.4.6 and 1.5.7, so they never touch your own Discord; run elevated |
 | `scripts/gen_decisions.py` | Builds `docs/DECISIONS.md` from `Ruling:` lines of `docs/<plan>/ai/ledger.md`; `--check` exits 1 if stale |
 

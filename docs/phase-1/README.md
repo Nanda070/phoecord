@@ -75,7 +75,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.2.8** 🟡 | `/phoecord` slash commands (new) | Nanda | ✅ 23.11, PR #22 |
 | **1.2.9** 🟢 | `phoecord import-vencord` | anyone | ⏳ |
 | **1.2.10** 🟡 | Message filters: iLoveSpam, NoBlockedMessages, NoReplyMention (ImageLink and NoPendingCount are UI-only, moved to Phase 2) | Nanda | ✅ 23.11, PR #45 |
-| **1.2.11** 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, BetterGifAltText, SilentMessageToggle (`/silent`) | anyone | ⏳ |
+| **1.2.11** 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, SilentMessageToggle (`/phoecord silent`); BetterGifAltText is UI-only, moved to Phase 2 | Nanda | ✅ 23.11, PR #49 |
 | **1.2.12** 🟡 | Commands: CustomCommands, FriendInvites, petpet, SpotifyShareCommands, ServerInfo, ViewRaw, UnsuppressEmbeds | anyone | ⏳ |
 | **1.2.13** 🟡 | Presence: CustomRPC, MusicRichPresence, IgnoreActivities, AutoDNDWhilePlaying, CustomIdle | anyone | ⏳ |
 | **1.2.14** 🟡 | Profiles: NoProfileThemes, FakeProfileThemes, USRBG, Decor (data part) | anyone | ⏳ |
@@ -91,7 +91,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.3.5** 🔴 | Rights from the manifest | Nanda | ✅ 23.11, PR #24 |
 | **1.3.6** 🟡 | SDK: bindings, macro, `examples/hello-plugin` | anyone | ⏳ |
 | **1.3.7** 🟡 | TypeScript plugin template | anyone | ⏳ |
-| **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ⏳ |
+| **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ✅ 23.11, PR #48 (`examples/plugins/clear_urls`, 79 KB, loads without a restart) |
 | **1.4.1** 🔴 | Client discovery on 3 OSes | Nanda | ✅ 23.11, PR #23 (library; real machines not checked) |
 | **1.4.2** 🔴 | CA and proxy autostart | Nanda | ✅ 23.11, PR #23; `phoecord setup` uses it since PR #33 |
 | **1.4.3** 🟡 | Installer GUI: dark red theme, tabs, motion, as easy as BetterDiscord/Vencord; terms screen; Plugins tab (install from file or link, rights shown first, on/off, remove) | Kennurken | ⏳ |

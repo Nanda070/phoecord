@@ -38,6 +38,8 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - The whole CLI speaks Russian, `--help` included (stage 1.7.3).
 - Terms of use (`TERMS.md`, `TERMS.ru.md`, version 1): `phoecord setup` shows them and installs nothing until you type `yes` (`да`); a new version asks again (stage 1.4.7).
 - Plugins `i_love_spam`, `no_blocked_messages` and `no_reply_mention`, off by default (stage 1.2.10); ImageLink and NoPendingCount are UI-only and move to Phase 2.
+- Plugins `text_replace`, `send_timestamps`, `anonymise_file_names` and `silent_message_toggle` with `/phoecord silent`, off by default (stage 1.2.11); BetterGifAltText is UI-only and moves to Phase 2.
+- The first third-party plugin example: `clear_urls` as a WASM package in `examples/plugins/clear_urls/`, loaded without a restart (stage 1.3.8).
 
 ### Removed
 
