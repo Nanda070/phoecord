@@ -10,16 +10,23 @@ Related: [`PLUGINS.md`](PLUGINS.md) (which plugin goes where), [`ARCHITECTURE.md
 
 ---
 
-## 0. The one rule: re-implement, never copy
+## 0. Licenses: what you may reuse
 
-Vencord is **GPL-3.0**; PhoeCord is **MIT**. Copying Vencord code, even one function or a regex, would put GPL code into an MIT project. So:
+PhoeCord is **GPL-3.0-or-later**, the same as Vencord. So you may adapt Vencord code (its logic, regexes, constants, lists of tracking parameters, and so on) when porting, as long as you credit it:
 
-- Read the original to understand **what it does from the user's point of view**: which requests or events it changes, what the user sees, which settings it has.
-- Write the PhoeCord version from that behaviour, in Rust, from scratch. Do not keep the original open side by side while typing.
-- Names of plugins and settings may stay the same (they are not code), so `phoecord import-vencord` can map them.
-- Userplugins have their own licenses (look for `LICENSE` in their folder). Unless it is MIT-compatible and you keep its notice, the same rule applies.
+- Put this header at the top of a file that contains adapted Vencord code:
 
-**Check:** no line of your PR is a translated copy of the original.
+  ```rust
+  // Adapted from Vencord, src/plugins/<plugin>/index.ts
+  // Copyright (c) Vendicated and contributors, GPL-3.0-or-later.
+  ```
+
+- Most Vencord code is TypeScript that patches React, so in practice you translate the *idea* into Rust events; copy only what carries over (patterns, tables, constants).
+- Userplugins: check their `LICENSE`. GPL-3.0 and MIT are fine (keep an MIT author's copyright line in the header); no license means all rights reserved, so re-implement from behaviour only.
+- Names of plugins and settings stay the same, so `phoecord import-vencord` can map them.
+- The plugin SDK (`crates/phoecord-plugin-sdk`, `wit/`) and the templates in `docs/_template/code/` are MIT, so third-party WASM plugins may use any license. A plugin that adapts Vencord code is GPL-3.0 itself.
+
+**Check:** every file with adapted code has the header, and its license is GPL-compatible.
 
 ---
 

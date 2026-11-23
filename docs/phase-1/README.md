@@ -24,6 +24,7 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 - Installer GUI on egui, not GPUI (same delegation).
 - No code signing, now or at 1.0, like Vencord (Nanda 23.11.2026: "we build the project without signing", translated).
 - Plugin scope: everything Vencord has, plus the owner's userplugins, is the priority; `no_track` is the only plugin on by default (Nanda 23.11.2026: "priority is everything in Vencord" and "also the ones in my userplugins", translated). QuestMaster and TrustMeBro are excluded (see `docs/PLUGINS.md`).
+- License: GPL-3.0-or-later, like Vencord; the plugin SDK stays MIT so third-party plugins may use any license (Nanda 23.11.2026: "make ours GPL 3.0 too", translated).
 - Git history stays as it is; no force-push to `main` (Nanda 23.11.2026: "keep the history", translated).
 - Docs, plans and templates follow the VALORANT repository's structure (Nanda 23.11.2026: "like VALORANT", translated).
 - All documentation is English-only; the app must support Russian later (Nanda 23.11.2026: "translate all docs to English, no Russian at all, though the program should support Russian in the future", translated). Localization becomes stage 1.7.

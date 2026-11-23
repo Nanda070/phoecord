@@ -122,6 +122,10 @@ name.ru = "ClearURLs"
 
 ---
 
+### Licensing of plugins
+
+PhoeCord is GPL-3.0-or-later. The plugin SDK (`phoecord-plugin-sdk`), the WIT contract (`wit/`) and the plugin templates are MIT, so a third-party WASM plugin, which only talks to PhoeCord through that contract, may use any license. A plugin that adapts Vencord code is GPL-3.0 itself.
+
 ## Dynamic plugins: choosing a runtime
 
 | | WASM (wasmtime, Component Model) | Lua (mlua) | QuickJS (rquickjs) |

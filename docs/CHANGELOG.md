@@ -26,6 +26,8 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Changed
 
+- License: MIT → **GPL-3.0-or-later**, like Vencord. `NOTICE` holds the copyright and exceptions; the plugin SDK, `wit/` and templates stay MIT; the v0 code's MIT notice moved to `LICENSES/MIT-v0.txt`. Vencord code may now be adapted with attribution.
+
 - All documentation is English-only.
 - `docs/PORTING_PLUGINS.md`: step-by-step guide to porting any plugin (layer choice, Vencord → PhoeCord concept map, native and WASM, tests, worked example).
 - `docs/PLUGINS.md`: every Vencord plugin and the owner's userplugins mapped to a layer and a task; Phase 1 tasks 1.2.10–1.2.19 for Vencord parity on the network.

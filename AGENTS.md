@@ -39,11 +39,11 @@ A large document starts with a line `Checked against code: <sha>, <date>.` Whoev
 ## Never
 
 - Commit Discord tokens, `ca.key`, `ca.pem`, traffic dumps, `.env` files, Discord client binaries or disassembly of them.
-- Remove or edit the copyright lines in [`LICENSE`](LICENSE).
+- Remove or edit [`LICENSE`](LICENSE), [`NOTICE`](NOTICE) or the notices in [`LICENSES/`](LICENSES/).
 - Use `unsafe` outside `crates/phoecord-loader`, or without a `// SAFETY:` comment.
 - Write tests that touch the network or need a Discord token.
 - Change `crates/phoecord-core/src/plugin.rs` without a task that says so and the owner's review.
-- Copy code from Vencord (GPL-3.0) or from a userplugin whose license is not MIT-compatible; port by behaviour, per [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md).
+- Adapt code from Vencord or a userplugin without the attribution header, or from code whose license is not GPL-3.0-compatible; see [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md) §0.
 - Add features for mass messaging, self-bots, evading bans or moderation, or collecting other people's data.
 - Make a plugin open sockets or files directly instead of going through `Host`.
 - Merge into `main` yourself. Only the owners merge.
