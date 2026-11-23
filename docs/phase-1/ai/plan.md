@@ -377,6 +377,7 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Files:** none (results go into the ledger line that closes it).
 
+- Never on your own Discord install: use a VM (`scripts/dev/New-TestVm.ps1` creates one on Hyper-V) or a second OS user account, with Discord Canary and a test account.
 - On Windows, macOS and Linux: `phoecord setup`, reboot, check the proxy runs and Discord connects through it; then `phoecord uninstall` and check no PhoeCord file, trust-store entry or autostart entry is left.
 
 **Done when:** all three OSes pass, or each failure has an issue.

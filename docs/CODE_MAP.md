@@ -155,6 +155,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 |:---|:---|
 | `scripts/check.sh`, `scripts/check.ps1` | All checks in order, stop at first failure (see `AGENTS.md`) |
 | `scripts/check_i18n.py` | Every key of `crates/*/i18n/en/*.ftl` exists in the `ru` file with the same variables; exit 1 otherwise |
+| `scripts/dev/New-TestVm.ps1` | Creates a throwaway Hyper-V VM (Gen 2, Secure Boot, vTPM, Default Switch) for the manual checks 1.4.6 and 1.5.7, so they never touch your own Discord; run elevated |
 | `scripts/gen_decisions.py` | Builds `docs/DECISIONS.md` from `Ruling:` lines of `docs/<plan>/ai/ledger.md`; `--check` exits 1 if stale |
 
 ## 5. Docs
