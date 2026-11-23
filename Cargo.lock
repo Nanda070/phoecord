@@ -1615,6 +1615,7 @@ version = "0.1.0"
 dependencies = [
  "phoecord-core",
  "phoecord-plugin-runtime",
+ "regex",
  "serde_json",
 ]
 
@@ -1821,6 +1822,18 @@ dependencies = [
  "log",
  "rustc-hash",
  "smallvec",
+]
+
+[[package]]
+name = "regex"
+version = "1.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9807af0e638c12e753aa1b4e601791bf2a8f71274023c8bbeec12fc149950857"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-automata",
+ "regex-syntax",
 ]
 
 [[package]]

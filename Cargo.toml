@@ -23,6 +23,7 @@ phoecord-plugins = { path = "crates/phoecord-plugins" }
 anyhow = "1"
 dirs = "7"
 flate2 = "1"
+regex = { version = "1", default-features = false, features = ["std", "unicode", "perf"] }
 rcgen = { version = "0.14", features = ["x509-parser"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 serde = { version = "1", features = ["derive"] }

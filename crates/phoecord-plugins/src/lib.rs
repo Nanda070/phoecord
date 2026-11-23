@@ -18,6 +18,10 @@ pub mod no_reply_mention;
 pub mod no_track;
 pub mod relationship_notifier;
 pub mod silent_typing;
+pub mod text_replace;
+
+#[cfg(test)]
+mod testutil;
 
 /// Every built-in plugin, in default run order.
 pub fn builtin() -> Vec<Box<dyn Plugin>> {
@@ -32,6 +36,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(i_love_spam::ILoveSpam::new()),
         Box::new(no_blocked_messages::NoBlockedMessages::new()),
         Box::new(no_reply_mention::NoReplyMention::new()),
+        Box::new(text_replace::TextReplace::new()),
     ];
     // `/phoecord plugins` lists everything above and the commands plugin itself. Register more
     // `/phoecord` subcommands here with `Commands::with`.
