@@ -28,3 +28,39 @@ pub fn guest_wasm() -> &'static [u8] {
             .expect("guest wasm missing")
     })
 }
+
+use std::path::Path;
+use std::sync::atomic::{AtomicU32, Ordering};
+
+/// A scratch folder under the system temp dir, removed when dropped.
+pub struct TempDir(pub PathBuf);
+
+impl TempDir {
+    pub fn new() -> TempDir {
+        static N: AtomicU32 = AtomicU32::new(0);
+        let dir = std::env::temp_dir().join(format!(
+            "phoecord-wasm-test-{}-{}",
+            std::process::id(),
+            N.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        TempDir(dir)
+    }
+}
+
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
+/// `root/<id>/plugin.toml` (header + `extra` lines) and `plugin.wasm` (the test guest).
+pub fn write_package(root: &Path, id: &str, api: u32, extra: &str) -> PathBuf {
+    let dir = root.join(id);
+    std::fs::create_dir_all(&dir).unwrap();
+    let toml =
+        format!("id = \"{id}\"\nname = \"{id}\"\nversion = \"0.1.0\"\napi = {api}\n{extra}\n");
+    std::fs::write(dir.join("plugin.toml"), toml).unwrap();
+    std::fs::write(dir.join("plugin.wasm"), guest_wasm()).unwrap();
+    dir
+}

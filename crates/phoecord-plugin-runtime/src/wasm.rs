@@ -6,6 +6,7 @@
 //! hold without `unsafe`; so the caller and the worker talk over channels instead. The worker sends
 //! every `host` import the guest makes to the caller, who answers it with the real [`Host`].
 
+use crate::package::{EventFilter, PackageManifest};
 use phoecord_core::{
     Event, EventKind, Host, HostResponse, Layer, Manifest, Plugin, Val, Verdict,
     plugin::API_VERSION,
@@ -510,18 +511,52 @@ impl Worker {
     }
 }
 
+/// What a plugin is allowed and expected to be, beyond the component itself.
+#[derive(Clone, Debug)]
+pub struct Setup {
+    /// Overrides the guest's own manifest (a package's `plugin.toml` wins).
+    pub manifest: Option<Manifest>,
+    /// Events delivered to the plugin; the rest never reach it.
+    pub events: EventFilter,
+}
+
+impl Default for Setup {
+    /// The guest's own manifest and every event.
+    fn default() -> Self {
+        Setup {
+            manifest: None,
+            events: EventFilter::all(),
+        }
+    }
+}
+
+impl Setup {
+    pub fn from_package(package: PackageManifest) -> Result<Setup, String> {
+        Ok(Setup {
+            manifest: Some(package.manifest),
+            events: package.events,
+        })
+    }
+}
+
 /// A plugin that is a WASM component.
 pub struct WasmPlugin {
     /// Keeps the epoch clock running for as long as the plugin lives.
     _runtime: Arc<WasmRuntime>,
     manifest: Manifest,
+    events: EventFilter,
     worker: Mutex<Worker>,
     disabled: AtomicBool,
 }
 
 impl WasmPlugin {
-    /// Compile `wasm` (a component) and start its worker. The manifest is the guest's own.
+    /// [`WasmPlugin::new`] with the guest's own manifest and every event.
     pub fn from_bytes(runtime: &Arc<WasmRuntime>, wasm: &[u8]) -> Result<WasmPlugin, Error> {
+        WasmPlugin::new(runtime, wasm, Setup::default())
+    }
+
+    /// Compile `wasm` (a component) and start its worker.
+    pub fn new(runtime: &Arc<WasmRuntime>, wasm: &[u8], setup: Setup) -> Result<WasmPlugin, Error> {
         let component = Component::new(&runtime.engine, wasm)?;
         let mut linker: Linker<State> = Linker::new(&runtime.engine);
         // The guest links `std`, which imports WASI. No WASI is provided: any call traps. These
@@ -604,11 +639,12 @@ impl WasmPlugin {
                     }
                 }
             })?;
-        let manifest = match ready_rx.recv() {
+        let guest_manifest = match ready_rx.recv() {
             Ok(Ok(m)) => manifest_from_wit(m),
             Ok(Err(e)) => return Err(Error::msg(e)),
             Err(_) => return Err(Error::msg("the plugin worker failed to start")),
         };
+        let manifest = setup.manifest.unwrap_or(guest_manifest);
         if manifest.api != API_VERSION {
             return Err(Error::msg(format!(
                 "plugin {} targets Plugin API v{}, this host speaks v{API_VERSION}",
@@ -618,6 +654,7 @@ impl WasmPlugin {
         Ok(WasmPlugin {
             _runtime: runtime.clone(),
             manifest,
+            events: setup.events,
             worker: Mutex::new(Worker {
                 down: Some(down_tx),
                 up: up_rx,
@@ -662,12 +699,12 @@ impl Plugin for WasmPlugin {
         &self.manifest
     }
 
-    fn wants(&self, _event: &EventKind) -> bool {
-        !self.is_disabled()
+    fn wants(&self, event: &EventKind) -> bool {
+        !self.is_disabled() && self.events.matches(event)
     }
 
     fn wants_gateway(&self) -> bool {
-        !self.is_disabled()
+        !self.is_disabled() && self.events.wants_gateway()
     }
 
     fn on_event(&self, host: &mut dyn Host, event: Event<'_>) -> Verdict {
@@ -680,6 +717,9 @@ impl Plugin for WasmPlugin {
             Event::Dispatch { name, .. } => EventKind::Dispatch { name },
             Event::Send { op, .. } => EventKind::Send { op: *op },
         };
+        if !self.events.matches(&kind) {
+            return Verdict::Pass;
+        }
         let job = Job {
             kind: kind_to_wit(&kind),
             event: event_to_wit(&event),
