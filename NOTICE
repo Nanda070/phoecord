@@ -1,0 +1,23 @@
+PhoeCord
+Copyright (C) 2026 Cheterin Group
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See LICENSE.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+Exceptions and third-party notices:
+
+- crates/phoecord-plugin-sdk, wit/ and docs/_template/code/ are licensed under
+  the MIT license (LICENSES/MIT-sdk.txt), so third-party plugins built on them
+  may use any license.
+- Code from the v0 network proxy is MIT-licensed by its author; its notice is
+  kept in LICENSES/MIT-v0.txt.
+- Code adapted from Vencord (GPL-3.0-or-later, Copyright (c) Vendicated and
+  contributors) carries a header naming the original file.
+
+PhoeCord is not affiliated with Discord Inc., Vencord or Zed Industries.

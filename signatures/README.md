@@ -1,0 +1,36 @@
+# Signatures
+
+AOB (array-of-bytes) signatures that let the PhoeCord loader find functions in a specific Discord client build. They live apart from the loader code so they can be updated without rebuilding it (ARCHITECTURE.md, "Finding functions").
+
+**This folder ships no real Discord signatures yet.** Real tables are added with the features that need them (Phase 1 stage 1.8 for the current client, Phase 2 for Phoenix). Never commit client binaries, disassembly or dumps of them: a signature is a short byte mask plus a name.
+
+## Where the loader looks
+
+`%LOCALAPPDATA%\PhoeCord\signatures\*.toml`. Files are read in name order; a later file replaces a build table with the same key. A file that does not parse is skipped and logged; the rest still load.
+
+## Format
+
+```toml
+# signatures/example.toml
+[build."0.0.123"]
+theme_palette  = { aob = "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B D8", rip = 3 }
+message_render = { aob = "40 53 48 83 EC 20 48 8B D9 E8" }
+
+# Same version number, a specific hotfix build: key = "<version>+<.text SHA-256 prefix>"
+[build."0.0.123+9687f167"]
+theme_palette  = { aob = "..." }
+```
+
+- **Build key.** `"<version>"` is the file version of the client exe (`a.b.c.d` from its version resource). `"<version>+<hex>"` additionally requires the lowercase hex SHA-256 of the exe's `.text` section to start with `<hex>` (at least 8 digits). The hash form wins over the plain form when both match. The loader logs both values at start (`%LOCALAPPDATA%\PhoeCord\loader.log`).
+- **Entry name.** Free-form, one per function; the feature that uses it asks for it by name.
+- **`aob`.** Hex bytes separated by spaces; `??` (or `?`) matches any byte. A pattern of only wildcards is rejected.
+- **`rip`** (optional). Byte offset inside the match of a 32-bit RIP-relative operand. The result is the address that operand points to (`match + rip + 4 + rel32`), instead of the match itself. For `48 8D 0D ?? ?? ?? ??` (`lea rcx, [rip+disp]`) the operand starts at byte 3, so `rip = 3`.
+- Unknown keys in an entry are an error, so typos do not silently disable a signature.
+
+## Uniqueness
+
+A signature counts as found only if it matches **exactly once** in the client's `.text`. Zero matches and several matches both disable only the feature that needs it; the loader logs which one happened. Anchor signatures on strings and on calls into GPUI crates rather than on code the compiler inlines differently from build to build.
+
+## Results
+
+Resolved addresses are RVAs (relative to the exe's module base). The loader adds the base of the running process.

@@ -1,7 +1,7 @@
 //! Plugin runtime: runs the plugin chain for every event, whatever a plugin is made of.
 //!
 //! Today it drives native plugins (`phoecord-plugins`). The WASM backend (wasmtime + a WIT world that
-//! mirrors `phoecord_core::plugin`) plugs in behind the same [`Chain`] (ROADMAP.md, milestone 1.3).
+//! mirrors `phoecord_core::plugin`) plugs in behind the same [`Chain`] (docs/ROADMAP.md, milestone 1.3).
 
 use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashSet;

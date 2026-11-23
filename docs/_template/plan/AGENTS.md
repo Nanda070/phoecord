@@ -19,7 +19,7 @@ If unsure, stop and ask the human to check `docs/<plan>/README.md`.
 
 ## Step 1: read
 
-1. The root `AGENTS.md` and `CONTRIBUTING.md`.
+1. `docs/AGENTS.md` and `CONTRIBUTING.md`.
 2. The last 30 lines of `docs/<plan>/ai/ledger.md`.
 3. `docs/<plan>/ai/spec.md`, the source of truth.
 4. Your task in `docs/<plan>/ai/plan.md`.
@@ -28,7 +28,7 @@ If unsure, stop and ask the human to check `docs/<plan>/README.md`.
 
 - Branches: `feat/<short>` from a fresh `origin/main`. One task per PR; Nanda merges.
 - Edit only the files of your area. A change outside it: a `blocked` line in the ledger, then tell your human.
-- Living docs of the root `AGENTS.md` in the same commit.
+- Living docs of `docs/AGENTS.md` in the same commit.
 - Do not change a decision of `README.md` silently: a `Ruling:` line in the ledger and the edit in the same commit, then `python scripts/gen_decisions.py`. Format: `docs/_template/ruling.md`.
 
 ## Ledger format

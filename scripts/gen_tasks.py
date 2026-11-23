@@ -1,9 +1,9 @@
-"""Build TASKS.md in the repository root from the "Tasks" tables of every plan in docs/.
+"""Build docs/TASKS.md from the "Tasks" tables of every plan in docs/.
 
 Tasks are edited only in their plan's README.md; this file is regenerated from them.
 
-    python scripts/gen_tasks.py          # rewrite TASKS.md
-    python scripts/gen_tasks.py --check  # exit 1 if TASKS.md is stale (CI and scripts/check.sh)
+    python scripts/gen_tasks.py          # rewrite docs/TASKS.md
+    python scripts/gen_tasks.py --check  # exit 1 if docs/TASKS.md is stale (CI and scripts/check.sh)
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
-OUT = ROOT / "TASKS.md"
+OUT = DOCS / "TASKS.md"
 SKIP_DIRS = {"_template", "incidents", "reports", "research"}
 COLUMNS = ("task", "what", "who", "status")
 
@@ -77,7 +77,7 @@ def build() -> str:
     ]
     for plan, r in all_rows:
         out.append(
-            f"| [{plan}](docs/{plan}/README.md) | {task_id(r['task'])} | {r['what']} | {r['who']} | {r['status']} |"
+            f"| [{plan}]({plan}/README.md) | {task_id(r['task'])} | {r['what']} | {r['who']} | {r['status']} |"
         )
 
     people: dict[str, list[tuple[str, dict[str, str]]]] = {}
@@ -95,7 +95,7 @@ def main() -> int:
     if "--check" in sys.argv:
         current = OUT.read_text(encoding="utf-8") if OUT.exists() else ""
         if current != text:
-            print("TASKS.md is stale: run python scripts/gen_tasks.py", file=sys.stderr)
+            print("docs/TASKS.md is stale: run python scripts/gen_tasks.py", file=sys.stderr)
             return 1
         return 0
     OUT.write_text(text, encoding="utf-8", newline="\n")

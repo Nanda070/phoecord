@@ -24,6 +24,7 @@ The work plan until Phoenix Canary ships, written 23.11.2026 at Nanda's request.
 - Installer GUI on egui, not GPUI (same delegation).
 - No code signing, now or at 1.0, like Vencord (Nanda 23.11.2026: "we build the project without signing", translated).
 - Plugin scope: everything Vencord has, plus the owner's userplugins, is the priority; `no_track` is the only plugin on by default (Nanda 23.11.2026: "priority is everything in Vencord" and "also the ones in my userplugins", translated). QuestMaster and TrustMeBro are excluded (see `docs/PLUGINS.md`).
+- License: GPL-3.0-or-later, like Vencord; the plugin SDK stays MIT so third-party plugins may use any license (Nanda 23.11.2026: "make ours GPL 3.0 too", translated).
 - Git history stays as it is; no force-push to `main` (Nanda 23.11.2026: "keep the history", translated).
 - Docs, plans and templates follow the VALORANT repository's structure (Nanda 23.11.2026: "like VALORANT", translated).
 - All documentation is English-only; the app must support Russian later (Nanda 23.11.2026: "translate all docs to English, no Russian at all, though the program should support Russian in the future", translated). Localization becomes stage 1.7.
@@ -45,20 +46,20 @@ Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor
 
 ## Tasks
 
-Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is collected into the root [`TASKS.md`](../../TASKS.md): after editing run `python scripts/gen_tasks.py`.
+Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is collected into [`TASKS.md`](../TASKS.md): after editing run `python scripts/gen_tasks.py`.
 
 | Task | What | Who | Status |
 |:--|:--|:--|:--|
 | **1.0.1** 🔴 | Merge the Phase 1 plan, the docs structure and the English-only docs | Nanda | ✅ 23.11, `main` `ea73482` (PR #4) |
 | **1.0.2** 🟡 | Dependabot: close #1, merge #2 and #3 after green CI | Nanda | ✅ 23.11, folded into one PR |
-| **1.1.1** 🔴 | Proxy `Host`: settings, KV, `self_id`, `notify` | Nanda | ⏳ |
-| **1.1.2** 🔴 | `config.toml` with `[plugins.<id>]` sections and live reload | Nanda | ⏳ |
-| **1.1.3** 🔴 | Account state behind `Host` | Nanda | ⏳ |
-| **1.1.4** 🔴 | Proxy: `CONNECT`, loopback only, MITM by `intercept` | Nanda | ⏳ |
-| **1.1.5** 🔴 | REST through `Chain` | Nanda | ⏳ |
-| **1.1.6** 🔴 | Gateway through `Chain` | Nanda | ⏳ |
-| **1.1.7** 🔴 | CLI: `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `paths` | Nanda | ⏳ |
-| **1.1.8** 🟡 | `selftest` against the real Discord | Nanda | ⏳ |
+| **1.1.1** 🔴 | Proxy `Host`: settings, KV, `self_id`, `notify` | Nanda | ✅ |
+| **1.1.2** 🔴 | `config.toml` with `[plugins.<id>]` sections and live reload | Nanda | ✅ |
+| **1.1.3** 🔴 | Account state behind `Host` | Nanda | ✅ |
+| **1.1.4** 🔴 | Proxy: `CONNECT`, loopback only, MITM by `intercept` | Nanda | ✅ |
+| **1.1.5** 🔴 | REST through `Chain` | Nanda | ✅ |
+| **1.1.6** 🔴 | Gateway through `Chain` | Nanda | ✅ |
+| **1.1.7** 🔴 | CLI: `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `paths` | Nanda | ✅ |
+| **1.1.8** 🟡 | `selftest` against the real Discord | Nanda | ✅ |
 | **1.1.9** 🟡 | Gateway fixtures without personal data | anyone | ⏳ |
 | **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ⏳ |
 | **1.2.1** 🔴 | `silent_typing` | anyone | ⏳ |
@@ -93,10 +94,10 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is coll
 | **1.4.3** 🟡 | Installer GUI | Nanda | ⏳ |
 | **1.4.4** 🔴 | Full rollback | Nanda | ⏳ |
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
-| **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ⏳ |
-| **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ⏳ |
-| **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ⏳ |
-| **1.5.4** 🔴 | Inline detours and hook removal | Nanda | ⏳ |
+| **1.5.1** 🔴 | `version.dll`: export forwarding | Nanda | ✅ 23.11, PR #10 |
+| **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ✅ 23.11, PR #10 |
+| **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ✅ 23.11, PR #10 |
+| **1.5.4** 🔴 | Inline detours and hook removal | Nanda | ✅ 23.11, PR #10 |
 | **1.5.5** 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
 | **1.5.6** 🟡 | Reinstall after a Discord update | Nanda | ⏳ |
 | **1.5.7** 🔴 | Verify on 3 client versions | Nanda | ⏳ |
@@ -105,11 +106,11 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). This table is coll
 | **1.6.3** 🟡 | What of GPUI is visible in a release binary | Nanda | ⏳ |
 | **1.6.4** 🟡 | Themes in Zed and what to expect from Phoenix | anyone | ⏳ |
 | **1.6.5** 🔴 | Report `docs/research/gpui.md` | Nanda | ⏳ |
-| **1.7.1** 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ⏳ |
+| **1.7.1** 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ✅ 23.11, PR #9 |
 | **1.7.2** 🔴 | `language` setting, OS default | Nanda | ⏳ |
 | **1.7.3** 🔴 | Russian translation of CLI, notifications, installer | anyone | ⏳ |
 | **1.7.4** 🟡 | `Host::t()` and per-plugin `.ftl` | Nanda | ⏳ |
-| **1.7.5** 🟡 | CI check: every `en` key exists in `ru` | anyone | ⏳ |
+| **1.7.5** 🟡 | CI check: every `en` key exists in `ru` | anyone | ✅ 23.11, PR #9 |
 
 Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do not depend on the network and run in parallel with 1.2–1.4. Stage 1.7 starts after 1.1.7 (once there are CLI strings to translate) and must land before 1.4.3.
 
@@ -120,14 +121,14 @@ Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do 
 - **Antivirus flags `version.dll` as malware.** Open source, reproducible builds with `SHA256SUMS`, submitting samples to Microsoft and major vendors before release.
 - **Discord changes the Gateway protocol.** Caught by `selftest` (1.1.8) and fixtures; the fix goes into `phoecord-proxy::codec`, plugins stay untouched.
 - **WASM is slow on the hot path.** Run the 1.1.10 benchmark on a WASM chain too; if p99 > 1 ms, `message_logger` and `fake_nitro` stay native.
-- **Account bans.** Client modification breaks Discord's Terms. Plugins do nothing the server would see as bot activity (mass requests, self-bots); this rule applies to every PR review.
+- **Account bans.** Client modification breaks Discord's Terms, and heavy automation (bulk requests) is the easiest thing for Discord to spot; bulk plugins go through the `Host::rest` rate limiter.
 - **Russian translation drifts behind English.** The 1.7.5 CI check fails on missing keys; a string without a translation falls back to English rather than showing a key.
 
 ## Living docs and publications
 
-- [`ROADMAP.md`](../../ROADMAP.md): tick the 1.1–1.7 boxes in each task's PR.
+- [`ROADMAP.md`](../ROADMAP.md): tick the 1.1–1.7 boxes in each task's PR.
 - [`docs/CHANGELOG.md`](../CHANGELOG.md): an "Unreleased" line in every PR; versions `0.2`–`0.6` at the end of stages.
-- [`ARCHITECTURE.md`](../../ARCHITECTURE.md): on Plugin API changes, the runtime decision and how we reach Phoenix.
+- [`ARCHITECTURE.md`](../ARCHITECTURE.md): on Plugin API changes, the runtime decision and how we reach Phoenix.
 - [`docs/CODE_MAP.md`](../CODE_MAP.md): every new file, config key and env variable.
 - [`docs/PROJECT_MAP.md`](../PROJECT_MAP.md): every plugin's status.
 - README: the "Plugins" table and the pre-alpha note at the end of each stage (keep it compact; details belong in `docs/PROJECT_MAP.md`).

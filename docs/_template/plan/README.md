@@ -49,7 +49,7 @@ importance: 🔴 required · 🟡 desirable · 🟢 if possible.
 
 <Large plan: details, files and "done when" in [`ai/plan.md`](ai/plan.md).>
 
-<!-- This table is collected into the root TASKS.md: after editing run `python scripts/gen_tasks.py`. Do not rename the columns: Task, What, Who, Status. -->
+<!-- This table is collected into docs/TASKS.md: after editing run `python scripts/gen_tasks.py`. Do not rename the columns: Task, What, Who, Status. -->
 
 | Task | What | Who | Status |
 |:--|:--|:--|:--|
@@ -61,7 +61,7 @@ importance: 🔴 required · 🟡 desirable · 🟢 if possible.
 
 ## Living docs and publications
 
-<Which documents from the root `AGENTS.md` table change, release notes, README "Plugins" table.>
+<Which documents from `docs/AGENTS.md` table change, release notes, README "Plugins" table.>
 
 ## How to start
 

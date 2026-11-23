@@ -2,7 +2,7 @@
 
 Checked against Vencord's plugin list: 23.11.2026 (vencord.dev/plugins, 173 entries).
 
-**Goal: every Vencord plugin that makes sense on a native client, plus the owner's own userplugins.** This page maps each one to where it lives in PhoeCord. Names match Vencord's so settings import 1:1 (`phoecord import-vencord`); our ids are the `snake_case` form (`MessageLogger` → `message_logger`). Plugins are reimplemented on the PhoeCord Plugin API; no Vencord or third-party code is copied.
+**Goal: every Vencord plugin that makes sense on a native client, plus the owner's own userplugins.** This page maps each one to where it lives in PhoeCord. Names match Vencord's so settings import 1:1 (`phoecord import-vencord`); our ids are the `snake_case` form (`MessageLogger` → `message_logger`). Plugins are rebuilt on the PhoeCord Plugin API; Vencord code may be adapted with attribution, since both projects are GPL-3.0-or-later. How to port one: [`PORTING_PLUGINS.md`](PORTING_PLUGINS.md).
 
 **On by default:** `no_track` only, as in Vencord. Everything else is off until the user turns it on.
 
@@ -15,7 +15,7 @@ Checked against Vencord's plugin list: 23.11.2026 (vencord.dev/plugins, 173 entr
 | ♻️ Replaced | PhoeCord provides it natively in another form | as noted | 6 |
 | ⛔ N/A | Web-only, DevTools-only, Vencord internals or out of scope | never | 17 |
 
-Total: 169 Vencord plugins, 4 Vencord core modules, 10 userplugins (+ 2 excluded). Phase 1 ships **69** of them, fully or in their network part.
+Total: 169 Vencord plugins, 4 Vencord core modules, 10 userplugins. Phase 1 ships **69** of them, fully or in their network part.
 
 Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine, and the 30 most-used 🎨 plugins (ROADMAP 2.4). **v1.x** = the rest of 🎨 until parity.
 
@@ -218,13 +218,9 @@ From Nanda's Vencord `userplugins` folder. Bulk actions (`VoiceChatUtilities`, `
 | AntiRickroll | Warn before opening rickroll links | 🌐 + 🎨 | 1.2.19 / 2 |
 | BetterActivities | Activity icons in the member list, all activities shown | 🎨 UI | 2 |
 | SoundboardToVoice | Play soundboard sounds through your microphone | 🎨 UI | 2 (audio pipeline) |
+| QuestMaster | Quest dashboard and auto-completion | 🌐 + 🎨 | not scheduled |
+| TrustMeBro | Age verification bypass | 🌐 Network | not scheduled |
 
-### Not included
-
-| Plugin | Why |
-|:---|:---|
-| QuestMaster | Auto-completes Discord Quests and claims their rewards without actually watching or playing; this fakes engagement for sponsors and is not something PhoeCord will build. |
-| TrustMeBro | Bypasses the age verification Discord applies under the UK Online Safety Act; PhoeCord will not circumvent legally required age checks. |
 
 ## How to read "Where"
 

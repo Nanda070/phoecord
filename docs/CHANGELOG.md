@@ -6,6 +6,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Added
 
+- Stage 1.1 core refactor: the proxy, REST and Gateway run through Plugin API v1 and `Chain`; `ProxyHost` provides scoped settings, KV, account state and notifications. The `phoecord` CLI now has `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `toggle`, `paths` and `selftest`.
 - Cargo workspace of 8 crates: `core`, `proxy`, `plugin-runtime`, `plugin-sdk`, `plugins`, `loader`, `installer`, `cli`.
 - Plugin API v1 (`phoecord-core::plugin`): `Manifest`, `Event`, `EventKind`, `Verdict`, `Host`.
 - Plugin chain `phoecord-plugin-runtime::Chain`: the first `Drop`/`Reply` stops the chain.
@@ -15,6 +16,11 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - Issue and PR templates; CI on Linux, Windows and macOS plus an MSRV job.
 - Localization planned: English first, Russian next (ROADMAP 1.7).
 
+- `phoecord-i18n`: Fluent localizer with English and Russian bundles, fallback ru → en → key, OS language detection (stage 1.7.1).
+- `scripts/check_i18n.py`: fails when a Russian translation is missing a key or a variable; part of `check.sh` and CI (stage 1.7.5).
+
+- `phoecord-loader` builds as a proxy `version.dll`: lazy export forwarding to the system DLL, a `DllMain` that only starts a worker, client build detection (file version + `.text` SHA-256), `signatures/*.toml` with unique AOB matches and RIP resolution, inline detours with removal on unload (stages 1.5.1-1.5.4).
+
 ### Ported from the v0 proxy
 
 - `val`, `etf`, REST routes → `phoecord-core`.
@@ -23,7 +29,10 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Changed
 
+- License: MIT → **GPL-3.0-or-later**, like Vencord. `NOTICE` holds the copyright and exceptions; the plugin SDK, `wit/` and templates stay MIT; the v0 code's MIT notice moved to `LICENSES/MIT-v0.txt`. Vencord code may now be adapted with attribution.
+
 - All documentation is English-only.
+- `docs/PORTING_PLUGINS.md`: step-by-step guide to porting any plugin (layer choice, Vencord → PhoeCord concept map, native and WASM, tests, worked example).
 - `docs/PLUGINS.md`: every Vencord plugin and the owner's userplugins mapped to a layer and a task; Phase 1 tasks 1.2.10–1.2.19 for Vencord parity on the network.
 - Decided: WASM plugin runtime, egui installer GUI, no code signing (like Vencord).
 

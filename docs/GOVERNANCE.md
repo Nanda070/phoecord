@@ -6,7 +6,7 @@
 |:---|:---|:---|:---|
 | **Nanda** | Project lead | `nandak070` | [@nanda070](https://t.me/nanda070) |
 
-Copyright holder: **Cheterin Group** (see [`LICENSE`](../LICENSE)).
+Copyright holder: **Cheterin Group** (see [`NOTICE`](../NOTICE)). License: GPL-3.0-or-later ([`LICENSE`](../LICENSE)).
 
 ## Who decides what
 
@@ -23,6 +23,6 @@ Changes to the CA, TLS, trust stores, the proxy and the loader always need the o
 
 ## Access
 
-- The repository is public under MIT; write access is granted and revoked by Nanda.
+- The repository is public under GPL-3.0-or-later (plugin SDK under MIT); write access is granted and revoked by Nanda.
 - Repository secrets: only Nanda ([`SECRETS.md`](SECRETS.md)).
 - When someone leaves, their access is revoked the same day.
