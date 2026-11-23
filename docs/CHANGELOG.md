@@ -37,6 +37,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - Language setting: `phoecord --lang ru`, `language` in `config.toml`, or the OS language; `setup`, `uninstall` and `paths` already speak Russian, the rest of the CLI follows in 1.7.3 (stage 1.7.2).
 - The whole CLI speaks Russian, `--help` included (stage 1.7.3).
 - Terms of use (`TERMS.md`, `TERMS.ru.md`, version 1): `phoecord setup` shows them and installs nothing until you type `yes` (`да`); a new version asks again (stage 1.4.7).
+- Plugins `i_love_spam`, `no_blocked_messages` and `no_reply_mention`, off by default (stage 1.2.10); ImageLink and NoPendingCount are UI-only and move to Phase 2.
 
 ### Removed
 

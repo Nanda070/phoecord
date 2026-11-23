@@ -54,3 +54,4 @@ Ruling: hybrid transport: today's Electron client stays on the local proxy; on P
 Ruling: every pull request is assigned to Nanda070 and requests Nanda070's review (CODEOWNERS + an auto-assign workflow) (owner Nanda, 2026-11-23, "all PRs go under review of nanda070 (assignments)" (translated)) — why: one owner sees every change — risk: GitHub cannot request a review from a PR's own author, so PRs opened from the Nanda070 account get the assignment only
 2026-11-23 19:55 | 1.2.7 | review | matvee | native `clear_urls` with 8 tests, branch feat/clear-urls; the WASM build stays in 1.3
 2026-11-23 23:00 | 1.2.7 | complete | matvee | clear_urls merged after the owner's review; rebased over #43 by the coordinator, PR #42
+2026-11-24 00:00 | 1.2.10 | complete | filters-1-2-10/Claude | i_love_spam, no_blocked_messages (history filtering opt-in after the coordinator's review), no_reply_mention; ImageLink and NoPendingCount moved to Phase 2 as UI-only; PR #45

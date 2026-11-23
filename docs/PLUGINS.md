@@ -83,9 +83,9 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | GreetStickerPicker | Pick any greet sticker | 🎨 UI | 2 |
 | HideMedia | Hide attachments and embeds per message | 🎨 UI | 2 |
 | IgnoreActivities | Hide chosen activities from your status | 🌐 Network | 1.2.13 |
-| iLoveSpam | Show messages from likely spammers | 🌐 Network | 1.2.10 |
+| iLoveSpam | Show messages from likely spammers | 🌐 Network | done |
 | ImageFilename | Image file name on hover | 🎨 UI | 2 |
-| ImageLink | Never hide image links | 🌐 Network | 1.2.10 |
+| ImageLink | Never hide image links | 🎨 UI | 2 (the client decides from the embed type; no wire field keeps the link) |
 | ImageZoom | Scroll to zoom images | 🎨 UI | 2 |
 | ImplicitRelationships | Implicit relationships in Friends | 🌐 + 🎨 | 1.2.16 / 2 |
 | IrcColors | Unique username colours | 🎨 UI | 2 |
@@ -103,16 +103,16 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | MutedServersActivityBadge | Activity badge on muted servers | 🎨 UI | 2 |
 | MutualGroupDMs | Mutual group DMs on profiles | 🌐 + 🎨 | 1.2.16 / 2 |
 | NewGuildSettings | Auto-mute and set up servers you join | 🌐 Network | 1.2.16 |
-| NoBlockedMessages | Hide blocked users' messages completely | 🌐 Network | 1.2.10 |
+| NoBlockedMessages | Hide blocked users' messages completely | 🌐 Network | done (history filtering is opt-in: `filter_history`) |
 | NoDevtoolsWarning | Hide the DevTools warning | ⛔ N/A | DevTools only |
 | NoF1 | Disable the F1 help key | 🎨 UI | 2 |
 | NoMaskedUrlPaste | No masked link on paste over text | 🎨 UI | 2 |
 | NoMiddleClickPaste | No middle-click paste on Linux | 🎨 UI | 2 |
 | NoMosaic | Remove the image mosaic | 🖌️ Theme | 2.3 |
 | NoOnboardingDelay | Skip the onboarding delay | 🎨 UI | 2 |
-| NoPendingCount | Hide pending request counts | 🌐 Network | 1.2.10 |
+| NoPendingCount | Hide pending request counts | 🎨 UI | 2 (counts are computed on the client; hiding them on the wire would hide the requests too) |
 | NoProfileThemes | Remove other people's Nitro profile themes | 🌐 Network | 1.2.14 |
-| NoReplyMention | Reply without a ping by default | 🌐 Network | 1.2.10 |
+| NoReplyMention | Reply without a ping by default | 🌐 Network | done |
 | NoServerEmojis | No server emoji in autocomplete | 🎨 UI | 2 |
 | NoSystemBadge | No taskbar unread badge | 🎨 UI | 2 |
 | NoTrack | Block analytics and crash reports (on by default) | 🌐 Network | done |
