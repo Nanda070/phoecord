@@ -162,3 +162,4 @@ cli-arg-setup-channel = Add a Start-menu shortcut that starts this Discord throu
 cli-shortcut-created = shortcut "{ $name }" added: { $path }
 cli-shortcut-unsupported = No shortcut on this system; start Discord with `phoecord launch --channel { $channel }`.
 cli-shortcut-skipped = No shortcut added: { $why }
+cli-warn-ca-untrusted = Warning: the local CA ({ $path }) is not in your trust store, so Discord will not connect through PhoeCord and may keep restarting. Run `phoecord trust` (or `phoecord setup`) to fix it.

@@ -18,8 +18,13 @@ pub enum Step {
     Dir { path: PathBuf },
     /// A file the installer created (`ca.pem`, `ca.key`, a unit file, a plist).
     File { path: PathBuf },
-    /// The local CA was added to the OS trust stores.
-    CaTrusted { ca_pem: PathBuf },
+    /// The local CA was added to the OS trust stores. `fingerprint` is the SHA-256 (hex) of the
+    /// certificate that was trusted; old logs have none, which means "unknown": trust again.
+    CaTrusted {
+        ca_pem: PathBuf,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        fingerprint: Option<String>,
+    },
     /// Windows per-user Run key value `HKCU\...\Run\<name>`.
     RunKey { name: String, value: String },
     /// macOS LaunchAgent loaded from `plist` (the file itself is a separate `File` step).
@@ -34,7 +39,7 @@ impl Step {
         match self {
             Step::Dir { path } => format!("folder {}", path.display()),
             Step::File { path } => format!("file {}", path.display()),
-            Step::CaTrusted { ca_pem } => {
+            Step::CaTrusted { ca_pem, .. } => {
                 format!("CA {} from the system trust stores", ca_pem.display())
             }
             Step::RunKey { name, .. } => format!("Run key value {name}"),

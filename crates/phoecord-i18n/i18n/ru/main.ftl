@@ -167,3 +167,4 @@ cli-arg-setup-channel = Добавить ярлык в меню «Пуск», к
 cli-shortcut-created = ярлык «{ $name }» добавлен: { $path }
 cli-shortcut-unsupported = В этой системе ярлык не создаётся; запускайте Discord командой `phoecord launch --channel { $channel }`.
 cli-shortcut-skipped = Ярлык не добавлен: { $why }
+cli-warn-ca-untrusted = Внимание: локальный сертификат CA ({ $path }) не добавлен в хранилище доверенных, поэтому Discord не подключится через PhoeCord и может бесконечно перезапускаться. Выполните `phoecord trust` (или `phoecord setup`), чтобы это исправить.

@@ -267,6 +267,19 @@ fn runtime() -> Result<tokio::runtime::Runtime> {
     Ok(tokio::runtime::Runtime::new()?)
 }
 
+/// The warning for `run` and `launch` when the CA they load is not in the OS trust stores.
+fn ca_warning(ca_pem: &std::path::Path, l10n: &Localizer) -> Option<String> {
+    phoecord_installer::ca::is_untrusted(&phoecord_installer::system::RealSystem, ca_pem).then(
+        || {
+            tf(
+                l10n,
+                "cli-warn-ca-untrusted",
+                &[("path", &ca_pem.display().to_string())],
+            )
+        },
+    )
+}
+
 async fn run(paths: Paths, launch: Option<Launch>, l10n: &Localizer) -> Result<()> {
     let cfg = Config::load_or_init(&paths.config)?;
     let listen = cfg.listen.clone();
@@ -292,6 +305,9 @@ async fn run(paths: Paths, launch: Option<Launch>, l10n: &Localizer) -> Result<(
         None => None,
     };
     let proxy = Proxy::new(paths, cfg, chain(), false)?;
+    if let Some(w) = ca_warning(&proxy.paths.data.join("ca.pem"), l10n) {
+        eprintln!("{w}");
+    }
     // WASM plugin packages in `<data>/plugins/<id>/`: loaded now, and again on every folder scan.
     match WasmRuntime::new() {
         Ok(rt) => proxy.watch_packages(PackageSet::new(rt, proxy.paths.data.join("plugins"))),
@@ -485,7 +501,7 @@ fn describe_step(l10n: &Localizer, step: &Step) -> String {
             "cli-step-file",
             &[("path", &path.display().to_string())],
         ),
-        Step::CaTrusted { ca_pem } => tf(
+        Step::CaTrusted { ca_pem, .. } => tf(
             l10n,
             "cli-step-ca-trusted",
             &[("path", &ca_pem.display().to_string())],

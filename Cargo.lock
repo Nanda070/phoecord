@@ -1647,6 +1647,7 @@ dependencies = [
  "phoecord-plugin-runtime",
  "phoecord-plugins",
  "rcgen",
+ "ring",
  "rustls",
  "serde",
  "serde_json",

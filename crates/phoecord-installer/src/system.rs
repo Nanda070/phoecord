@@ -68,6 +68,8 @@ pub trait System {
     /// Add the CA in `ca_pem` to the OS trust stores.
     fn trust_ca(&self, ca_pem: &Path) -> Result<()>;
     fn untrust_ca(&self) -> Result<()>;
+    /// Is the exact certificate in `ca_pem` (not just one with the same name) in the OS trust stores?
+    fn is_trusted(&self, ca_pem: &Path) -> Result<bool>;
     /// Windows: set `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\<name>`.
     fn run_key_set(&self, name: &str, value: &str) -> Result<()>;
     fn run_key_delete(&self, name: &str) -> Result<()>;
@@ -169,6 +171,10 @@ impl System for RealSystem {
         phoecord_proxy::trust::uninstall()
     }
 
+    fn is_trusted(&self, ca_pem: &Path) -> Result<bool> {
+        phoecord_proxy::trust::is_trusted(ca_pem)
+    }
+
     fn run_key_set(&self, name: &str, value: &str) -> Result<()> {
         run(Command::new("reg").args([
             "add", RUN_KEY, "/v", name, "/t", "REG_SZ", "/d", value, "/f",
@@ -249,6 +255,11 @@ pub mod fake {
         pub fail_on: RefCell<Option<String>>,
         /// Process ids `stop_proxies` finds running (and stops).
         pub running: RefCell<Vec<u32>>,
+        /// SHA-256 fingerprints of the certificates "in the store": `trust_ca` adds the one of the
+        /// file it is given, `untrust_ca` empties the store, `is_trusted` looks one up.
+        pub store: RefCell<Vec<String>>,
+        /// When set, `is_trusted` fails.
+        pub check_fails: RefCell<bool>,
     }
 
     impl FakeSystem {
@@ -267,10 +278,21 @@ pub mod fake {
 
     impl System for FakeSystem {
         fn trust_ca(&self, ca_pem: &Path) -> Result<()> {
-            self.hit(format!("trust_ca {}", ca_pem.display()))
+            self.hit(format!("trust_ca {}", ca_pem.display()))?;
+            let fp = phoecord_proxy::trust::fingerprint(ca_pem)?;
+            self.store.borrow_mut().push(fp);
+            Ok(())
         }
         fn untrust_ca(&self) -> Result<()> {
+            self.store.borrow_mut().clear();
             self.hit("untrust_ca".into())
+        }
+        fn is_trusted(&self, ca_pem: &Path) -> Result<bool> {
+            if *self.check_fails.borrow() {
+                bail!("fake failure: is_trusted");
+            }
+            let fp = phoecord_proxy::trust::fingerprint(ca_pem)?;
+            Ok(self.store.borrow().contains(&fp))
         }
         fn run_key_set(&self, name: &str, value: &str) -> Result<()> {
             self.hit(format!("run_key_set {name} {value}"))
