@@ -110,6 +110,7 @@ impl MessageLogger {
                 vencord: Some("MessageLogger".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
             cache: Mutex::new(Lru::default()),
         }

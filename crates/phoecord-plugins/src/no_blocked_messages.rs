@@ -51,6 +51,7 @@ impl NoBlockedMessages {
                 vencord: Some("NoBlockedMessages".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
             state: Mutex::new(State::default()),
         }

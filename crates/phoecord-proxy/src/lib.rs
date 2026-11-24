@@ -383,6 +383,7 @@ mod tests {
                 vencord: None,
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             })),
         ]);
         let mut cfg = Config::default();

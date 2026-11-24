@@ -29,6 +29,7 @@ impl ILoveSpam {
                 vencord: Some("iLoveSpam".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
         }
     }

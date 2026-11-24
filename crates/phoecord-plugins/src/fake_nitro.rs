@@ -45,6 +45,7 @@ impl FakeNitro {
                 vencord: Some("FakeNitro".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
             state: Mutex::new(State::default()),
         }

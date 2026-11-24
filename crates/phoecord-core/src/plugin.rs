@@ -40,6 +40,8 @@ pub struct Manifest {
     pub layers: Vec<Layer>,
     /// [`API_VERSION`] the plugin was built against.
     pub api: u32,
+    /// Outside hosts `Host::fetch` may call (exact host names, no scheme or port).
+    pub fetch: Vec<String>,
 }
 
 /// One thing a plugin may react to.
@@ -151,6 +153,11 @@ pub trait Host {
         let _ = (file, line);
         Err("Host::append_data is not available in this host".into())
     }
+    /// Called by the plugin chain right after `begin_plugin` with the hosts the plugin's manifest
+    /// lists in `fetch`, so [`Host::fetch`] can check its allow-list. Plugins never call this.
+    fn set_fetch_hosts(&mut self, hosts: &[String]) {
+        let _ = hosts;
+    }
     /// Called by the plugin chain before each plugin runs, so the host can scope `setting`,
     /// `kv_*`, `log` and rate limits to it. Plugins never call this.
     fn begin_plugin(&mut self, id: &str) {
@@ -164,6 +171,11 @@ pub struct HostResponse {
     pub status: u16,
     /// The JSON body, if there was one and it parsed.
     pub body: Option<Val>,
+    /// The body as text when it was not JSON (UTF-8, lossy), so plugins can read plain answers.
+    pub text: Option<String>,
+    /// Response headers that matter to plugins (lower-case names): `content-type`, `retry-after`,
+    /// `x-ratelimit-*`, `link`, `location`. Never cookies.
+    pub headers: Vec<(String, String)>,
 }
 
 /// A plugin, native or behind the WASM runtime.

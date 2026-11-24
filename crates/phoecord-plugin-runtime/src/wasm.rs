@@ -144,6 +144,7 @@ fn manifest_from_wit(m: wit::Manifest) -> Manifest {
             })
             .collect(),
         api: m.api,
+        fetch: Vec::new(),
     }
 }
 
@@ -342,6 +343,8 @@ impl State {
             HostReply::Response(r) => r.map(|r| wit::HostResponse {
                 status: r.status,
                 body: r.body.as_ref().map(val_to_tree),
+                text: r.text,
+                headers: r.headers,
             }),
             _ => Err("unexpected host reply".into()),
         }

@@ -98,6 +98,7 @@ mod limits {
             vencord: None,
             layers: vec![Layer::Network],
             api: 1,
+            fetch: Vec::new(),
         }))
     }
 

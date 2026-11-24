@@ -16,6 +16,7 @@
 //! #   send: glob over the op number, e.g. "send:3"
 //! events = ["dispatch:MESSAGE_CREATE"]
 //! rights = ["notify"]          # which `Host` methods it may call (see `wasm::Right`)
+//! fetch = ["api.example.com"]  # outside hosts `Host::fetch` may call (needs the `fetch` right)
 //! ```
 //!
 //! Rights (`rights = [...]`): a call without its right is an error for the guest and one log line
@@ -66,6 +67,9 @@ struct RawManifest {
     events: Vec<String>,
     #[serde(default)]
     rights: Vec<String>,
+    /// Outside hosts `Host::fetch` may call, e.g. `["translate.googleapis.com"]`.
+    #[serde(default)]
+    fetch: Vec<String>,
 }
 
 fn default_layers() -> Vec<String> {
@@ -107,6 +111,11 @@ impl PackageManifest {
             })
             .collect::<Result<Vec<_>, _>>()?;
         let events = EventFilter::parse(&raw.events)?;
+        let fetch = raw
+            .fetch
+            .iter()
+            .map(|h| valid_fetch_host(h))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(PackageManifest {
             manifest: Manifest {
                 id: raw.id,
@@ -117,10 +126,31 @@ impl PackageManifest {
                 vencord: raw.vencord,
                 layers,
                 api: raw.api,
+                fetch,
             },
             events,
             rights: raw.rights,
         })
+    }
+}
+
+/// A `fetch` entry is a bare lower-case host name: no scheme, port, path or wildcard.
+fn valid_fetch_host(h: &str) -> Result<String, String> {
+    let h = h.trim().to_ascii_lowercase();
+    let ok = !h.is_empty()
+        && h.split('.').count() >= 2
+        && h.split('.').all(|l| {
+            !l.is_empty()
+                && !l.starts_with('-')
+                && !l.ends_with('-')
+                && l.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        });
+    if ok {
+        Ok(h)
+    } else {
+        Err(format!(
+            "fetch host {h:?} must be a plain host name such as \"api.example.com\""
+        ))
     }
 }
 

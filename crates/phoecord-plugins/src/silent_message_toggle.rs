@@ -47,6 +47,7 @@ impl SilentMessageToggle {
                 vencord: Some("SilentMessageToggle".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
             armed: Arc::new(AtomicBool::new(false)),
         }

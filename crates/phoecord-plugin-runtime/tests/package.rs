@@ -234,6 +234,7 @@ mod live {
             vencord: None,
             layers: vec![Layer::Network],
             api: 1,
+            fetch: Vec::new(),
         };
         let chain = Chain::new(vec![Box::new(Builtin(manifest("taken"))) as Box<dyn Plugin>]);
         let mut set = PackageSet::new(common::runtime(), root.0.clone());

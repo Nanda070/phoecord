@@ -19,6 +19,7 @@ impl NoTrack {
                 vencord: Some("NoTrack".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
         }
     }

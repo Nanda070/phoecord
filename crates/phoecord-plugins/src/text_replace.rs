@@ -46,6 +46,7 @@ impl TextReplace {
                 vencord: Some("TextReplace".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
             reported: Mutex::new(HashSet::new()),
         }

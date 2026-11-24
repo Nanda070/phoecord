@@ -158,6 +158,7 @@ impl Chain {
             .filter(|p| p.wants(kind))
         {
             host.begin_plugin(&p.manifest().id);
+            host.set_fetch_hosts(&p.manifest().fetch);
             let verdict = match catch_unwind(AssertUnwindSafe(|| call(p, host))) {
                 Ok(v) => v,
                 Err(_) => {
@@ -337,6 +338,7 @@ mod tests {
             vencord: None,
             layers: vec![Layer::Network],
             api: phoecord_core::plugin::API_VERSION,
+            fetch: Vec::new(),
         }
     }
 

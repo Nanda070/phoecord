@@ -131,6 +131,7 @@ fn main() {
         vencord: None,
         layers: vec![Layer::Network],
         api: 1,
+        fetch: Vec::new(),
     })) as Box<dyn Plugin>]);
     println!("MESSAGE_CREATE, one plugin, 5000 events after 500 warm-up:");
     measure("native no-op plugin", &native, "MESSAGE_CREATE");

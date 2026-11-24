@@ -176,6 +176,7 @@ impl Commands {
                 vencord: Some("CommandsAPI".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
             subs: Vec::new(),
             counter: AtomicU64::new(0),

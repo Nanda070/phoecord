@@ -59,6 +59,7 @@ impl AnonymiseFileNames {
                 vencord: Some("AnonymiseFileNames".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
             names: Mutex::new(HashMap::new()),
             random: RandomState::new(),

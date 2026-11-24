@@ -79,6 +79,7 @@ impl NoReplyMention {
                 vencord: Some("NoReplyMention".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
             seen: Mutex::new(Seen::default()),
         }

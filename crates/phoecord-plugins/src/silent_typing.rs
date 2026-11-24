@@ -19,6 +19,7 @@ impl SilentTyping {
                 vencord: Some("SilentTyping".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
         }
     }

@@ -133,6 +133,10 @@ interface types {
         status: u16,
         /// The JSON body, if there was one and it parsed.
         body: option<tree>,
+        /// The body as text when it was not JSON.
+        text: option<string>,
+        /// Response headers that matter to plugins (lower-case names).
+        headers: list<tuple<string, string>>,
     }
 }
 

@@ -39,6 +39,7 @@ impl SendTimestamps {
                 vencord: Some("SendTimestamps".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
             warned: AtomicBool::new(false),
         }
