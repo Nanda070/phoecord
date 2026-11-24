@@ -50,6 +50,7 @@ Ask: *"Could a program between the client and Discord do this by changing the tr
 | `MessageEvents.addPreSendListener` | `Event::RestRequest` on `POST /channels/{id}/messages` | edit `body["content"]`, return `Verdict::Changed` |
 | `MessageEvents.addPreEditListener` | `Event::RestRequest` on `PATCH /channels/{id}/messages/{mid}` | |
 | `RestAPI` calls you make | `host.rest(method, route, body)` (route is a plain path like `/channels/{id}/messages`) | rate-limited (1/s per plugin, 5/s overall, Discord's own limits honoured); warn the user in the plugin's description if it does bulk work |
+| uploading a file (`sendMessage` with attachments, `CloudUpload`) | `host.rest_files("POST", "/channels/{id}/messages", payload, &[FilePart {..}])` | multipart like the client; same limits as `rest` |
 | `fetch` to an outside site | `host.fetch(request)` (HTTPS, 5 MB answer cap, no redirects followed) | the host must be listed under `fetch = [...]` in the manifest |
 | Gateway sends (presence, voice state) | `Event::Send { op, payload }`, `host.emit_send(op, payload)` | op 3 presence, op 4 voice state |
 | `DataStore` / `Settings.plugins.X.store` | `host.kv_get` / `host.kv_set` | small JSON values, per plugin |

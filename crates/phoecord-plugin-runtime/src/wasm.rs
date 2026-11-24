@@ -8,7 +8,7 @@
 
 use crate::package::{EventFilter, PackageManifest};
 use phoecord_core::{
-    Event, EventKind, Host, HostResponse, Layer, Manifest, Plugin, Val, Verdict,
+    Event, EventKind, FilePart, Host, HostResponse, Layer, Manifest, Plugin, Val, Verdict,
     plugin::API_VERSION,
 };
 use std::collections::VecDeque;
@@ -239,6 +239,7 @@ enum HostCall {
     ChannelGuild(u64),
     Fetch(String, String, Option<Val>),
     Rest(String, String, Option<Val>),
+    RestFiles(String, String, Option<Val>, Vec<FilePart>),
     EmitDispatch(Val),
     PluginEnabled(String),
     SetPluginEnabled(String, bool),
@@ -345,6 +346,7 @@ impl State {
                 body: r.body.as_ref().map(val_to_tree),
                 text: r.text,
                 headers: r.headers,
+                bytes: r.bytes,
             }),
             _ => Err("unexpected host reply".into()),
         }
@@ -421,6 +423,25 @@ impl wit_host::Host for State {
         let body = body.as_ref().map(tree_to_val).transpose()?;
         self.call_response(HostCall::Rest(method, route, body))
     }
+    fn rest_files(
+        &mut self,
+        method: String,
+        route: String,
+        payload: Option<wit::Tree>,
+        files: Vec<wit::FilePart>,
+    ) -> Result<wit::HostResponse, String> {
+        self.allow(Right::Rest)?;
+        let payload = payload.as_ref().map(tree_to_val).transpose()?;
+        let files = files
+            .into_iter()
+            .map(|f| FilePart {
+                filename: f.filename,
+                content_type: f.content_type,
+                data: f.data,
+            })
+            .collect();
+        self.call_response(HostCall::RestFiles(method, route, payload, files))
+    }
     fn emit_dispatch(&mut self, payload: wit::Tree) -> Result<(), String> {
         self.allow(Right::EmitDispatch)?;
         self.call_done(HostCall::EmitDispatch(tree_to_val(&payload)?))
@@ -476,6 +497,9 @@ fn serve(host: &mut dyn Host, call: HostCall) -> HostReply {
         HostCall::ChannelGuild(c) => HostReply::Id(host.channel_guild(c)),
         HostCall::Fetch(m, u, b) => HostReply::Response(host.fetch(&m, &u, b.as_ref())),
         HostCall::Rest(m, r, b) => HostReply::Response(host.rest(&m, &r, b.as_ref())),
+        HostCall::RestFiles(m, r, p, f) => {
+            HostReply::Response(host.rest_files(&m, &r, p.as_ref(), &f))
+        }
         HostCall::EmitDispatch(p) => {
             host.emit_dispatch(p);
             HostReply::Done(Ok(()))

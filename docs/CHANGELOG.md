@@ -44,6 +44,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - The first third-party plugin example: `clear_urls` as a WASM package in `examples/plugins/clear_urls/`, loaded without a restart (stage 1.3.8).
 - `phoecord launch --channel stable|ptb|canary` (no silent default to Stable); `launch` reuses a running proxy; `setup --channel` adds a Start-menu shortcut that starts that Discord through PhoeCord; `uninstall` stops a running proxy and removes PhoeCord's own CA files (stage 1.4.8).
 - Plugins can call Discord's API as your own client session (`Host::rest`, rate-limited) and outside HTTPS hosts they list (`Host::fetch`, `fetch = [...]` in `plugin.toml`); the session header stays in memory only (stage 1.1.13).
+- Plugin API (minor, `API_VERSION` stays 1): `HostResponse.bytes` (raw non-JSON answers, e.g. images) and `Host::rest_files` (upload files to Discord as the client does); both reach WASM plugins through `wit/phoecord.wit` (right `rest`). Unblocks petpet (1.2.12) and USRBG / Decor (1.2.14).
 
 ### Removed
 

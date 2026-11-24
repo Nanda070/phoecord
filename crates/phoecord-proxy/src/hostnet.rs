@@ -17,7 +17,7 @@ use http_body_util::{BodyExt, Empty, Full};
 use hyper::header::{self, HeaderMap, HeaderName, HeaderValue};
 use hyper::{Method, Request};
 use hyper_util::rt::TokioIo;
-use phoecord_core::{HostResponse, Val};
+use phoecord_core::{FilePart, HostResponse, Val};
 use rustls::pki_types::ServerName;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -30,6 +30,8 @@ pub const SESSION_TTL: Duration = Duration::from_secs(30 * 60);
 pub const MAX_BODY: usize = 5 * 1024 * 1024;
 /// Largest request body a plugin may send.
 pub const MAX_REQUEST: usize = 1024 * 1024;
+/// Largest multipart upload `Host::rest_files` sends (Discord's own limit for most accounts).
+pub const MAX_UPLOAD: usize = 25 * 1024 * 1024;
 /// Whole-call timeout, connect to last byte.
 pub const TIMEOUT: Duration = Duration::from_secs(15);
 /// At most this many Discord API calls a second across all plugins.
@@ -276,6 +278,35 @@ impl Net {
         body: Option<&Val>,
         upstream: Option<egress::Upstream>,
     ) -> Result<HostResponse, String> {
+        let json = encode_body(body)?;
+        self.rest_raw(
+            method,
+            path,
+            json.map(|b| (b, "application/json".to_string())),
+            upstream,
+        )
+    }
+
+    /// A Discord API call with files as `multipart/form-data` (`payload_json` + `files[n]`).
+    pub fn rest_files(
+        &self,
+        method: &str,
+        path: &str,
+        payload: Option<&Val>,
+        files: &[FilePart],
+        upstream: Option<egress::Upstream>,
+    ) -> Result<HostResponse, String> {
+        let (body, content_type) = multipart(payload, files, &new_boundary())?;
+        self.rest_raw(method, path, Some((body, content_type)), upstream)
+    }
+
+    fn rest_raw(
+        &self,
+        method: &str,
+        path: &str,
+        body: Option<(Vec<u8>, String)>,
+        upstream: Option<egress::Upstream>,
+    ) -> Result<HostResponse, String> {
         let session = self
             .session_now()
             .ok_or("client not signed in yet: Discord has not made an authenticated API request through PhoeCord")?;
@@ -283,7 +314,6 @@ impl Net {
         let path = clean_route(path)?;
         let key = bucket_key(method.as_str(), &path);
         self.check_limits(&key)?;
-        let json = encode_body(body)?;
         let mut headers = HeaderMap::new();
         for (n, v) in &session.headers {
             headers.insert(
@@ -299,7 +329,7 @@ impl Net {
             port: 443,
             path: format!("{}{}", session.prefix, path),
         };
-        let r = self.run(method, url, headers, json, upstream)?;
+        let r = self.run(method, url, headers, body, upstream)?;
         self.learn_limits(&key, r.status, &r.raw_headers, &r.raw_body);
         if r.status == 401 {
             // The token is no good any more: stop using it until the client sends a new one.
@@ -333,7 +363,13 @@ impl Net {
             HeaderValue::from_static(concat!("PhoeCord/", env!("CARGO_PKG_VERSION"))),
         );
         Ok(self
-            .run(method, url, headers, json, upstream)?
+            .run(
+                method,
+                url,
+                headers,
+                json.map(|b| (b, "application/json".to_string())),
+                upstream,
+            )?
             .into_response())
     }
 
@@ -355,7 +391,7 @@ impl Net {
         method: Method,
         url: Url,
         headers: HeaderMap,
-        body: Option<Vec<u8>>,
+        body: Option<(Vec<u8>, String)>,
         upstream: Option<egress::Upstream>,
     ) -> Result<Raw, String> {
         let target = self.target.lock().unwrap().clone();
@@ -423,12 +459,14 @@ impl Raw {
                 Some((n.to_string(), v.to_string()))
             })
             .collect();
-        let (body, text) = match serde_json::from_slice::<serde_json::Value>(&self.raw_body) {
-            Ok(j) => (Some(Val::from_json(j)), None),
-            Err(_) if self.raw_body.is_empty() => (None, None),
+        let (body, text, bytes) = match serde_json::from_slice::<serde_json::Value>(&self.raw_body)
+        {
+            Ok(j) => (Some(Val::from_json(j)), None, None),
+            Err(_) if self.raw_body.is_empty() => (None, None, None),
             Err(_) => (
                 None,
                 Some(String::from_utf8_lossy(&self.raw_body).into_owned()),
+                Some(self.raw_body.to_vec()),
             ),
         };
         HostResponse {
@@ -436,6 +474,7 @@ impl Raw {
             body,
             text,
             headers,
+            bytes,
         }
     }
 }
@@ -458,6 +497,77 @@ fn encode_body(body: Option<&Val>) -> Result<Option<Vec<u8>>, String> {
         return Err(format!("request body over {MAX_REQUEST} bytes"));
     }
     Ok(Some(b))
+}
+
+/// A random multipart boundary (no `rand` dependency: time and a counter are enough for a
+/// boundary, which only has to not occur in the parts).
+fn new_boundary() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static N: AtomicU64 = AtomicU64::new(0);
+    let t = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    format!("phoecord{t:x}{:x}", N.fetch_add(1, Ordering::Relaxed))
+}
+
+/// Quote a form-data header value: no CR, LF or `"` may reach the wire.
+fn form_value(s: &str) -> String {
+    s.chars()
+        .map(|c| {
+            if matches!(c, '"' | '\r' | '\n') {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect()
+}
+
+/// The `multipart/form-data` body Discord's client sends for uploads, and its content type.
+pub fn multipart(
+    payload: Option<&Val>,
+    files: &[FilePart],
+    boundary: &str,
+) -> Result<(Vec<u8>, String), String> {
+    if files.is_empty() {
+        return Err("rest_files needs at least one file".into());
+    }
+    if files.len() > 10 {
+        return Err("Discord takes at most 10 files per message".into());
+    }
+    let mut out = Vec::new();
+    if let Some(p) = payload {
+        let json = serde_json::to_vec(&p.to_json()).map_err(|e| e.to_string())?;
+        out.extend_from_slice(
+            format!(
+                "--{boundary}\r\nContent-Disposition: form-data; name=\"payload_json\"\r\nContent-Type: application/json\r\n\r\n"
+            )
+            .as_bytes(),
+        );
+        out.extend_from_slice(&json);
+        out.extend_from_slice(b"\r\n");
+    }
+    for (i, f) in files.iter().enumerate() {
+        if f.content_type.contains(['\r', '\n']) {
+            return Err("bad content type".into());
+        }
+        out.extend_from_slice(
+            format!(
+                "--{boundary}\r\nContent-Disposition: form-data; name=\"files[{i}]\"; filename=\"{}\"\r\nContent-Type: {}\r\n\r\n",
+                form_value(&f.filename),
+                f.content_type
+            )
+            .as_bytes(),
+        );
+        out.extend_from_slice(&f.data);
+        out.extend_from_slice(b"\r\n");
+        if out.len() > MAX_UPLOAD {
+            return Err(format!("upload over {MAX_UPLOAD} bytes"));
+        }
+    }
+    out.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
+    Ok((out, format!("multipart/form-data; boundary={boundary}")))
 }
 
 /// A route a plugin gives: `/channels/1/messages?limit=5`, optionally with the `/api/vN` prefix.
@@ -537,7 +647,7 @@ async fn request(
     method: Method,
     url: Url,
     mut headers: HeaderMap,
-    body: Option<Vec<u8>>,
+    body: Option<(Vec<u8>, String)>,
 ) -> Result<Raw> {
     let (tcp, tls) = match &target {
         Target::Live => (
@@ -558,12 +668,16 @@ async fn request(
         header::ACCEPT_ENCODING,
         HeaderValue::from_static("identity"),
     );
-    if body.is_some() {
-        headers.insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static("application/json"),
-        );
-    }
+    let body = match body {
+        Some((bytes, content_type)) => {
+            headers.insert(
+                header::CONTENT_TYPE,
+                HeaderValue::from_str(&content_type).map_err(|e| anyhow!("{e}"))?,
+            );
+            Some(bytes)
+        }
+        None => None,
+    };
     let len = body.as_ref().map_or(0, Vec::len);
     let mut b = Request::builder().method(method).uri(&url.path);
     *b.headers_mut().unwrap() = headers;
@@ -633,6 +747,30 @@ mod tests {
         ] {
             assert!(clean_route(bad).is_err(), "{bad}");
         }
+    }
+
+    #[test]
+    fn multipart_has_payload_and_files() {
+        let payload = Val::from_json(serde_json::json!({"content": "hi"}));
+        let files = [FilePart {
+            filename: "pet\"pet.gif".into(),
+            content_type: "image/gif".into(),
+            data: b"GIF89a".to_vec(),
+        }];
+        let (body, ct) = multipart(Some(&payload), &files, "B").unwrap();
+        assert_eq!(ct, "multipart/form-data; boundary=B");
+        let text = String::from_utf8_lossy(&body);
+        assert!(text.starts_with("--B\r\nContent-Disposition: form-data; name=\"payload_json\""));
+        assert!(text.contains("{\"content\":\"hi\"}"));
+        assert!(text.contains("name=\"files[0]\"; filename=\"pet_pet.gif\"\r\nContent-Type: image/gif\r\n\r\nGIF89a\r\n"));
+        assert!(text.ends_with("--B--\r\n"));
+        assert!(multipart(None, &[], "B").is_err());
+        let bad = [FilePart {
+            filename: "a".into(),
+            content_type: "x\r\ny".into(),
+            data: vec![],
+        }];
+        assert!(multipart(None, &bad, "B").is_err());
     }
 
     #[test]

@@ -137,6 +137,15 @@ interface types {
         text: option<string>,
         /// Response headers that matter to plugins (lower-case names).
         headers: list<tuple<string, string>>,
+        /// The raw body when it was not JSON, e.g. a fetched image.
+        bytes: option<list<u8>>,
+    }
+
+    /// One file for `rest-files`.
+    record file-part {
+        filename: string,
+        content-type: string,
+        data: list<u8>,
     }
 }
 
@@ -144,7 +153,7 @@ interface types {
 ///
 /// A call the plugin has no right to (the `rights` list of its `plugin.toml`) returns `err`.
 interface host {
-    use types.{tree, host-response};
+    use types.{tree, host-response, file-part};
 
     /// This plugin's settings, e.g. `setting("emoji_size")`. Always allowed.
     setting: func(key: string) -> option<tree>;
@@ -168,6 +177,9 @@ interface host {
     fetch: func(method: string, url: string, body: option<tree>) -> result<host-response, string>;
     /// A Discord API call on the user's behalf. Right `rest`.
     rest: func(method: string, route: string, body: option<tree>) -> result<host-response, string>;
+    /// A Discord API call with files (`multipart/form-data`: `payload_json` + `files[n]`), e.g. a
+    /// generated image sent as a message. Right `rest`.
+    rest-files: func(method: string, route: string, payload: option<tree>, files: list<file-part>) -> result<host-response, string>;
     /// Queue a whole server to client gateway frame that only this client sees, such as a local
     /// answer to a slash command. Right `emit_dispatch`.
     emit-dispatch: func(payload: tree) -> result<_, string>;

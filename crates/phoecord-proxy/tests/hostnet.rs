@@ -358,6 +358,65 @@ fn fetch_text_size_cap_and_redirects() {
     assert!(r.headers.iter().any(|(k, _)| k == "location"));
 }
 
+#[test]
+fn fetch_returns_binary_bodies_as_bytes() {
+    let gif: Vec<u8> = vec![
+        b'G', b'I', b'F', b'8', b'9', b'a', 1, 0, 1, 0, 0x80, 0xff, 0,
+    ];
+    let body = gif.clone();
+    let (addr, _) = fake(Box::new(move |_| {
+        (
+            200,
+            vec![("content-type".into(), "image/gif".into())],
+            body.clone(),
+        )
+    }));
+    let s = shared(addr);
+    let cfg = Config::default();
+    let mut h = ProxyHost::new(&s, &cfg);
+    h.begin_plugin("p");
+    h.set_fetch_hosts(&["cdn.example.com".to_string()]);
+    let r = h
+        .fetch("GET", "https://cdn.example.com/frame.gif", None)
+        .unwrap();
+    assert_eq!(r.body, None);
+    assert_eq!(r.bytes.as_deref(), Some(&gif[..]), "raw bytes survive");
+}
+
+#[test]
+fn rest_files_sends_multipart_with_the_clients_session() {
+    let (addr, seen) = fake(Box::new(|_| json(200, r#"{"id":"5"}"#)));
+    let s = shared(addr);
+    let cfg = Config::default();
+    sign_in(&s, "tok");
+    let mut h = ProxyHost::new(&s, &cfg);
+    h.begin_plugin("petpet");
+    let files = [phoecord_core::FilePart {
+        filename: "petpet.gif".into(),
+        content_type: "image/gif".into(),
+        data: b"GIF89a".to_vec(),
+    }];
+    let r = h
+        .rest_files("POST", "/channels/9/messages", Some(&Val::map()), &files)
+        .unwrap();
+    assert_eq!(r.status, 200);
+    let v = seen.lock().unwrap();
+    assert_eq!(v[0].line, "POST /api/v9/channels/9/messages HTTP/1.1");
+    assert_eq!(v[0].header("authorization"), Some("tok"));
+    assert!(
+        v[0].header("content-type")
+            .is_some_and(|c| c.starts_with("multipart/form-data; boundary=")),
+        "{:?}",
+        v[0].header("content-type")
+    );
+    drop(v);
+    // Same caps as rest: a second call from the same plugin within a second is refused.
+    let e = h
+        .rest_files("POST", "/channels/9/messages", None, &files)
+        .unwrap_err();
+    assert!(e.contains("rate limited"), "{e}");
+}
+
 /// A plugin that calls both from inside the chain.
 struct Probe {
     m: Manifest,

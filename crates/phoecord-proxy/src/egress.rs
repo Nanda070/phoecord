@@ -229,9 +229,11 @@ mod tests {
 
     #[tokio::test]
     async fn a_dead_upstream_gives_a_clear_error() {
-        let l = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let addr = l.local_addr().unwrap();
-        drop(l);
+        // A bound socket that never listens: the port stays ours (no parallel test can take it,
+        // which made this test flaky) and every connection to it is refused.
+        let sock = tokio::net::TcpSocket::new_v4().unwrap();
+        sock.bind("127.0.0.1:0".parse().unwrap()).unwrap();
+        let addr = sock.local_addr().unwrap();
         let up = Upstream::parse(&format!("http://{addr}")).unwrap();
         let e = format!(
             "{:#}",

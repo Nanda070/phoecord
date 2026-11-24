@@ -8,5 +8,7 @@ pub mod plugin;
 pub mod route;
 mod val;
 
-pub use plugin::{Event, EventKind, Host, HostResponse, Layer, Manifest, Plugin, Verdict};
+pub use plugin::{
+    Event, EventKind, FilePart, Host, HostResponse, Layer, Manifest, Plugin, Verdict,
+};
 pub use val::Val;

@@ -132,6 +132,19 @@ pub trait Host {
         let _ = (method, route, body);
         Err("Host::rest is not available in this host".into())
     }
+    /// A Discord API call with files, sent as `multipart/form-data` the way the client uploads
+    /// attachments: `payload` becomes the `payload_json` part, each file a `files[n]` part. Same
+    /// session, route rules and rate limits as [`Host::rest`].
+    fn rest_files(
+        &mut self,
+        method: &str,
+        route: &str,
+        payload: Option<&Val>,
+        files: &[FilePart],
+    ) -> Result<HostResponse, String> {
+        let _ = (method, route, payload, files);
+        Err("Host::rest_files is not available in this host".into())
+    }
     /// Queue a server → client gateway payload (a whole frame such as `{"op":0,"t":"MESSAGE_CREATE",
     /// "d":{…}}`) that only this client sees, e.g. a local answer to a slash command. Sent right
     /// after the frame being handled; from a REST event it goes to the connected gateway at once.
@@ -176,6 +189,19 @@ pub struct HostResponse {
     /// Response headers that matter to plugins (lower-case names): `content-type`, `retry-after`,
     /// `x-ratelimit-*`, `link`, `location`. Never cookies.
     pub headers: Vec<(String, String)>,
+    /// The raw body when it was not JSON, e.g. an image a plugin fetched. `None` for JSON and empty
+    /// bodies.
+    pub bytes: Option<Vec<u8>>,
+}
+
+/// One file for [`Host::rest_files`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FilePart {
+    /// The file name Discord shows, e.g. `petpet.gif`.
+    pub filename: String,
+    /// MIME type, e.g. `image/gif`.
+    pub content_type: String,
+    pub data: Vec<u8>,
 }
 
 /// A plugin, native or behind the WASM runtime.

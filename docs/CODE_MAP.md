@@ -72,7 +72,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/ca.rs` | `Authority`: local CA load-or-create, name constraint (`CONSTRAINED_TO`), leaf certificates per SNI, rustls `ServerConfig` | `CA_NAME` is what `untrust` looks for; tests check the constraint blocks other domains |
 | `src/trust.rs` | Install/remove the CA: Windows `certutil -user`, macOS keychain, Linux NSS (incl. Flatpak, Snap) | Platform code behind `cfg`; build on all 3 OSes before merging |
 
-| `src/hostnet.rs` | `Net`: the client's session headers kept in memory only (30 min TTL, dropped on 401), `Host::rest` to the client's own Discord API host with route checks, per-plugin 1/s + global 5/s caps and Discord's rate-limit buckets; `Host::fetch` to allow-listed HTTPS hosts (5 MB cap, no redirects, no credentials); a small dedicated runtime so plugin calls never block the proxy | Never log or persist the session headers; `Debug` is redacted |
+| `src/hostnet.rs` | `Net`: the client's session headers kept in memory only (30 min TTL, dropped on 401), `Host::rest` to the client's own Discord API host with route checks, per-plugin 1/s + global 5/s caps and Discord's rate-limit buckets; `Host::rest_files` (multipart upload, 10 files, 25 MB); `Host::fetch` to allow-listed HTTPS hosts (5 MB cap, no redirects, no credentials, raw `bytes` for non-JSON answers); a small dedicated runtime so plugin calls never block the proxy | Never log or persist the session headers; `Debug` is redacted |
 | `tests/hostnet.rs` | Loopback fake Discord and outside servers: capture/reuse, refusals, rate limits, allow-list, caps, a `Chain` test | |
 
 ### `phoecord-plugin-runtime`

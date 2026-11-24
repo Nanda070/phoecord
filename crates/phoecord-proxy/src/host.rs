@@ -4,7 +4,7 @@
 use crate::account::Account;
 use crate::config::Config;
 use crate::hostnet::{GLOBAL_PER_SECOND, Net};
-use phoecord_core::{Host, HostResponse, Val};
+use phoecord_core::{FilePart, Host, HostResponse, Val};
 use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -294,6 +294,41 @@ impl Host for ProxyHost<'_> {
         route: &str,
         body: Option<&Val>,
     ) -> Result<HostResponse, String> {
+        self.rest_gate()?;
+        let upstream = self.upstream()?;
+        self.shared.net.rest(method, route, body, upstream)
+    }
+
+    fn rest_files(
+        &mut self,
+        method: &str,
+        route: &str,
+        payload: Option<&Val>,
+        files: &[FilePart],
+    ) -> Result<HostResponse, String> {
+        self.rest_gate()?;
+        let upstream = self.upstream()?;
+        self.shared
+            .net
+            .rest_files(method, route, payload, files, upstream)
+    }
+
+    fn fetch(
+        &mut self,
+        method: &str,
+        url: &str,
+        body: Option<&Val>,
+    ) -> Result<HostResponse, String> {
+        let upstream = self.upstream()?;
+        self.shared
+            .net
+            .fetch(&self.fetch_hosts, method, url, body, upstream)
+    }
+}
+
+impl ProxyHost<'_> {
+    /// Sign-in and the per-plugin and global caps shared by `rest` and `rest_files`.
+    fn rest_gate(&mut self) -> Result<(), String> {
         if !self.shared.net.signed_in() {
             return Err("client not signed in yet".into());
         }
@@ -312,24 +347,9 @@ impl Host for ProxyHost<'_> {
                 "rate limited: at most {GLOBAL_PER_SECOND} Discord API calls per second in total"
             ));
         }
-        let upstream = self.upstream()?;
-        self.shared.net.rest(method, route, body, upstream)
+        Ok(())
     }
 
-    fn fetch(
-        &mut self,
-        method: &str,
-        url: &str,
-        body: Option<&Val>,
-    ) -> Result<HostResponse, String> {
-        let upstream = self.upstream()?;
-        self.shared
-            .net
-            .fetch(&self.fetch_hosts, method, url, body, upstream)
-    }
-}
-
-impl ProxyHost<'_> {
     fn upstream(&self) -> Result<Option<crate::egress::Upstream>, String> {
         self.config
             .upstream
