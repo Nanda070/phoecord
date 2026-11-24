@@ -239,7 +239,12 @@ mod tests {
             "{:#}",
             connect(Some(&up), "discord.com", 443).await.unwrap_err()
         );
-        assert!(e.contains("cannot reach the upstream proxy"), "{e}");
+        // Refused at once on Linux and Windows; macOS lets the connect hang until the timeout.
+        // Either way the message names the upstream proxy and says what went wrong.
+        assert!(
+            e.contains("cannot reach the upstream proxy") || e.contains("did not answer in time"),
+            "{e}"
+        );
     }
 
     #[tokio::test]
