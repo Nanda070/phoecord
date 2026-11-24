@@ -6,7 +6,7 @@ in its plan's `ai/ledger.md` first, then rerun the script.
 
 ## Phase 1. Before the Phoenix Canary public beta
 
-Source: `docs/phase-1/ai/ledger.md`, decisions: 26.
+Source: `docs/phase-1/ai/ledger.md`, decisions: 27.
 
 - Ruling: the repository is public on Nanda070's account (owner Nanda, 2026-11-23, "Public" (translated)) — why: open-source MIT project — risk: everything pushed is published at once; secrets rules in AGENTS.md and SECRETS.md
 - Ruling: the copyright holder is Cheterin Group, next to the retained upstream MIT copyright line (owner Nanda, 2026-11-23, "Copyright in LICENSE" (translated)) — why: project ownership — risk: none
@@ -34,3 +34,4 @@ Source: `docs/phase-1/ai/ledger.md`, decisions: 26.
 - Ruling: hybrid transport: today's Electron client stays on the local proxy; on Phoenix the target is in-process (plugin runtime inside `version.dll`, network hooks next to the UI hooks, no CA, no port, no extra process) with the proxy as the fallback; an upstream proxy (SOCKS5/HTTP) is added for VPN and zapret users (new tasks 1.1.11, 1.1.12) (owner Nanda, 2026-11-23, "definitely record the hybrid in the plan, no point moving to one DLL right now" (translated)) — why: the proxy survives client updates and works on 3 OSes; in-process removes the CA and port where the loader is needed anyway — risk: in-process network hooks break on Phoenix updates until signatures are refreshed
 - Ruling: every pull request is assigned to Nanda070 and requests Nanda070's review (CODEOWNERS + an auto-assign workflow) (owner Nanda, 2026-11-23, "all PRs go under review of nanda070 (assignments)" (translated)) — why: one owner sees every change — risk: GitHub cannot request a review from a PR's own author, so PRs opened from the Nanda070 account get the assignment only
 - Ruling: the full 1.5.7 check (10 minutes on 3 consecutive client versions) is done after the release, not before (owner Nanda, 2026-11-24, "all good, but I did not do the full check, we'll do it after the release" (translated)) — why: one version passed a basic start/use/quit run and the loader has no hooks yet without signatures — risk: a crash on another client build is found later, by users
+- Ruling: 1.4.6 and 1.5.7 are closed on the Windows results; the real reboot, macOS and Linux checks of 1.4.6 and the 3-version run of 1.5.7 happen after the release (owner Nanda, 2026-11-24, "mark it closed but note that macOS and Linux are checked after the release", "same with 1.5.7" (translated)) — why: the Windows path, which most users take, passed — risk: a macOS or Linux installer bug, or a crash on another client build, is found after the release

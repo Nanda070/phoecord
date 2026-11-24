@@ -97,7 +97,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.4.3** 🟡 | Installer GUI: dark red theme, tabs, motion, as easy as BetterDiscord/Vencord; terms screen; Plugins tab (install from file or link, rights shown first, on/off, remove) | Kennurken | ⏳ |
 | **1.4.4** 🔴 | Full rollback | Nanda | ✅ 23.11, PR #23; `phoecord uninstall` since PR #33 |
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Nanda | ⏳ |
-| **1.4.6** 🔴 | Manual check on real Windows, macOS and Linux machines: `setup` → reboot → proxy runs and Discord connects; `uninstall` leaves no file, trust entry or autostart entry | Nanda | 🔄 Windows ✅ 24.11 after 1.4.8 (setup with terms, shortcut, client through the proxy, launch reuses a running proxy, uninstall stops the proxy and leaves only `config.toml`; Stable with Vencord untouched); real reboot not done; one new bug (1.4.9); macOS and Linux not checked |
+| **1.4.6** 🔴 | Manual check on real Windows, macOS and Linux machines: `setup` → reboot → proxy runs and Discord connects; `uninstall` leaves no file, trust entry or autostart entry | Nanda | ✅ 24.11 on Windows (setup, shortcut, client through the proxy, proxy reuse, uninstall; owner's Stable untouched). After the release: real reboot, macOS, Linux, and a re-run once 1.4.9 lands |
 | **1.4.7** 🔴 | Terms of use (`TERMS.md`, English and Russian) that must be accepted before install, in the GUI and in `phoecord setup` | Nanda | ✅ 23.11, PR #38; text approved by the owner (the GUI screen is part of 1.4.3) |
 | **1.4.8** 🔴 | Fixes from the Windows check (1.4.6): `uninstall` removes a CA made by any command and stops a running proxy; `launch --channel stable/ptb/canary` (no silent default to Stable); `launch` reuses a running proxy; a Start-menu shortcut that starts the client through the proxy, so autostart is useful | Nanda | ✅ 24.11, PR #52 (all five fixed with tests; the Windows re-check is part of 1.4.6) |
 | **1.4.9** 🔴 | `setup` trusts the CA it will actually use: compare the certificate's fingerprint with the trust store instead of trusting the `install.log` line, so a CA recreated between runs is trusted again (found in the 1.4.6 re-check: Canary restarted in a loop) | Nanda | ⏳ |
@@ -107,7 +107,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.5.4** 🔴 | Inline detours and hook removal | Nanda | ✅ 23.11, PR #10 |
 | **1.5.5** 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
 | **1.5.6** 🟡 | Reinstall after a Discord update | Nanda | ⏳ |
-| **1.5.7** 🔴 | Verify on 3 client versions | Nanda | 🔄 1 of 3 versions: Canary 1.0.1355 on 24.11, loaded in all 7 processes, build detected, UI layer off (no signatures), started and quit with no crash; the full 10-minute run on 3 versions is after the release (owner's call) |
+| **1.5.7** 🔴 | Verify on 3 client versions | Nanda | ✅ 24.11 on Canary 1.0.1355 (loaded in all 7 processes, build detected, no crash). After the release: the 10-minute run on 3 consecutive client versions |
 | **1.5.8** 🟡 | Loader cost: act only in the main client process (skip `--type=` child processes) and hash `.text` from the mapped image instead of reading the whole exe (224 MB, about 140 ms in each of 7 processes) | Nanda | ⏳ |
 | **1.6.1** 🔴 | A map of GPUI | Nanda | ✅ 23.11, PR #12 |
 | **1.6.2** 🔴 | GPUI reference build | Nanda | ✅ 23.11, PR #12 |
