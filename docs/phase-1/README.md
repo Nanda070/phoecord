@@ -95,7 +95,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ✅ 23.11, PR #48 (`examples/plugins/clear_urls`, 79 KB, loads without a restart) |
 | **1.4.1** 🔴 | Client discovery on 3 OSes | Nanda | ✅ 23.11, PR #23 (library; real machines not checked) |
 | **1.4.2** 🔴 | CA and proxy autostart | Nanda | ✅ 23.11, PR #23; `phoecord setup` uses it since PR #33 |
-| **1.4.3** 🟡 | Installer GUI: dark red theme, tabs, motion, as easy as BetterDiscord/Vencord; terms screen; Plugins tab (install from file or link, rights shown first, on/off, remove) | Kennurken | ⏳ review: PR from `Kennurken:feat/installer-gui`; the owner signs off on the look |
+| **1.4.3** 🟡 | Installer GUI: dark red theme, tabs, motion, as easy as BetterDiscord/Vencord; terms screen; Plugins tab (install from file or link, rights shown first, on/off, remove) | Kennurken | ✅ 24.11, PR #66 (window + NSIS/MSI/DMG installers; checked by the owner on Windows 11 with Canary; macOS and Linux real installs after the release) |
 | **1.4.4** 🔴 | Full rollback | Nanda | ✅ 23.11, PR #23; `phoecord uninstall` since PR #33 |
 | **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Kennurken | ⏳ |
 | **1.4.6** 🔴 | Manual check on real Windows, macOS and Linux machines: `setup` → reboot → proxy runs and Discord connects; `uninstall` leaves no file, trust entry or autostart entry | Nanda | ✅ 24.11 on Windows (setup, shortcut, client through the proxy, proxy reuse, uninstall; owner's Stable untouched). After the release: real reboot, macOS, Linux, and a re-run once 1.4.9 lands |
