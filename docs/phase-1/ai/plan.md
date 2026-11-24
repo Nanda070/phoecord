@@ -409,7 +409,7 @@ Found in the 1.4.6 re-check on 24.11: `ca.pem` had been recreated after it was t
 
 **Done when:** a test over the fake `System` recreates the CA between two `setup` runs and the second run trusts the new one; the warning has a test.
 
-### 1.4.5. Releases (Nanda)
+### 1.4.5. Releases (Kennurken)
 
 **Files:** `.github/workflows/release.yml`, `docs/GOVERNANCE.md`
 
@@ -460,7 +460,7 @@ Found in the 1.4.6 re-check on 24.11: `ca.pem` had been recreated after it was t
 
 **Done when:** the loader reports its status to `phoecord run`, visible in the proxy log.
 
-### 1.5.6. Survive Discord updates (Nanda)
+### 1.5.6. Survive Discord updates (Kennurken)
 
 **Files:** `crates/phoecord-installer/src/loader.rs`
 
