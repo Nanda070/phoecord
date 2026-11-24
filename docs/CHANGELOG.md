@@ -45,6 +45,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - `phoecord launch --channel stable|ptb|canary` (no silent default to Stable); `launch` reuses a running proxy; `setup --channel` adds a Start-menu shortcut that starts that Discord through PhoeCord; `uninstall` stops a running proxy and removes PhoeCord's own CA files (stage 1.4.8).
 - Plugins can call Discord's API as your own client session (`Host::rest`, rate-limited) and outside HTTPS hosts they list (`Host::fetch`, `fetch = [...]` in `plugin.toml`); the session header stays in memory only (stage 1.1.13).
 - Plugin API (minor, `API_VERSION` stays 1): `HostResponse.bytes` (raw non-JSON answers, e.g. images) and `Host::rest_files` (upload files to Discord as the client does); both reach WASM plugins through `wit/phoecord.wit` (right `rest`). Unblocks petpet (1.2.12) and USRBG / Decor (1.2.14).
+- `setup` trusts a recreated local CA (it compares fingerprints with the trust store), and `run`/`launch` warn when the CA is not trusted (stage 1.4.9).
 
 ### Removed
 

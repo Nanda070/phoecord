@@ -138,6 +138,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/discover.rs` | `discover()`: Stable/PTB/Canary on Windows, macOS, Linux (PATH, Flatpak, Snap); `discover_in(&Roots)` for tests |
 | `src/system.rs` | `Os`, `Env`, the `System` trait (trust store, Run key, launchctl, systemd); `RealSystem` is the only code that touches the machine |
 | `src/ca.rs`, `src/autostart.rs` | Install steps: local CA + trust; Run key / LaunchAgent / systemd user unit |
+| `src/ca.rs` (installer) | `ensure_ca`: trusts the CA when the fingerprint stored in `install.log` differs or `System::is_trusted` says no; `is_untrusted` drives the `run`/`launch` warning | A failing check must not re-prompt on every `setup` |
 | `src/shortcut.rs` | Start-menu shortcut "Discord … (PhoeCord)" that runs `phoecord launch --channel …`: Windows `.lnk` (PowerShell + WScript.Shell, every value quoted), Linux `.desktop` | Created and removed through `System`, logged in `install.log` |
 | `src/launch.rs` | `choose` (the client for `--channel`, or the only one installed; several without `--channel` is an error), `client_command`, `probe_proxy` (is PhoeCord already on the port: `GET /__phoecord`) | `launch` never defaults silently to Stable |
 | `src/vencord.rs` | `phoecord import-vencord`: finds Vencord / Vesktop / Equicord `settings.json` (or `--path`), maps enabled plugins by `Manifest::vencord` | Reads only; never writes Vencord's files; one file is listed once on case-insensitive file systems |

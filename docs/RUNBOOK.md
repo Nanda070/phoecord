@@ -49,6 +49,7 @@ Write down right away: when it started (UTC), Discord client and version, PhoeCo
 
 ## 3b. Starting Discord through PhoeCord
 
+- Discord restarts in a loop or never finishes "Starting" after `setup`: the CA PhoeCord signs with is not trusted (`run` and `launch` print a warning). Run `phoecord trust`, then restart Discord.
 - `phoecord launch --channel canary` (or `stable`, `ptb`). With several clients installed and no `--channel`, `launch` lists them and stops: it never picks one silently.
 - If the proxy already runs (autostart), `launch` only starts the client with the proxy flag.
 - "address used by another program, not PhoeCord": something else holds the port; change `listen` in `config.toml`.
