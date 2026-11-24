@@ -3,6 +3,7 @@
 
 use crate::account::Account;
 use crate::config::Config;
+use crate::hostnet::{GLOBAL_PER_SECOND, Net};
 use phoecord_core::{Host, HostResponse, Val};
 use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
@@ -110,6 +111,9 @@ type Notifier = Box<dyn Fn(&str, &str) + Send + Sync>;
 /// State shared by every [`ProxyHost`]. Each lock is taken per call, never held across the chain.
 pub struct Shared {
     pub account: Mutex<Account>,
+    /// The client's Discord session and the HTTP client behind `Host::rest` / `Host::fetch`.
+    pub net: Net,
+    rest_global: Mutex<RateLimiter>,
     kv: Mutex<KvStore>,
     plugins_dir: PathBuf,
     /// `config.toml`, for `Host::set_plugin_enabled` (empty in tests that never toggle).
@@ -128,6 +132,8 @@ impl Shared {
     pub fn with_notifier(plugins_dir: PathBuf, notifier: Notifier) -> Shared {
         Shared {
             account: Mutex::new(Account::default()),
+            net: Net::new(),
+            rest_global: Mutex::new(RateLimiter::new(GLOBAL_PER_SECOND, Duration::from_secs(1))),
             kv: Mutex::new(KvStore::new(plugins_dir.clone())),
             plugins_dir,
             config_path: PathBuf::new(),
@@ -146,6 +152,8 @@ pub struct ProxyHost<'a> {
     shared: &'a Shared,
     config: &'a Config,
     plugin: String,
+    /// `fetch` hosts of the plugin being run (its manifest).
+    fetch_hosts: Vec<String>,
     /// Client → server payloads queued by plugins; the gateway sends them after the current frame.
     pub sends: Vec<(i64, Val)>,
     /// Server → client payloads queued by plugins with `Host::emit_dispatch`.
@@ -158,6 +166,7 @@ impl<'a> ProxyHost<'a> {
             shared,
             config,
             plugin: String::new(),
+            fetch_hosts: Vec::new(),
             sends: Vec::new(),
             locals: Vec::new(),
         }
@@ -168,6 +177,11 @@ impl Host for ProxyHost<'_> {
     fn begin_plugin(&mut self, id: &str) {
         self.plugin.clear();
         self.plugin.push_str(id);
+        self.fetch_hosts.clear();
+    }
+
+    fn set_fetch_hosts(&mut self, hosts: &[String]) {
+        self.fetch_hosts = hosts.to_vec();
     }
 
     fn setting(&self, key: &str) -> Option<Val> {
@@ -278,19 +292,52 @@ impl Host for ProxyHost<'_> {
         &mut self,
         method: &str,
         route: &str,
-        _body: Option<&Val>,
+        body: Option<&Val>,
     ) -> Result<HostResponse, String> {
-        let ok = self
+        if !self.shared.net.signed_in() {
+            return Err("client not signed in yet".into());
+        }
+        let now = Instant::now();
+        if !self
             .shared
             .rest_limit
             .lock()
             .unwrap()
-            .allow(&self.plugin, Instant::now());
-        if !ok {
+            .allow(&self.plugin, now)
+        {
             return Err("rate limited: at most 1 Discord API call per second per plugin".into());
         }
-        // The upstream call itself lands with the first plugin that needs it (stage 1.2).
-        Err(format!("Host::rest {method} {route} is not wired up yet"))
+        if !self.shared.rest_global.lock().unwrap().allow("all", now) {
+            return Err(format!(
+                "rate limited: at most {GLOBAL_PER_SECOND} Discord API calls per second in total"
+            ));
+        }
+        let upstream = self.upstream()?;
+        self.shared.net.rest(method, route, body, upstream)
+    }
+
+    fn fetch(
+        &mut self,
+        method: &str,
+        url: &str,
+        body: Option<&Val>,
+    ) -> Result<HostResponse, String> {
+        let upstream = self.upstream()?;
+        self.shared
+            .net
+            .fetch(&self.fetch_hosts, method, url, body, upstream)
+    }
+}
+
+impl ProxyHost<'_> {
+    fn upstream(&self) -> Result<Option<crate::egress::Upstream>, String> {
+        self.config
+            .upstream
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .map(crate::egress::Upstream::parse)
+            .transpose()
+            .map_err(|e| format!("{e:#}"))
     }
 }
 
@@ -433,17 +480,5 @@ mod tests {
         assert_eq!(h.channel_guild(12), None);
         h.emit_send(3, Val::map());
         assert_eq!(h.sends.len(), 1);
-    }
-
-    #[test]
-    fn rest_is_rate_limited() {
-        let shared = Shared::new(temp("rest"));
-        let cfg = Config::default();
-        let mut h = ProxyHost::new(&shared, &cfg);
-        h.begin_plugin("p");
-        let first = h.rest("GET", "/users/@me", None).unwrap_err();
-        assert!(first.contains("not wired"), "{first}");
-        let second = h.rest("GET", "/users/@me", None).unwrap_err();
-        assert!(second.contains("rate limited"), "{second}");
     }
 }
