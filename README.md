@@ -64,11 +64,15 @@ Branches, commits and PRs: [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for peopl
 
 ## Contributors
 
-<a href="https://github.com/Nanda070/phoecord/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Nanda070/phoecord" alt="Contributors" />
-</a>
+<!-- contributors:start -->
+<p>
+  <a href="https://github.com/Nanda070" title="Nanda070"><img src="https://github.com/Nanda070.png?size=96" width="64" height="64" alt="Nanda070" /></a>
+  <a href="https://github.com/matveee" title="matveee"><img src="https://github.com/matveee.png?size=96" width="64" height="64" alt="matveee" /></a>
+  <a href="https://github.com/buslan07" title="buslan07"><img src="https://github.com/buslan07.png?size=96" width="64" height="64" alt="buslan07" /></a>
+</p>
+<!-- contributors:end -->
 
-Updated automatically from the repository's commit history. Want to join? See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Everyone with a merged commit, from GitHub's contributors list ([graph](https://github.com/Nanda070/phoecord/graphs/contributors)); refreshed with `python scripts/update_contributors.py` when a new contributor's PR is merged. Want to join? See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 Thanks to [Vencord](https://github.com/Vendicated/Vencord) for the plugin ideas and to [Zed](https://github.com/zed-industries/zed) for open-sourcing GPUI. Not affiliated with Discord Inc., Vencord or Zed Industries.
 

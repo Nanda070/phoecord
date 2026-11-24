@@ -21,6 +21,7 @@ A change that leaves these documents wrong is not done. Update them in the same 
 | A new secret, key or place where one is stored | the secrets table in [`docs/GOVERNANCE.md`](GOVERNANCE.md) (never the value) |
 | A new kind of breakage or a new diagnostic | [`docs/RUNBOOK.md`](RUNBOOK.md) |
 | A plugin added or its behaviour changed | its row in [`docs/PLUGINS.md`](PLUGINS.md) |
+| Merged the first PR of a new contributor | the README contributors block: `python scripts/update_contributors.py` |
 | A decision by the owner | a `Ruling:` line in the plan's `ai/ledger.md`, then `python scripts/gen_decisions.py` |
 
 `docs/DECISIONS.md` is generated: never edit it by hand. `scripts/check.sh` fails if it is stale.
