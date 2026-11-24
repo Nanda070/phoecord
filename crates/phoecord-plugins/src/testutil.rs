@@ -9,6 +9,8 @@ pub struct Cfg {
     pub settings: HashMap<String, Val>,
     pub logs: Vec<String>,
     pub plugins: HashMap<String, bool>,
+    /// The signed-in user's id, for plugins that treat "me" differently.
+    pub me: Option<u64>,
 }
 
 impl Cfg {
@@ -27,7 +29,7 @@ impl Host for Cfg {
     }
     fn kv_set(&mut self, _: &str, _: Val) {}
     fn self_id(&self) -> Option<u64> {
-        None
+        self.me
     }
     fn notify(&mut self, _: &str, _: &str) {}
     fn log(&mut self, message: &str) {

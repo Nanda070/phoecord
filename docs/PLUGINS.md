@@ -61,7 +61,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | CustomIdle | Change or disable auto-idle | 🌐 Network | done (0 or over 10 minutes; `/phoecord exitidle`) |
 | CustomRPC | Fully custom Rich Presence | 🌐 Network | done — settings in `config.toml`, `/phoecord rpc` / 2 (settings page, preview) |
 | Dearrow | Less clickbait YouTube embed titles and thumbnails | 🌐 Network | done: titles replaced in new and loaded messages; thumbnails behind `replaceElements = 0` (off by default, unverified on a live client: the client's CSP may block them); the toggle button is Phase 2 |
-| Decor | Custom avatar decorations | 🌐 + 🎨 | 1.2.14 / 2 |
+| Decor | Custom avatar decorations | 🌐 + 🎨 | 1.2.14, blocked: the client loads the picture from the Discord CDN by hash; needs CDN interception or a UI hook *(2)* |
 | DevCompanion | Vencord developer companion | ⛔ N/A | Vencord dev tool |
 | DirectFileDownload | Download files directly | 🎨 UI | 2 |
 | DisableCallIdle | Never kicked from idle DM calls | 🎨 UI | 2 |
@@ -71,7 +71,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | ExpressionManager | Clone, edit, delete emoji and stickers | 🎨 UI | 2 |
 | F8Break | Pause on F8 with DevTools | ⛔ N/A | DevTools only |
 | FakeNitro | Fake emoji and stickers, Nitro themes, Nitro stream quality | 🌐 Network | done: emoji; stickers, stream 1.2.5 |
-| FakeProfileThemes | Profile themes hidden in the bio | 🌐 Network | 1.2.14 |
+| FakeProfileThemes | Profile themes hidden in the bio | 🌐 Network | done |
 | FavoriteEmojiFirst | Favourite emoji first in autocomplete | 🎨 UI | 2 |
 | FixCodeblockGap | Remove the gap under code blocks | 🖌️ Theme | 2.3 |
 | FixImagesQuality | Load images at original resolution | 🌐 Network | partial: `originalImagesInChat` only (image attachments); the default optimised mode needs a UI hook *(2)*; unverified on a live client |
@@ -113,7 +113,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | NoMosaic | Remove the image mosaic | 🖌️ Theme | 2.3 |
 | NoOnboardingDelay | Skip the onboarding delay | 🎨 UI | 2 |
 | NoPendingCount | Hide pending request counts | 🎨 UI | 2 (counts are computed on the client; hiding them on the wire would hide the requests too) |
-| NoProfileThemes | Remove other people's Nitro profile themes | 🌐 Network | 1.2.14 |
+| NoProfileThemes | Remove other people's Nitro profile themes | 🌐 Network | done |
 | NoReplyMention | Reply without a ping by default | 🌐 Network | done |
 | NoServerEmojis | No server emoji in autocomplete | 🎨 UI | 2 |
 | NoSystemBadge | No taskbar unread badge | 🎨 UI | 2 |
@@ -176,7 +176,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | UnsuppressEmbeds | Unsuppress embeds | 🌐 + 🎨 | done: data — `/phoecord unsuppress` / 2 (message menu item) |
 | UserMessagesPronouns | Pronouns in chat | 🎨 UI | 2 |
 | UserVoiceShow | Show who is in voice | 🌐 + 🎨 | done: data — `/phoecord voice` / 2 (badge, profile section) |
-| USRBG | Community banners without Nitro | 🌐 Network | 1.2.14 |
+| USRBG | Community banners without Nitro | 🌐 Network | 1.2.14, blocked: the client loads the picture from the Discord CDN by hash; needs CDN interception or a UI hook *(2)* |
 | ValidReply | Fix 'message could not be loaded' in replies | 🌐 Network | done: missing `referenced_message` filled from the page or one lookup |
 | ValidUser | Fix @unknown-user mentions | 🌐 Network | done: unknown mentioned users looked up (`GET /users/{id}`) and added to the message |
 | VcNarrator | Announce voice joins and leaves | 🌐 + 🎨 | done: data — desktop notifications, no speech / 2 (TTS, test button) |

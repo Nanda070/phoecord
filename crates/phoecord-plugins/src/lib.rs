@@ -21,6 +21,7 @@ pub mod experiments;
 pub mod fake_deafen;
 pub mod fake_deafen_detector;
 pub mod fake_nitro;
+pub mod fake_profile_themes;
 pub mod fix_images_quality;
 pub mod follow_user;
 pub mod friend_invites;
@@ -37,6 +38,7 @@ pub mod music_rich_presence;
 pub mod mutual_group_dms;
 pub mod new_guild_settings;
 pub mod no_blocked_messages;
+pub mod no_profile_themes;
 pub mod no_reply_mention;
 pub mod no_track;
 pub mod override_forum_defaults;
@@ -335,6 +337,9 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(message_logger::MessageLogger::new()),
         Box::new(i_love_spam::ILoveSpam::new()),
         Box::new(no_blocked_messages::NoBlockedMessages::new()),
+        Box::new(fake_profile_themes::FakeProfileThemes::new()),
+        // After fake_profile_themes: with both on, it removes the fake colours of everyone else too.
+        Box::new(no_profile_themes::NoProfileThemes::new()),
         Box::new(no_reply_mention::NoReplyMention::new()),
         Box::new(text_replace::TextReplace::new()),
         Box::new(send_timestamps::SendTimestamps::new()),
