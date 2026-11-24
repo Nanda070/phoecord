@@ -6,7 +6,7 @@ A step-by-step guide to moving any plugin (a Vencord built-in, a Vencord userplu
 
 Related: [`PLUGINS.md`](PLUGINS.md) (which plugin goes where), [`ARCHITECTURE.md`](ARCHITECTURE.md) "Plugin API v1", the templates [`_template/code/plugin.rs`](_template/code/plugin.rs) and [`_template/code/plugin.toml`](_template/code/plugin.toml).
 
-> **Status.** Native and WASM plugins work today. `Host::rest` and `Host::fetch` are stubs that answer "not wired" *(not wired yet)*; on-screen parts wait for Phase 2 UI hooks *(2)*. Write the plugin against the API that exists and leave a `// needs: …` note for the rest.
+> **Status.** Native and WASM plugins work today. `Host::rest` calls Discord's API as the user's own client session and `Host::fetch` calls outside hosts listed in the manifest; on-screen parts wait for Phase 2 UI hooks *(2)*. Write the plugin against the API that exists and leave a `// needs: …` note for the rest.
 
 ---
 
@@ -27,7 +27,7 @@ Look the plugin up in [`PLUGINS.md`](PLUGINS.md). If it is not there, decide wit
 | changes what you send (message text, files, presence, typing, voice state) | 🌐 Network | now, in the proxy |
 | changes or hides what you receive (messages, profiles, flags, counts) | 🌐 Network | now, in the proxy |
 | adds a command | 🌐 Network | now, as a `/phoecord` command |
-| needs an external service (translation, DeArrow, Last.fm) | 🌐 Network | now, with `Host::fetch` *(not wired yet)* |
+| needs an external service (translation, DeArrow, Last.fm) | 🌐 Network | now, with `Host::fetch` (list the host in `fetch = [...]`) |
 | shows data in a new place on screen (badge, button, panel, tooltip) | 🌐 + 🎨 | data part now, on-screen part in Phase 2 |
 | only changes how the client looks or behaves locally (zoom, keybinds, menus) | 🎨 UI | Phase 2 |
 | only changes colours, spacing, fonts | 🖌️ Theme | Phase 2 theme engine |
@@ -49,8 +49,8 @@ Ask: *"Could a program between the client and Discord do this by changing the tr
 | `FluxDispatcher` events (`MESSAGE_CREATE`, …) | `Event::Dispatch { name, payload, extra }` | same event names as the Gateway |
 | `MessageEvents.addPreSendListener` | `Event::RestRequest` on `POST /channels/{id}/messages` | edit `body["content"]`, return `Verdict::Changed` |
 | `MessageEvents.addPreEditListener` | `Event::RestRequest` on `PATCH /channels/{id}/messages/{mid}` | |
-| `RestAPI` calls you make | `host.rest(method, route, body)` *(not wired yet)* | rate-limited; warn the user in the plugin's description if it does bulk work |
-| `fetch` to an outside site | `host.fetch(request)` *(not wired yet)* | the host must be listed under `fetch = [...]` in the manifest |
+| `RestAPI` calls you make | `host.rest(method, route, body)` (route is a plain path like `/channels/{id}/messages`) | rate-limited (1/s per plugin, 5/s overall, Discord's own limits honoured); warn the user in the plugin's description if it does bulk work |
+| `fetch` to an outside site | `host.fetch(request)` (HTTPS, 5 MB answer cap, no redirects followed) | the host must be listed under `fetch = [...]` in the manifest |
 | Gateway sends (presence, voice state) | `Event::Send { op, payload }`, `host.emit_send(op, payload)` | op 3 presence, op 4 voice state |
 | `DataStore` / `Settings.plugins.X.store` | `host.kv_get` / `host.kv_set` | small JSON values, per plugin |
 | `showNotification` / `Toasts` | `host.notify(title, body)` | rate-limited by the host |

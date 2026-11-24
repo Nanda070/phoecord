@@ -43,6 +43,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - Plugins `text_replace`, `send_timestamps`, `anonymise_file_names` and `silent_message_toggle` with `/phoecord silent`, off by default (stage 1.2.11); BetterGifAltText is UI-only and moves to Phase 2.
 - The first third-party plugin example: `clear_urls` as a WASM package in `examples/plugins/clear_urls/`, loaded without a restart (stage 1.3.8).
 - `phoecord launch --channel stable|ptb|canary` (no silent default to Stable); `launch` reuses a running proxy; `setup --channel` adds a Start-menu shortcut that starts that Discord through PhoeCord; `uninstall` stops a running proxy and removes PhoeCord's own CA files (stage 1.4.8).
+- Plugins can call Discord's API as your own client session (`Host::rest`, rate-limited) and outside HTTPS hosts they list (`Host::fetch`, `fetch = [...]` in `plugin.toml`); the session header stays in memory only (stage 1.1.13).
 
 ### Removed
 

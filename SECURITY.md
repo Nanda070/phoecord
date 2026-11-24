@@ -22,6 +22,10 @@ All other traffic (CDN, media, voice, other sites) goes through a plain tunnel: 
 
 Status: prototype merged (stages 1.5.1–1.5.4), not yet placed by the installer; checked with a test host only, not inside Discord. Requirements the loader must meet: `phoecord-loader` is placed next to the client as a proxy DLL; it loads only plugins installed in PhoeCord's own folder, never downloads code from the network and has no function that reads the token. The installer puts the DLL in place only on an explicit user command and can remove it.
 
+## Your Discord session
+
+To let plugins call Discord's API the way the client does (`Host::rest`), the proxy keeps the `Authorization` header of your own client's latest API request **in memory only**: never written to disk or logs, never handed to a plugin (plugins get only the answer), dropped after 30 minutes without client traffic or when Discord answers 401. Calls go only to the Discord API host your client uses. Outside calls (`Host::fetch`) never carry it.
+
 ## Third-party plugins
 
 Status: the WASM runtime works (stage 1.3). WASM plugins run in a sandbox with no access to files, network or the process, only through the host API, and only with the `rights` their `plugin.toml` lists (none by default). A plugin sees only the events its manifest subscribes to. Each event has a time limit (50 ms soft with strikes, 1 s hard) and a 32 MiB memory limit. Native plugins are code with full rights: install them only from sources you trust.

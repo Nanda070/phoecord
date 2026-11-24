@@ -116,6 +116,8 @@ pub trait Host       { setting, kv_get, kv_set, self_id, notify, log, emit_send,
                        plugin_enabled, set_plugin_enabled, append_data, guild_emojis, channel_guild, rest, fetch }
 ```
 
+`Host::rest(method, route, body)` calls Discord's API as the user's own client session: the proxy keeps the client's `Authorization` and client headers in memory only (never on disk, in logs or in a plugin's hands; dropped after 30 minutes without client traffic or on a 401), sends only to the client's own API host with a plain route, and applies 1 call/s per plugin, 5/s overall and Discord's own rate-limit buckets. `Host::fetch` calls an outside HTTPS host only if the plugin lists it (`fetch = [...]` in `plugin.toml`, `Manifest.fetch` for built-ins); no Discord credentials, no cookies, no redirects, a 5 MB answer cap. `HostResponse` carries status, selected headers, JSON body or text. Both go through `upstream` when it is set.
+
 `RestResponse.body` is mutable: a plugin that returns `Changed` makes the proxy send the rewritten JSON. `emit_dispatch` queues a server → client frame only this client sees (used for local slash command answers); from a REST event the proxy broadcasts it to open gateway connections. `append_data` is the only way a plugin writes a file: one line into `data/plugins/<id>/<file>`.
 
 Chain rules (`phoecord-plugin-runtime::Chain`): plugins run in load order; the first `Drop` or `Reply` stops the chain; `Changed` from any plugin means re-encoding.

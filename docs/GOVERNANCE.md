@@ -26,6 +26,7 @@ Copyright holder: **Cheterin Group** (see [`NOTICE`](../NOTICE)). License: GPL-3
 |:---|:---|:---|:---|
 | Local CA key (`ca.key`) of each user | The user's own PhoeCord data folder, owner-only permissions | Each user, never the project | The user's proxy |
 | GitHub repository admin | GitHub account `Nanda070` | Nanda | Repository settings, secrets, releases |
+| The user's Discord session header (`Authorization`) | In the proxy's memory only, never on disk | Each user, never the project | `Host::rest` (30 min TTL, dropped on 401) |
 | GitHub Actions secrets | Repository settings → Secrets; none yet | Nanda | CI |
 
 The project never needs a Discord token: tests do not log in, and `selftest` runs without an account. A user's CA belongs to that user: the project never generates, collects or ships one. Releases are built only by CI.
