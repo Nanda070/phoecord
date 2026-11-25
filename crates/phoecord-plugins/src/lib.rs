@@ -53,6 +53,7 @@ pub mod user_voice_show;
 pub mod valid_reply;
 pub mod valid_user;
 pub mod vc_narrator;
+pub mod view_raw;
 pub mod voice_chat_utilities;
 pub mod who_reacted;
 
@@ -125,6 +126,8 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "ru",
         include_str!("../i18n/ru/vc_narrator.ftl"),
     ),
+    ("view_raw", "en", include_str!("../i18n/en/view_raw.ftl")),
+    ("view_raw", "ru", include_str!("../i18n/ru/view_raw.ftl")),
     (
         "voice_chat_utilities",
         "en",
@@ -221,6 +224,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let quest_master = quest_master::QuestMaster::new();
     let quest_master_command = quest_master.command();
     // Stage 1.2.12 commands (off by default).
+    let view_raw = view_raw::ViewRaw::new();
+    let view_raw_command = view_raw.command();
     let unsuppress_embeds = unsuppress_embeds::UnsuppressEmbeds::new();
     let unsuppress_embeds_command = unsuppress_embeds.command();
     let friend_invites = friend_invites::FriendInvites::new();
@@ -312,6 +317,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         commands = commands.with(c);
     }
     commands = commands.with(unsuppress_embeds_command);
+    commands = commands.with(view_raw_command);
     for c in friend_invites_commands {
         commands = commands.with(c);
     }
