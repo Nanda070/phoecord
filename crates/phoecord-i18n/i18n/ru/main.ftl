@@ -27,6 +27,16 @@ error-permission-denied = Доступ запрещён. Попробуйте з
 lang-changed = Язык изменён на { $language }.
 
 # CLI: setup, uninstall, paths
+cli-intro =
+    PhoeCord - локальный мод для Discord: он запускает на этом компьютере небольшой прокси и меняет то, что показывает Discord.
+    Большинству нужно приложение-установщик (PhoeCord.app на Mac, установщик PhoeCord на Windows), а не эта программа.
+
+    Команды для командной строки:
+      phoecord setup     настроить PhoeCord (сертификат, автозапуск)
+      phoecord launch    запустить Discord через PhoeCord
+      phoecord run       запустить только прокси в этом окне
+      phoecord --help    все команды
+
 cli-setup-done = Готово. Полностью закройте Discord и запустите его командой `phoecord launch`.
 cli-uninstall-done = PhoeCord удалён. Перезапустите Discord без `phoecord launch`.
 cli-uninstall-incomplete = не все шаги удалось отменить; они остались в install.log, запустите `phoecord uninstall` ещё раз

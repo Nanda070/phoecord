@@ -193,7 +193,13 @@ fn describe_error(e: &anyhow::Error, l10n: &Localizer) -> String {
 }
 
 fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Result<()> {
-    match cli.cmd.unwrap_or(Cmd::Run) {
+    // No subcommand: say what this is and start nothing. Autostart, shortcuts and the installer
+    // window all pass `run` or `launch` explicitly, so this is only someone opening the program.
+    let Some(cmd) = cli.cmd else {
+        println!("{}", l10n.t("cli-intro").trim_end());
+        return Ok(());
+    };
+    match cmd {
         Cmd::Run => runtime()?.block_on(run(paths, None, l10n, lang_flag(resolved))),
         Cmd::Launch { command, channel } => {
             let launch = Launch {

@@ -22,6 +22,16 @@ error-permission-denied = Permission denied. Try running as administrator.
 lang-changed = Language set to { $language }.
 
 # CLI: setup, uninstall, paths
+cli-intro =
+    PhoeCord is a local mod for Discord: it runs a small proxy on this computer and changes what Discord shows.
+    Most people want the installer app (PhoeCord.app on a Mac, the PhoeCord setup on Windows), not this program.
+
+    Commands for the command line:
+      phoecord setup     set PhoeCord up (certificate, autostart)
+      phoecord launch    start Discord through PhoeCord
+      phoecord run       run only the proxy, in this window
+      phoecord --help    all commands
+
 cli-setup-done = Done. Quit Discord fully, then start it with `phoecord launch`.
 cli-uninstall-done = PhoeCord is removed. Restart Discord without `phoecord launch`.
 cli-uninstall-incomplete = some steps could not be undone; they stay in install.log, run `phoecord uninstall` again
