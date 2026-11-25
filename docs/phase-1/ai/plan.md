@@ -321,6 +321,32 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 **Done when:** `clear_urls` works identically as an external package.
 
+### 1.3.9. Plugin dev console (Nanda)
+
+**Files:** `crates/phoecord-cli/src/dev.rs`, a local endpoint in `crates/phoecord-proxy`
+
+`phoecord dev console` attaches to the running proxy and shows, live and filterable: every plugin's log lines, the events the chain sees (REST and Gateway, with a `--filter` on event name or route), verdicts and timings per plugin. Commands in the console: toggle a plugin, reload it, show its settings and KV, replay the last event of a kind into one plugin. Loopback only, behind a per-start token written to the data folder (same rule as the loader pipe: only the user who runs the proxy).
+
+**Done when:** a plugin author sees their `log` lines and the events they get without restarting anything, and can toggle and reload from the console.
+
+### 1.3.10. Fast hot reload (Nanda)
+
+**Files:** `crates/phoecord-plugin-runtime/src/package.rs`, `crates/phoecord-cli/src/dev.rs`
+
+Replace the 2 s folder scan with file-system notifications, so a changed `plugin.wasm`, `plugin.toml` or `i18n/*.ftl` reloads at once; `phoecord dev watch <plugin source folder>` runs `cargo build --target wasm32-wasip2 --release`, copies the result into `plugins/<id>/` and reloads it.
+
+**Done when:** saving a source file of `examples/plugins/clear_urls` reloads it in the running proxy in under 300 ms after the build ends (measured, in the PR).
+
+### 1.3.11. Plugin catalog (Nanda)
+
+**Files:** `catalog/plugins.json` (or a separate repository), `crates/phoecord-cli`, `crates/phoecord-installer-gui/src/tabs/plugins.rs`
+
+An index of community WASM plugins: id, name, author, description, version, download URL, SHA-256, rights. `phoecord install <id|url>` and a Catalog view in the installer window's Plugins tab install from it through the existing staging and rights dialog; updates are offered when the index has a newer version. Entries are added by pull request and reviewed like code; a download whose hash does not match is refused.
+
+**Done when:** a plugin from the catalog installs, updates and uninstalls from both the CLI and the window, and a tampered download is refused.
+
+Read access to the client's local cache (a `stores.sql`-like API) is not in Phase 1: today's Electron client keeps its cache in Chromium storage, not in a database we can query. It becomes a Phase 2 item once Phoenix's on-disk store is known (see `docs/research/phoenix-desktop.md`).
+
 ## Stage 1.4. GUI installer prototype
 
 ### 1.4.1. Client discovery (Nanda)
