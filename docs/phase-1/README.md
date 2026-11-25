@@ -41,7 +41,7 @@ none
 | | Nanda | Contributors |
 |:---|:---|:---|
 | Area | core, Plugin API, proxy, CA and trust, loader, installer, runtime, releases, review and merging | plugins, SDK examples, tests and fixtures, translations, docs, research |
-| Tasks | 1.0.1, 1.0.2, 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.1.5, 1.1.6, 1.1.7, 1.1.8, 1.1.10, 1.1.12, 1.1.13, 1.2.3, 1.2.4, 1.2.5, 1.2.6, 1.2.8, 1.2.10, 1.2.11, 1.3.1, 1.3.2, 1.3.3, 1.3.4, 1.3.5, 1.3.8, 1.4.1, 1.4.2, 1.4.4, 1.4.6, 1.4.7, 1.4.8, 1.4.9, 1.5.1, 1.5.2, 1.5.3, 1.5.4, 1.5.5, 1.5.7, 1.5.8, 1.6.1, 1.6.2, 1.6.3, 1.6.4, 1.6.5, 1.7.1, 1.7.2, 1.7.3, 1.7.4, 1.7.5, 1.3.9, 1.3.10, 1.3.11 (open: 1.3.9, 1.3.10, 1.3.11) | 1.2.1, 1.2.2, 1.2.7, 1.2.12, 1.2.13 (matvee; open: 1.2.12, 1.2.13); 1.1.11, 1.2.9 (buslan07; all done); 1.2.16, 1.2.18, 1.2.19, 1.4.3, 1.4.5, 1.5.6 (Kennurken; all done); 1.1.9, 1.2.14, 1.2.15, 1.2.17, 1.3.6, 1.3.7 (open to anyone; open) |
+| Tasks | 1.0.1, 1.0.2, 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.1.5, 1.1.6, 1.1.7, 1.1.8, 1.1.10, 1.1.12, 1.1.13, 1.2.3, 1.2.4, 1.2.5, 1.2.6, 1.2.8, 1.2.10, 1.2.11, 1.3.1, 1.3.2, 1.3.3, 1.3.4, 1.3.5, 1.3.8, 1.4.1, 1.4.2, 1.4.4, 1.4.6, 1.4.7, 1.4.8, 1.4.9, 1.5.1, 1.5.2, 1.5.3, 1.5.4, 1.5.5, 1.5.7, 1.5.8, 1.6.1, 1.6.2, 1.6.3, 1.6.4, 1.6.5, 1.7.1, 1.7.2, 1.7.3, 1.7.4, 1.7.5, 1.3.9, 1.3.10, 1.3.11 (open: 1.3.9, 1.3.10, 1.3.11) | 1.2.1, 1.2.2, 1.2.7, 1.2.12, 1.2.13 (matvee; open: 1.2.13); 1.1.11, 1.2.9 (buslan07; all done); 1.2.16, 1.2.18, 1.2.19, 1.4.3, 1.4.5, 1.5.6 (Kennurken; all done); 1.1.9, 1.2.14, 1.2.15, 1.2.17, 1.3.6, 1.3.7 (open to anyone; open) |
 
 Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor plugins are written against an API that is already merged.
 
@@ -77,7 +77,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.2.9** 🟢 | `phoecord import-vencord` | buslan07 | ✅ 24.11, PR #54 (plugin names only, settings not copied) |
 | **1.2.10** 🟡 | Message filters: iLoveSpam, NoBlockedMessages, NoReplyMention (ImageLink and NoPendingCount are UI-only, moved to Phase 2) | Nanda | ✅ 23.11, PR #45 |
 | **1.2.11** 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, SilentMessageToggle (`/phoecord silent`); BetterGifAltText is UI-only, moved to Phase 2 | Nanda | ✅ 23.11, PR #49 |
-| **1.2.12** 🟡 | Commands: CustomCommands, FriendInvites, petpet, SpotifyShareCommands, ServerInfo, ViewRaw, UnsuppressEmbeds | matvee | 🔎 in review (branch `feat/commands-1-2-12`: all seven as `/phoecord` subcommands, off by default; ServerInfo, ViewRaw and UnsuppressEmbeds are data parts, their menus wait for Phase 2; synthetic tests only, not run on a live account) |
+| **1.2.12** 🟡 | Commands: CustomCommands, FriendInvites, petpet, SpotifyShareCommands, ServerInfo, ViewRaw, UnsuppressEmbeds | matvee | ✅ 25.11, PR #89 (all seven as `/phoecord` subcommands, off by default; ServerInfo, ViewRaw and UnsuppressEmbeds are data parts, their menus are Phase 2; synthetic payloads only, the invite body and the Spotify activity fields are unverified live) |
 | **1.2.13** 🟡 | Presence: CustomRPC, MusicRichPresence, IgnoreActivities, AutoDNDWhilePlaying, CustomIdle | matvee | ⏳ |
 | **1.2.14** 🟡 | Profiles: NoProfileThemes, FakeProfileThemes, USRBG, Decor (data part) | anyone | ⏳ |
 | **1.2.15** 🟡 | External services: Dearrow, GifProviderSwitcher, FixImagesQuality | anyone | ⏳ |
