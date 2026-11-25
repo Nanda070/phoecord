@@ -393,6 +393,8 @@ async fn run(
         Err(e) => tracing::warn!("WASM plugins are off: {e:#}"),
     }
     proxy.spawn_reloader();
+    // The loader inside the client reports here (Windows only; elsewhere this does nothing).
+    phoecord_proxy::ipc::spawn(proxy.paths.config.clone());
     let listener = server::bind(&listen)
         .await
         .with_context(|| tf(l10n, "cli-err-listen", &[("listen", &listen)]))?;

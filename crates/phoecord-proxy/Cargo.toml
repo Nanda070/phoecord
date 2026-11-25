@@ -12,6 +12,8 @@ publish = false
 [dependencies]
 phoecord-core.workspace = true
 phoecord-i18n = { path = "../phoecord-i18n" }
+# The IPC protocol and the pipe server; without the DLL itself.
+phoecord-loader = { path = "../phoecord-loader", default-features = false }
 phoecord-plugin-runtime.workspace = true
 anyhow.workspace = true
 dirs.workspace = true
