@@ -58,9 +58,6 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | CopyUserURLs | Copy user URL from the context menu | 🎨 UI | 2 |
 | CrashHandler | Recover from crashes | ♻️ Replaced | loader degradation (ARCHITECTURE.md) |
 | CustomCommands | Your own slash commands and tags | 🌐 Network | done — `/phoecord tags`, `/phoecord tag` |
-| CustomIdle | Change or disable auto-idle | 🌐 Network | 1.2.13 |
-| CustomRPC | Fully custom Rich Presence | 🌐 Network | 1.2.13 |
-| CustomCommands | Your own slash commands and tags | 🌐 Network | 1.2.12 |
 | CustomIdle | Change or disable auto-idle | 🌐 Network | done (0 or over 10 minutes; `/phoecord exitidle`) |
 | CustomRPC | Fully custom Rich Presence | 🌐 Network | done — settings in `config.toml`, `/phoecord rpc` / 2 (settings page, preview) |
 | Dearrow | Less clickbait YouTube embed titles and thumbnails | 🌐 Network | 1.2.15 |
