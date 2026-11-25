@@ -24,6 +24,7 @@ impl Unindent {
                 vencord: Some("Unindent".into()),
                 layers: vec![Layer::Network],
                 api: API_VERSION,
+                fetch: Vec::new(),
             },
         }
     }
