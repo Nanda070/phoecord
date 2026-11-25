@@ -34,6 +34,7 @@ pub mod no_reply_mention;
 pub mod no_track;
 pub mod override_forum_defaults;
 pub mod pause_invites_forever;
+pub mod petpet;
 pub mod platform_indicators;
 pub mod quest_master;
 pub mod read_all_notifications;
@@ -183,6 +184,8 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "ru",
         include_str!("../i18n/ru/silent_delete.ftl"),
     ),
+    ("petpet", "en", include_str!("../i18n/en/petpet.ftl")),
+    ("petpet", "ru", include_str!("../i18n/ru/petpet.ftl")),
     (
         "quest_master",
         "en",
@@ -257,6 +260,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let quest_master = quest_master::QuestMaster::new();
     let quest_master_command = quest_master.command();
     // Stage 1.2.12 commands (off by default).
+    let petpet = petpet::Petpet::new();
+    let petpet_command = petpet.command();
     let custom_commands = custom_commands::CustomCommands::new();
     let custom_commands_commands = custom_commands.commands();
     let spotify_share_commands = spotify_share_commands::SpotifyShareCommands::new();
@@ -364,6 +369,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     for c in custom_commands_commands {
         commands = commands.with(c);
     }
+    commands = commands.with(petpet_command);
     for c in friend_invites_commands {
         commands = commands.with(c);
     }

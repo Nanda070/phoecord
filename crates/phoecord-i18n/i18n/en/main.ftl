@@ -110,6 +110,7 @@ plugin-desc-silent_typing = Your typing indicator is never sent
 plugin-desc-clear_urls = Strip tracking parameters from links you send
 plugin-desc-unindent = Strip shared indentation from code blocks you send
 plugin-desc-friend_invites = Create, list and revoke friend invite links with commands
+plugin-desc-petpet = Make a headpat GIF of an avatar or picture with /phoecord petpet
 plugin-desc-custom_commands = Your own text snippets with arguments, sent with a command
 plugin-desc-spotify_share_commands = Share your current Spotify track, album or artist with a command
 plugin-desc-server_info = Show facts about a server: owner, age, boosts, channels, roles
