@@ -59,7 +59,7 @@ Ask: *"Could a program between the client and Discord do this by changing the tr
 | `UserStore.getCurrentUser()` | `host.self_id()` | more account facts: `host.guild_emojis`, `host.channel_guild` |
 | React components, context menus, chat bar buttons | Phase 2 UI hooks *(2)*; until then a `/phoecord` command or a setting | |
 | `start()` / `stop()` | nothing: the host calls `wants` / `on_event` only while the plugin is enabled | keep state inside the plugin struct |
-| User-facing strings | English in code now; `host.t("key")` with `i18n/{en,ru}.ftl` *(1.7)* | never hard-code Russian or other languages |
+| User-facing strings | `host.t("key", &[("name", value)])` with the plugin's own `.ftl` (section 3.3) | never hard-code user-facing text in any language |
 
 **Check:** for every feature of the original you can name the PhoeCord event or `Host` call that does it, or mark it *(2)*.
 
@@ -93,6 +93,15 @@ A complete, tested example: [`examples/plugins/clear_urls/`](../examples/plugins
 Same logic, different packaging: a crate built for `wasm32-wasip2` against `wit/phoecord.wit` (with `wit-bindgen` until the SDK and its macro land in 1.3.6), plus a `plugin.toml` from [`_template/code/plugin.toml`](_template/code/plugin.toml) listing `events`, `rights` and `fetch` hosts. The host only delivers the events and allows the `Host` calls the manifest lists. Drop the `plugin.toml` + `plugin.wasm` into the `plugins/<id>/` data folder: a running proxy loads it within 2 seconds. Switch it on with `[plugins.<id>] enabled = true` in `config.toml` (`phoecord enable` knows built-ins only for now).
 
 **Check:** the build passes and the proxy log shows the package loaded.
+
+### 3.3 Strings: `Host::t`
+
+Notification titles and bodies, `/phoecord` answers and anything else the user reads go through `host.t(key, args)` (WIT: `host.t`, no right needed). `args` are `(name, value)` string pairs for `{ $name }` placeholders; pass numbers as text and avoid plural forms in the message (write "Sessions: 3", not "3 sessions").
+
+- **Built-in plugin:** `crates/phoecord-plugins/i18n/en/<plugin_id>.ftl` and `.../ru/<plugin_id>.ftl` (one file per plugin: keys cannot clash and a plugin's strings are found in one place), plus the two lines in `I18N` in `crates/phoecord-plugins/src/lib.rs`. `scripts/check_i18n.py` fails when a `ru` key or variable is missing or a file is not listed. The text of a `/phoecord` subcommand answer is built while the `commands` plugin runs, so its keys go to `commands.ftl`, prefixed with your plugin id.
+- **WASM package:** `plugins/<id>/i18n/<lang>.ftl` (`en`, `ru`) next to `plugin.toml`; it is loaded with the package and reloaded when edited.
+- Lookup: the user's language, then your `en` file, then the key itself. English is the source: write `en` first and keep the key names `lower-case-with-hyphens`.
+- Text the *user* writes (templates, rules) stays theirs: translate only your defaults and titles.
 
 ---
 

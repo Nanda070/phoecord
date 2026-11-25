@@ -86,8 +86,9 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 |:---|:---|:---|
 | `src/lib.rs` | `Chain` (built-in segment, then a dynamic segment swapped by `replace_dynamic`; first `Drop`/`Reply` stops), `Outcome`, `NullHost` for tests | The stop rule is part of the API semantics; the lock is never held while a plugin runs |
 | `src/wasm.rs` | `WasmRuntime` (engine + epoch clock), `WasmLimits`, `WasmPlugin`, `Right`, `Setup`, `tree` ↔ `Val` | Guest trees are untrusted: keep the bounds, depth and single-use checks |
-| `src/package.rs` | `plugin.toml` format and rights table (documented at the top), `PackagePlugin` with reload, `load_dir`, `PackageSet::sync` (load new folders, unload removed ones) | A broken new version must leave the old one running |
+| `src/package.rs` | `plugin.toml` format and rights table (documented at the top), `PackagePlugin` with reload, `load_dir`, `PackageSet::sync` (load new folders, unload removed ones); `i18n/<lang>.ftl` of a package go to `PluginStrings` on load and reload (`PackageSet::with_strings`) | A broken new version must leave the old one running; the `.ftl` files are part of the reload stamp |
 | `tests/guest/` | A separate workspace: the test guest, built for `wasm32-wasip2` by the tests (CI installs the target) | Slow-event tests use a zero soft limit so they do not depend on machine speed |
+| `tests/strings.rs` | `Host::t` for packages: a string from the package's own `.ftl`, English fallback, hot reload of an edited `.ftl`, unload | Uses the guest's `STRINGS` dispatch |
 | `tests/clear_urls_wasm.rs` | Builds `examples/plugins/clear_urls`, loads it as a package (also into a running chain) and checks it behaves like the native plugin | Needs the `wasm32-wasip2` target |
 | `benches/overhead.rs` | Per-event cost of a WASM plugin vs a native one on a MESSAGE_CREATE payload (`cargo bench`) | Input for benchmark task 1.1.10 |
 | `wit/phoecord.wit` (repo root) | The `plugin` world and `host` interface; mirrors `phoecord-core::plugin` | Change together with `plugin.rs` |
@@ -102,7 +103,8 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 
 | File | What | Easy to break |
 |:---|:---|:---|
-| `src/lib.rs` | `builtin()`: every built-in plugin in default order; uniqueness test for ids | Order is run order |
+| `src/lib.rs` | `builtin()`: every built-in plugin in default order; uniqueness test for ids; `I18N` (the plugins' `.ftl` bundles) and `register_strings` | Order is run order; a new `i18n/<lang>/<id>.ftl` must be listed in `I18N` (`check_i18n.py` checks) |
+| `i18n/{en,ru}/<plugin id>.ftl` | The plugin's own strings behind `Host::t`: `commands` (the `/phoecord` answers), `relationship_notifier`, `better_sessions`, `vc_narrator` | Every `en` key needs a `ru` twin with the same variables; keys of other plugins' subcommand answers go to `commands.ftl` |
 | `src/no_track.rs` | NoTrack: answers analytics and crash-report routes locally with 204 | `wants` must stay as narrow as `on_event` |
 | `src/clear_urls.rs` | ClearURLs: strips tracking query parameters from links in sent and edited messages; `extra_rules` setting | Only `content` of JSON bodies; messages with attachments (multipart) are not cleaned yet |
 | `src/silent_typing.rs` | SilentTyping: answers `POST /channels/{id}/typing` locally with 204 | Only that exact route; `wants` must stay as narrow as `on_event` |
@@ -201,7 +203,7 @@ The installer window (stage 1.4.3). Every change to the machine goes through `ph
 
 | File | What | Easy to break |
 |:---|:---|:---|
-| `src/lib.rs` | `Localizer` (`new`, `t`, `t_args`, `language`), `normalize`, `detect_os_language`, `SUPPORTED` | Bundles are `include_str!`-ed: a new language needs a `source()` arm |
+| `src/lib.rs` | `Localizer` (`new`, `t`, `t_args`, `language`), `normalize`, `detect_os_language`, `resolve_language`, `SUPPORTED`; `PluginStrings` (per plugin and language bundles behind `Host::t`) | Bundles are `include_str!`-ed: a new language needs a `source()` arm |
 | `i18n/en/main.ftl`, `i18n/ru/main.ftl` | Shared strings; English is the source | Every `en` key needs a `ru` twin with the same variables (`check_i18n.py`) |
 
 ### `phoecord-cli`

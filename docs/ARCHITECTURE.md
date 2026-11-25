@@ -113,7 +113,8 @@ pub trait Plugin: Send + Sync {
 pub enum Event<'a>   { RestRequest{..}, RestResponse{..}, Dispatch{..}, Send{..} }
 pub enum Verdict     { Pass, Changed, Drop, Reply { status, body } }
 pub trait Host       { setting, kv_get, kv_set, self_id, notify, log, emit_send, emit_dispatch,
-                       plugin_enabled, set_plugin_enabled, append_data, guild_emojis, channel_guild, rest, fetch }
+                       plugin_enabled, set_plugin_enabled, append_data, guild_emojis, channel_guild, rest, fetch,
+                       t }
 ```
 
 `Host::rest(method, route, body)` calls Discord's API as the user's own client session: the proxy keeps the client's `Authorization` and client headers in memory only (never on disk, in logs or in a plugin's hands; dropped after 30 minutes without client traffic or on a 401), sends only to the client's own API host with a plain route, and applies 1 call/s per plugin, 5/s overall and Discord's own rate-limit buckets. `Host::fetch` calls an outside HTTPS host only if the plugin lists it (`fetch = [...]` in `plugin.toml`, `Manifest.fetch` for built-ins); no Discord credentials, no cookies, no redirects, a 5 MB answer cap. `HostResponse` carries status, selected headers, JSON body or text, and the raw `bytes` when the answer is not JSON (images, GIF frames). `Host::rest_files(method, route, payload, files)` sends files to Discord's API as `multipart/form-data` (`payload_json` + `files[n]`, at most 10 files and 25 MB), with the same session, route rules and rate limits as `rest`. Both go through `upstream` when it is set.
@@ -229,7 +230,7 @@ The app ships in **English** first; **Russian** is the first translation (ROADMA
 - Format: [Fluent](https://projectfluent.org/) (`fluent-bundle`), one `.ftl` file per crate and language: `crates/<crate>/i18n/{en,ru}/main.ftl`.
 - Language choice: `language` in `config.toml`, defaulting to the OS language, falling back to English for any missing key.
 - What is translated: CLI output, installer GUI, notifications, the in-client settings tab, slash command descriptions. Log lines stay English.
-- Plugins: a plugin may ship its own `i18n/<lang>.ftl`; the host loads it next to `plugin.toml` and exposes `Host::t(key, args)` (API minor bump).
+- Plugins: `Host::t(key, args) -> String` (additive, `API_VERSION` stays 1; the default returns the key) answers from the calling plugin's own bundle in the user's language (`--lang`, `language`, OS language, `en`), then from its English bundle, then with the key. `args` are string values for `{ $name }` placeholders. A WASM package ships `i18n/<lang>.ftl` next to `plugin.toml` (loaded with the package and on every hot reload; WIT `host.t`, no right needed). A built-in plugin ships `crates/phoecord-plugins/i18n/<lang>/<plugin id>.ftl`, one file per plugin, listed in `phoecord_plugins::I18N`. The proxy keeps them in `Shared::strings` (`phoecord_i18n::PluginStrings`). `/phoecord` answers are built while the `commands` plugin runs, so their keys live in `commands.ftl`.
 - CI checks that every key in `en` exists in `ru` (missing keys fail the build once 1.7 lands).
 
 ---
