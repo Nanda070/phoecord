@@ -124,11 +124,11 @@ impl State {
             .is_some_and(|t| t.elapsed() < OWN_ACTION_TTL)
     }
 
-    fn name_of(&self, user: u64) -> String {
+    fn name_of(&self, host: &dyn Host, user: u64) -> String {
         self.user_names
             .get(&user)
             .cloned()
-            .unwrap_or_else(|| format!("user {user}"))
+            .unwrap_or_else(|| host.t("unknown-user", &[("id", &user.to_string())]))
     }
 
     fn remember_user(&mut self, u: &Val) {
@@ -158,16 +158,18 @@ impl State {
         }
         let name = match c.str_at(&["name"]).filter(|n| !n.is_empty()) {
             Some(n) => n.to_string(),
-            None => {
-                let names: Vec<String> = recipients.iter().filter_map(display_name).collect();
-                if names.is_empty() {
-                    "a group DM".into()
-                } else {
-                    names.join(", ")
-                }
-            }
+            None => recipients
+                .iter()
+                .filter_map(display_name)
+                .collect::<Vec<_>>()
+                .join(", "),
         };
-        self.group_names.insert(id, name);
+        // A group with no name and no known members has no name here; the notice says "a group DM".
+        if name.is_empty() {
+            self.group_names.remove(&id);
+        } else {
+            self.group_names.insert(id, name);
+        }
     }
 
     /// Learn names from a dispatch's `d`.
@@ -213,6 +215,7 @@ impl State {
     /// The notification for a removal event, if any: `(title, body)`.
     fn notice(
         &self,
+        host: &dyn Host,
         name: &str,
         d: &Val,
         self_id: Option<u64>,
@@ -224,20 +227,17 @@ impl State {
                 if self.did_myself(&format!("friend:{id}")) {
                     return None;
                 }
-                let who = self.name_of(id);
+                let who = self.name_of(host, id);
+                let say = |key: &str| {
+                    (
+                        host.t(&format!("{key}-title"), &[]),
+                        host.t(key, &[("who", &who)]),
+                    )
+                };
                 match d.at(&["type"]).and_then(Val::as_i64) {
-                    Some(1) if opts.friends => Some((
-                        "Friend removed".into(),
-                        format!("{who} is no longer your friend."),
-                    )),
-                    Some(3) if opts.friend_requests => Some((
-                        "Friend request cancelled".into(),
-                        format!("{who} cancelled their friend request."),
-                    )),
-                    Some(4) if opts.friend_requests => Some((
-                        "Friend request declined".into(),
-                        format!("{who} declined your friend request."),
-                    )),
+                    Some(1) if opts.friends => Some(say("friend-removed")),
+                    Some(3) if opts.friend_requests => Some(say("request-cancelled")),
+                    Some(4) if opts.friend_requests => Some(say("request-declined")),
                     _ => None,
                 }
             }
@@ -253,12 +253,10 @@ impl State {
                     .guild_names
                     .get(&id)
                     .cloned()
-                    .unwrap_or_else(|| format!("server {id}"));
+                    .unwrap_or_else(|| host.t("unknown-guild", &[("id", &id.to_string())]));
                 Some((
-                    "Removed from a server".into(),
-                    format!(
-                        "You're no longer in {name}. You were kicked or banned, or it was deleted."
-                    ),
+                    host.t("guild-removed-title", &[]),
+                    host.t("guild-removed", &[("name", &name)]),
                 ))
             }
             "CHANNEL_RECIPIENT_REMOVE" if opts.groups => {
@@ -272,10 +270,10 @@ impl State {
                     .group_names
                     .get(&ch)
                     .cloned()
-                    .unwrap_or_else(|| "a group DM".into());
+                    .unwrap_or_else(|| host.t("unknown-group", &[]));
                 Some((
-                    "Removed from a group".into(),
-                    format!("You were removed from {name}."),
+                    host.t("group-removed-title", &[]),
+                    host.t("group-removed", &[("name", &name)]),
                 ))
             }
             _ => None,
@@ -317,7 +315,7 @@ impl Plugin for RelationshipNotifier {
                 let opts = Opts::read(host);
                 let notice = {
                     let mut st = self.state.lock().unwrap();
-                    let notice = st.notice(name, d, host.self_id(), opts);
+                    let notice = st.notice(&*host, name, d, host.self_id(), opts);
                     st.track(name, d);
                     notice
                 };
@@ -345,6 +343,7 @@ mod tests {
     struct TestHost {
         settings: Vec<(&'static str, bool)>,
         notices: Vec<(String, String)>,
+        lang: &'static str,
     }
 
     impl Host for TestHost {
@@ -365,6 +364,9 @@ mod tests {
             self.notices.push((title.into(), body.into()));
         }
         fn log(&mut self, _: &str) {}
+        fn t(&self, key: &str, args: &[(&str, &str)]) -> String {
+            crate::testutil::tr(self.lang, key, args)
+        }
         fn emit_send(&mut self, _: i64, _: Val) {}
         fn guild_emojis(&self, _: u64) -> Vec<u64> {
             Vec::new()
@@ -502,7 +504,42 @@ mod tests {
         let mut p = json(r#"{"op":0,"t":"GUILD_DELETE","d":{"id":"77"}}"#);
         let mut extra = Vec::new();
         chain.dispatch(&mut host, "GUILD_DELETE", &mut p, &mut extra);
+        // The null host has no bundles, so `Host::t` answers with the key.
         assert_eq!(host.logs.len(), 1);
-        assert!(host.logs[0].contains("server 77"));
+        assert!(host.logs[0].contains("guild-removed"), "{:?}", host.logs);
+    }
+
+    #[test]
+    fn unknown_names_get_a_placeholder() {
+        let chain = Chain::new(vec![Box::new(RelationshipNotifier::new())]);
+        let mut host = TestHost::default();
+        dispatch(
+            &chain,
+            &mut host,
+            "GUILD_DELETE",
+            r#"{"op":0,"t":"GUILD_DELETE","d":{"id":"77"}}"#,
+        );
+        assert!(
+            host.notices[0].1.contains("server 77"),
+            "{:?}",
+            host.notices
+        );
+    }
+
+    #[test]
+    fn notifications_speak_russian() {
+        let (chain, mut host) = ready_chain();
+        host.lang = "ru";
+        dispatch(&chain, &mut host, "RELATIONSHIP_REMOVE", FRIEND_GONE);
+        dispatch(&chain, &mut host, "GUILD_DELETE", GUILD_GONE);
+        assert_eq!(
+            host.notices[0],
+            (
+                "Друг удалён".to_string(),
+                "bo больше не ваш друг.".to_string()
+            )
+        );
+        assert!(host.notices[1].1.contains("Ember"), "{:?}", host.notices);
+        assert!(host.notices[1].0.starts_with("Вас удалили"));
     }
 }

@@ -71,6 +71,7 @@ pub async fn run(paths: Paths, l10n: &Localizer) -> Result<()> {
         ..Config::default()
     };
     let app = Proxy::new(paths, cfg, Chain::new(phoecord_plugins::builtin()), true)?;
+    phoecord_plugins::register_strings(&app.shared.strings);
     let listener = phoecord_proxy::server::bind("127.0.0.1:0").await?;
     let addr = listener.local_addr()?.to_string();
     tokio::spawn(phoecord_proxy::server::serve(app.clone(), listener));

@@ -131,10 +131,7 @@ impl Subcommand for FnCmd {
     }
     fn run(&self, host: &mut dyn Host, args: &Args) -> String {
         if host.plugin_enabled(self.plugin_id) == Some(false) {
-            return format!(
-                "The `{id}` plugin is off. Switch it on with `/phoecord toggle {id}`.",
-                id = self.plugin_id
-            );
+            return host.t("plugin-off", &[("id", self.plugin_id)]);
         }
         (self.run)(host, args)
     }
@@ -175,7 +172,7 @@ impl Subcommand for PluginsCmd {
         "List PhoeCord plugins and whether they are on"
     }
     fn run(&self, host: &mut dyn Host, _args: &Args) -> String {
-        let mut out = String::from("**PhoeCord plugins**");
+        let mut out = format!("**{}**", host.t("plugins-header", &[]));
         for p in &self.plugins {
             let on = host.plugin_enabled(&p.id).unwrap_or(false);
             out.push_str(&format!(
@@ -212,22 +209,22 @@ impl Subcommand for ToggleCmd {
     fn run(&self, host: &mut dyn Host, args: &Args) -> String {
         let id = args.get("id").unwrap_or("").trim();
         let Some(p) = self.plugins.iter().find(|p| p.id == id) else {
-            return format!("No plugin named `{id}`. Try `/phoecord plugins`.");
+            return host.t("toggle-unknown", &[("id", id)]);
         };
         if p.id == COMMAND_PLUGIN_ID {
-            return format!("`{id}` cannot switch itself off here; use `phoecord disable {id}`.");
+            return host.t("toggle-self", &[("id", id)]);
         }
         let on = !host.plugin_enabled(id).unwrap_or(false);
         match host.set_plugin_enabled(id, on) {
             Ok(()) => {
-                let note = if p.gateway {
-                    " Takes effect when Discord reconnects (Ctrl+R)."
-                } else {
-                    ""
-                };
-                format!("`{id}` is now {}.{note}", if on { "on" } else { "off" })
+                let mut out = host.t(if on { "toggle-on" } else { "toggle-off" }, &[("id", id)]);
+                if p.gateway {
+                    out.push(' ');
+                    out.push_str(&host.t("toggle-reconnect", &[]));
+                }
+                out
             }
-            Err(e) => format!("Could not switch `{id}`: {e}"),
+            Err(e) => host.t("toggle-failed", &[("id", id), ("error", &e)]),
         }
     }
 }
@@ -367,7 +364,7 @@ impl Commands {
             .find(|o| o.get("type").and_then(Val::as_i64) == Some(SUB_COMMAND))?;
         let name = sub.get("name").and_then(text)?;
         let Some(cmd) = self.subs.iter().find(|c| c.name() == name.as_str()) else {
-            return Some(format!("Unknown command `{name}`."));
+            return Some(host.t("unknown-command", &[("name", &name)]));
         };
         let options = sub
             .get("options")
@@ -595,6 +592,9 @@ mod tests {
         }
         fn notify(&mut self, _: &str, _: &str) {}
         fn log(&mut self, _: &str) {}
+        fn t(&self, key: &str, args: &[(&str, &str)]) -> String {
+            crate::testutil::tr("", key, args)
+        }
         fn emit_send(&mut self, _: i64, _: Val) {}
         fn guild_emojis(&self, _: u64) -> Vec<u64> {
             Vec::new()

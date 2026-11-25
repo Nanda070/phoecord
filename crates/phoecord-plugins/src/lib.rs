@@ -47,6 +47,51 @@ pub mod who_reacted;
 #[cfg(test)]
 mod testutil;
 
+/// The built-in plugins' own strings as `(plugin id, language, Fluent text)`: one file per plugin
+/// and language, `crates/phoecord-plugins/i18n/<lang>/<plugin id>.ftl`. A plugin without a file
+/// has no strings of its own. `scripts/check_i18n.py` checks `ru` against `en`.
+pub const I18N: &[(&str, &str, &str)] = &[
+    (
+        "better_sessions",
+        "en",
+        include_str!("../i18n/en/better_sessions.ftl"),
+    ),
+    (
+        "better_sessions",
+        "ru",
+        include_str!("../i18n/ru/better_sessions.ftl"),
+    ),
+    ("commands", "en", include_str!("../i18n/en/commands.ftl")),
+    ("commands", "ru", include_str!("../i18n/ru/commands.ftl")),
+    (
+        "relationship_notifier",
+        "en",
+        include_str!("../i18n/en/relationship_notifier.ftl"),
+    ),
+    (
+        "relationship_notifier",
+        "ru",
+        include_str!("../i18n/ru/relationship_notifier.ftl"),
+    ),
+    (
+        "vc_narrator",
+        "en",
+        include_str!("../i18n/en/vc_narrator.ftl"),
+    ),
+    (
+        "vc_narrator",
+        "ru",
+        include_str!("../i18n/ru/vc_narrator.ftl"),
+    ),
+];
+
+/// Hand [`I18N`] to the host's plugin strings, which answer `Host::t`.
+pub fn register_strings(strings: &phoecord_i18n::PluginStrings) {
+    for (id, lang, ftl) in I18N {
+        strings.set(id, lang, ftl);
+    }
+}
+
 /// Every built-in plugin, in default run order.
 pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let silent = silent_message_toggle::SilentMessageToggle::new();

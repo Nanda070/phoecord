@@ -33,6 +33,9 @@ impl Host for Cfg {
     fn log(&mut self, message: &str) {
         self.logs.push(message.into());
     }
+    fn t(&self, key: &str, args: &[(&str, &str)]) -> String {
+        tr("", key, args)
+    }
     fn emit_send(&mut self, _: i64, _: Val) {}
     fn guild_emojis(&self, _: u64) -> Vec<u64> {
         Vec::new()
@@ -43,6 +46,26 @@ impl Host for Cfg {
     fn plugin_enabled(&self, id: &str) -> Option<bool> {
         self.plugins.get(id).copied()
     }
+}
+
+/// What `Host::t` answers for `key` in `lang` (`""` = English): the first built-in plugin bundle
+/// that has the key, else the key. Keys are unique across the bundles that tests meet.
+pub fn tr(lang: &str, key: &str, args: &[(&str, &str)]) -> String {
+    use std::sync::OnceLock;
+    static STRINGS: OnceLock<phoecord_i18n::PluginStrings> = OnceLock::new();
+    let strings = STRINGS.get_or_init(|| {
+        let s = phoecord_i18n::PluginStrings::new();
+        crate::register_strings(&s);
+        s
+    });
+    let lang = if lang.is_empty() { "en" } else { lang };
+    for (id, _, _) in crate::I18N {
+        let text = strings.t(id, lang, key, args);
+        if text != key {
+            return text;
+        }
+    }
+    key.to_string()
 }
 
 /// A value from JSON text.
@@ -67,6 +90,8 @@ pub struct Rec {
     pub rest_answers: HashMap<String, phoecord_core::plugin::HostResponse>,
     /// Every `rest` call as `("METHOD route", body)`.
     pub rest_calls: Vec<(String, Option<Val>)>,
+    /// Language `Host::t` answers in (`""` = English).
+    pub lang: &'static str,
 }
 
 impl Rec {
@@ -108,6 +133,9 @@ impl Host for Rec {
     }
     fn log(&mut self, message: &str) {
         self.logs.push(message.into());
+    }
+    fn t(&self, key: &str, args: &[(&str, &str)]) -> String {
+        tr(self.lang, key, args)
     }
     fn emit_send(&mut self, op: i64, payload: Val) {
         self.sent.push((op, payload));

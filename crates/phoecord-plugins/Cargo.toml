@@ -11,6 +11,7 @@ publish = false
 
 [dependencies]
 phoecord-core.workspace = true
+phoecord-i18n = { path = "../phoecord-i18n" }
 regex.workspace = true
 time = { workspace = true, features = ["local-offset"] }
 

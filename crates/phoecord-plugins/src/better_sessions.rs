@@ -71,8 +71,8 @@ impl BetterSessions {
             move |host, _| {
                 last.store(now_ms(), Ordering::Relaxed);
                 match check(host) {
-                    Ok(report) => render(&report),
-                    Err(e) => format!("Could not read your sessions: {e}"),
+                    Ok(report) => render(host, &report),
+                    Err(e) => host.t("sessions-error", &[("error", &e)]),
                 }
             },
         )
@@ -216,32 +216,37 @@ fn describe(s: &Session) -> String {
     format!("{} \u{b7} {} \u{b7} {}", s.os, s.platform, s.location)
 }
 
-fn render(r: &Report) -> String {
+fn render(host: &dyn Host, r: &Report) -> String {
     if r.sessions.is_empty() {
-        return "Discord returned no sessions.".into();
+        return host.t("sessions-none", &[]);
     }
-    let mut out = format!("**{} sessions**", r.sessions.len());
+    let count = r.sessions.len().to_string();
+    let mut out = format!("**{}**", host.t("sessions-header", &[("count", &count)]));
     if r.first_run {
-        out.push_str(" (first check: all recorded as known)");
+        out.push_str(&format!(" ({})", host.t("sessions-first-run", &[])));
     }
     for s in &r.sessions {
         let tag = if r.new.contains(&s.id) {
-            " **NEW**"
+            format!(" **{}**", host.t("sessions-new-tag", &[]))
         } else {
-            ""
+            String::new()
         };
-        out.push_str(&format!(
-            "\n- {}, last used {}{tag}",
-            describe(s),
-            exact_time(&s.last_used)
-        ));
+        let line = host.t(
+            "sessions-line",
+            &[
+                ("session", &describe(s)),
+                ("time", &exact_time(&s.last_used)),
+            ],
+        );
+        out.push_str(&format!("\n- {line}{tag}"));
     }
     out
 }
 
 fn notify_new(host: &mut dyn Host, r: &Report) {
     for s in r.sessions.iter().filter(|s| r.new.contains(&s.id)) {
-        host.notify("BetterSessions", &format!("New session:\n{}", describe(s)));
+        let body = format!("{}\n{}", host.t("new-session", &[]), describe(s));
+        host.notify("BetterSessions", &body);
     }
 }
 

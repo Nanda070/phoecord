@@ -3245,6 +3245,7 @@ name = "phoecord-plugin-runtime"
 version = "0.5.0"
 dependencies = [
  "phoecord-core",
+ "phoecord-i18n",
  "serde",
  "toml 0.9.12+spec-1.1.0",
  "wasmtime",
@@ -3259,6 +3260,7 @@ name = "phoecord-plugins"
 version = "0.5.0"
 dependencies = [
  "phoecord-core",
+ "phoecord-i18n",
  "phoecord-plugin-runtime",
  "regex",
  "serde_json",
@@ -3280,6 +3282,7 @@ dependencies = [
  "hyper-util",
  "notify-rust",
  "phoecord-core",
+ "phoecord-i18n",
  "phoecord-plugin-runtime",
  "phoecord-plugins",
  "rcgen",

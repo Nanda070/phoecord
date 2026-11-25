@@ -194,13 +194,13 @@ fn describe_error(e: &anyhow::Error, l10n: &Localizer) -> String {
 
 fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Result<()> {
     match cli.cmd.unwrap_or(Cmd::Run) {
-        Cmd::Run => runtime()?.block_on(run(paths, None, l10n)),
+        Cmd::Run => runtime()?.block_on(run(paths, None, l10n, lang_flag(resolved))),
         Cmd::Launch { command, channel } => {
             let launch = Launch {
                 command,
                 channel: channel.map(Into::into),
             };
-            runtime()?.block_on(run(paths, Some(launch), l10n))
+            runtime()?.block_on(run(paths, Some(launch), l10n, lang_flag(resolved)))
         }
         Cmd::Setup {
             accept_terms,
@@ -335,7 +335,17 @@ fn loader_line(
     )
 }
 
-async fn run(paths: Paths, launch: Option<Launch>, l10n: &Localizer) -> Result<()> {
+/// The language when it came from `--lang`, for `Host::t` (the config and the OS are read live).
+fn lang_flag(resolved: &Resolved) -> Option<String> {
+    (resolved.source == phoecord_i18n::Source::Flag).then(|| resolved.lang.clone())
+}
+
+async fn run(
+    paths: Paths,
+    launch: Option<Launch>,
+    l10n: &Localizer,
+    lang_flag: Option<String>,
+) -> Result<()> {
     // `run` is what autostart starts and `launch` starts the client: both keep the loader in place,
     // before Discord can load the DLL.
     reconcile_loader(l10n);
@@ -363,12 +373,17 @@ async fn run(paths: Paths, launch: Option<Launch>, l10n: &Localizer) -> Result<(
         None => None,
     };
     let proxy = Proxy::new(paths, cfg, chain(), false)?;
+    proxy.shared.set_language_flag(lang_flag);
+    phoecord_plugins::register_strings(&proxy.shared.strings);
     if let Some(w) = ca_warning(&proxy.paths.data.join("ca.pem"), l10n) {
         eprintln!("{w}");
     }
     // WASM plugin packages in `<data>/plugins/<id>/`: loaded now, and again on every folder scan.
     match WasmRuntime::new() {
-        Ok(rt) => proxy.watch_packages(PackageSet::new(rt, proxy.paths.data.join("plugins"))),
+        Ok(rt) => proxy.watch_packages(
+            PackageSet::new(rt, proxy.paths.data.join("plugins"))
+                .with_strings(proxy.shared.strings.clone()),
+        ),
         Err(e) => tracing::warn!("WASM plugins are off: {e:#}"),
     }
     proxy.spawn_reloader();

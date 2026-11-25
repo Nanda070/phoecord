@@ -233,8 +233,11 @@ impl Plugin for VcNarrator {
                 Vec::new()
             }
         };
-        for m in messages {
-            host.notify("Voice", &m);
+        if !messages.is_empty() {
+            let title = host.t("title", &[]);
+            for m in messages {
+                host.notify(&title, &m);
+            }
         }
         Verdict::Pass
     }
