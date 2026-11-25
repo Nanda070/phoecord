@@ -4,11 +4,11 @@
 //! Vendicated and contributors; itself a port of Alyxia's Vendetta plugin). A user without Nitro
 //! writes `[#rrggbb,#rrggbb]` into their bio as invisible "tag" characters (each ASCII character
 //! shifted by `0xE0000`, see [`encode`]). This plugin finds that text in the bio of
-//! `GET /users/{id}/profile` and fills `theme_colors` with `[primary, accent]`, so the client
-//! shows the theme.
+//! `GET /users/{id}/profile`, fills `theme_colors` with `[primary, accent]` and sets
+//! `premium_type` to 2, as Vencord does, because the client shows a theme only on a Nitro profile.
 //!
 //! Settings (`[plugins.fake_profile_themes]`), as Vencord's:
-//! - `nitro_first` (default `true`): keep the real Nitro colours when a profile has both; `false`
+//! - `nitroFirst` (default `true`): keep the real Nitro colours when a profile has both; `false`
 //!   prefers the colours hidden in the bio.
 //!
 //! Not ported: the colour pickers and the "Copy 3y3" button of Vencord's settings page (UI, Phase 2).
@@ -63,13 +63,23 @@ pub fn encode(primary: u32, accent: u32) -> String {
 
 /// The colours hidden in a bio, if any: `[#1-6 hex digits,#1-6 hex digits]` written in tag characters.
 pub fn decode(bio: &str) -> Option<[i64; 2]> {
-    let ascii: String = bio
-        .chars()
-        .filter(|c| (0xE0000..=0xE007F).contains(&(*c as u32)))
-        .filter_map(|c| char::from_u32(c as u32 - 0xE0000))
-        .collect();
-    // `[#` hex `,#` hex `]`, the first occurrence (Vencord's DecodeRegex).
-    let mut rest = ascii.as_str();
+    // Like Vencord's DecodeRegex, the tag characters must follow each other: any other character
+    // ends a run, and each run is searched on its own.
+    let is_tag = |c: char| (0xE0000..=0xE007F).contains(&(c as u32));
+    bio.split(|c: char| !is_tag(c))
+        .filter(|run| !run.is_empty())
+        .find_map(|run| {
+            let ascii: String = run
+                .chars()
+                .filter_map(|c| char::from_u32(c as u32 - 0xE0000))
+                .collect();
+            first_pair(&ascii)
+        })
+}
+
+/// `[#` hex `,#` hex `]`, the first occurrence.
+fn first_pair(ascii: &str) -> Option<[i64; 2]> {
+    let mut rest = ascii;
     while let Some(start) = rest.find("[#") {
         rest = &rest[start + 2..];
         if let Some(colors) = parse_pair(rest) {
@@ -120,7 +130,7 @@ impl Plugin for FakeProfileThemes {
             return Verdict::Pass;
         }
         let nitro_first = host
-            .setting("nitro_first")
+            .setting("nitroFirst")
             .and_then(|v| v.as_bool())
             .unwrap_or(true);
         let Some(profile) = body.get_mut(PROFILES[0]) else {
@@ -139,6 +149,8 @@ impl Plugin for FakeProfileThemes {
             "theme_colors",
             Val::List(vec![Val::Int(primary), Val::Int(accent)]),
         );
+        // Vencord's `premiumType: 2`: without Nitro the client ignores `theme_colors`.
+        body.set("premium_type", Val::Int(2));
         Verdict::Changed
     }
 }
@@ -183,6 +195,12 @@ mod tests {
         // The brackets must be tag characters; plain text does not count.
         assert_eq!(decode("[#ffffff,#000000]"), None);
         assert_eq!(decode(""), None);
+        // Plain text inside the hidden part breaks it, as in Vencord's regex.
+        assert_eq!(decode(&format!("{}x{}", tag("[#12,"), tag("#34]"))), None);
+        assert_eq!(
+            decode(&format!("{}x{}", tag("[#1,"), tag("[#5,#6]"))),
+            Some([5, 6])
+        );
         // A broken first match does not hide a good second one.
         assert_eq!(decode(&tag("[#gg,#1][#1,#2]")), Some([1, 2]));
     }
@@ -215,6 +233,7 @@ mod tests {
             body.at(&["user_profile", "theme_colors"]),
             Some(&Val::List(vec![Val::Int(0x112233), Val::Int(0x445566)]))
         );
+        assert_eq!(body.get("premium_type"), Some(&Val::Int(2)));
     }
 
     #[test]
@@ -229,7 +248,7 @@ mod tests {
             Outcome::Untouched
         );
 
-        let mut host = Cfg::default().with("nitro_first", Val::Bool(false));
+        let mut host = Cfg::default().with("nitroFirst", Val::Bool(false));
         let mut body = profile(&bio, "[9,9]");
         assert_eq!(
             chain.rest_response(&mut host, "GET", "/users/7/profile", 200, &mut body),
