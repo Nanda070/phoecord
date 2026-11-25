@@ -1,6 +1,7 @@
 //! Minimal PE (x64 and x86) reader over a byte slice: sections, export names and the
 //! `VS_FIXEDFILEINFO` of the version resource. Pure and platform-independent so it is unit-tested
-//! on every OS; the loader feeds it the host exe read from disk and the system DLLs.
+//! on every OS; the loader feeds it the host exe as already mapped in memory ([`Pe::parse_mapped`])
+//! and the system DLLs read from disk ([`Pe::parse`]).
 
 use std::fmt;
 
@@ -30,6 +31,8 @@ pub struct Pe<'a> {
     /// `(rva, size)` of data directories 0 (export) and 2 (resource).
     export_dir: (u32, u32),
     resource_dir: (u32, u32),
+    /// `data` is a loaded image (sections at their RVAs), not a file (sections at raw offsets).
+    mapped: bool,
 }
 
 fn u16_at(d: &[u8], o: usize) -> Result<u16, PeError> {
@@ -45,7 +48,32 @@ fn u32_at(d: &[u8], o: usize) -> Result<u32, PeError> {
 }
 
 impl<'a> Pe<'a> {
+    /// Parses a PE file as stored on disk.
     pub fn parse(data: &'a [u8]) -> Result<Pe<'a>, PeError> {
+        Self::parse_inner(data, false)
+    }
+
+    /// Parses a PE image as the Windows loader mapped it: `image` starts at the module base and
+    /// every RVA is an offset into it. Section contents are the same bytes as in the file.
+    pub fn parse_mapped(image: &'a [u8]) -> Result<Pe<'a>, PeError> {
+        Self::parse_inner(image, true)
+    }
+
+    /// `SizeOfImage` from the headers at the start of a PE (file or image): how many bytes the
+    /// mapped image spans. Needs only the first page.
+    pub fn image_size(headers: &[u8]) -> Result<usize, PeError> {
+        if headers.get(..2) != Some(b"MZ") {
+            return Err(PeError("no MZ header"));
+        }
+        let pe = u32_at(headers, 0x3c)? as usize;
+        if headers.get(pe..pe + 4) != Some(b"PE\0\0") {
+            return Err(PeError("no PE signature"));
+        }
+        // SizeOfImage is at offset 56 of both the PE32 and PE32+ optional headers.
+        Ok(u32_at(headers, pe + 24 + 56)? as usize)
+    }
+
+    fn parse_inner(data: &'a [u8], mapped: bool) -> Result<Pe<'a>, PeError> {
         if data.get(..2) != Some(b"MZ") {
             return Err(PeError("no MZ header"));
         }
@@ -82,6 +110,7 @@ impl<'a> Pe<'a> {
             sections,
             export_dir: dir(0)?,
             resource_dir: dir(2)?,
+            mapped,
         })
     }
 
@@ -89,16 +118,24 @@ impl<'a> Pe<'a> {
         self.sections.iter().find(|s| s.name == name)
     }
 
-    /// Bytes of a section as stored in the file: `min(raw size, virtual size)`, which is the real
-    /// code without file-alignment padding.
+    /// Bytes of a section: `min(raw size, virtual size)`, which is the real code without
+    /// file-alignment padding. Read from the raw offset in a file, from the RVA in a mapped image;
+    /// both give the same bytes (the hash in `signatures/*.toml` does not depend on the source).
     pub fn section_bytes(&self, name: &str) -> Option<&'a [u8]> {
         let s = self.section(name)?;
-        let start = s.raw_offset as usize;
+        let start = if self.mapped {
+            s.virtual_address
+        } else {
+            s.raw_offset
+        } as usize;
         let len = s.raw_size.min(s.virtual_size) as usize;
         self.data.get(start..start.checked_add(len)?)
     }
 
     fn rva_to_offset(&self, rva: u32) -> Option<usize> {
+        if self.mapped {
+            return ((rva as usize) < self.data.len()).then_some(rva as usize);
+        }
         self.sections.iter().find_map(|s| {
             let span = s.virtual_size.max(s.raw_size);
             (rva >= s.virtual_address && rva - s.virtual_address < span)
@@ -303,6 +340,43 @@ mod tests {
         assert_eq!(pe.section_bytes(".text").unwrap(), &[1, 2, 3, 4]);
         assert_eq!(pe.export_names().unwrap(), ["Alpha", "Beta"]);
         assert_eq!(pe.file_version().as_deref(), Some("1.2.345.6"));
+    }
+
+    #[test]
+    fn mapped_image_gives_the_same_text_and_version() {
+        let file = build_pe(&[9, 8, 7, 6, 5], &["Alpha"], Some((1, 0, 1355, 0)));
+        let f = Pe::parse(&file).unwrap();
+        // Lay the file out the way the loader maps it: headers, then each section at its RVA.
+        // `build_pe` uses RVA == file offset; move the sections to a 0x1000 grid so nothing
+        // relies on that.
+        let mut image = vec![0u8; 0x10000];
+        image[..0x200].copy_from_slice(&file[..0x200]);
+        let sec = 0x98 + 0xf0;
+        for (i, s) in f.sections.iter().enumerate() {
+            let va = 0x1000 * (i + 1);
+            let raw = &file[s.raw_offset as usize..(s.raw_offset + s.raw_size) as usize];
+            image[va..va + raw.len()].copy_from_slice(raw);
+            let at = sec + i * 40 + 12;
+            image[at..at + 4].copy_from_slice(&(va as u32).to_le_bytes());
+        }
+        // Data directories: export (0) and resource (2) move with their sections.
+        let dirs = 0x98 + 112;
+        image[dirs..dirs + 4].copy_from_slice(&0x2000u32.to_le_bytes());
+        image[dirs + 16..dirs + 20].copy_from_slice(&0x3000u32.to_le_bytes());
+        // The version data entry holds an absolute RVA: point it at the moved `.rsrc`.
+        image[0x3048..0x304c].copy_from_slice(&0x3058u32.to_le_bytes());
+        image[0x98 + 56..0x98 + 60].copy_from_slice(&0x10000u32.to_le_bytes());
+        assert_eq!(Pe::image_size(&image[..0x1000]), Ok(0x10000));
+        let m = Pe::parse_mapped(&image).unwrap();
+        assert_eq!(m.section_bytes(".text"), f.section_bytes(".text"));
+        assert_eq!(m.section(".text").unwrap().virtual_address, 0x1000);
+        assert_eq!(m.file_version().as_deref(), Some("1.0.1355.0"));
+    }
+
+    #[test]
+    fn image_size_rejects_garbage() {
+        assert!(Pe::image_size(b"nope").is_err());
+        assert!(Pe::image_size(&[]).is_err());
     }
 
     #[test]

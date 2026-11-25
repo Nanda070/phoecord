@@ -51,7 +51,10 @@ pub fn hash_hex(bytes: &[u8]) -> String {
 
 /// Identifies a client build from the bytes of its exe file.
 pub fn detect(exe: &[u8]) -> Result<ClientVersion, VersionError> {
-    let pe = Pe::parse(exe)?;
+    from_pe(&Pe::parse(exe)?)
+}
+
+fn from_pe(pe: &Pe<'_>) -> Result<ClientVersion, VersionError> {
     let text = pe
         .section_bytes(".text")
         .ok_or(VersionError::NoTextSection)?;
@@ -62,6 +65,18 @@ pub fn detect(exe: &[u8]) -> Result<ClientVersion, VersionError> {
         text_rva: sect.virtual_address,
         text_len: sect.virtual_size,
     })
+}
+
+/// Identifies a client build from its exe as mapped in memory (`image` starts at the module base
+/// and spans `SizeOfImage`). The `.text` hash equals the one [`detect`] gives for the file.
+pub fn detect_mapped(image: &[u8]) -> Result<ClientVersion, VersionError> {
+    from_pe(&Pe::parse_mapped(image)?)
+}
+
+/// Electron's child processes (renderer, GPU, utility, crashpad) carry `--type=` on their command
+/// line; the main client process does not. Only the main process needs the loader's work.
+pub fn is_child_process(command_line: &str) -> bool {
+    command_line.contains("--type=")
 }
 
 #[cfg(test)]
@@ -93,6 +108,18 @@ mod tests {
         let b = detect(&build_pe(&[1, 2, 4], &[], Some((1, 0, 0, 1)))).unwrap();
         assert_eq!(a.file_version, b.file_version);
         assert_ne!(a.text_hash, b.text_hash);
+    }
+
+    #[test]
+    fn child_process_check() {
+        assert!(is_child_process(
+            r#""C:\D\Discord.exe" --type=renderer --user-data-dir="C:\x" --lang=en"#
+        ));
+        assert!(is_child_process("Discord.exe --type=gpu-process"));
+        assert!(!is_child_process(
+            r#""C:\D\Discord.exe" --processStart Discord.exe"#
+        ));
+        assert!(!is_child_process(""));
     }
 
     #[test]

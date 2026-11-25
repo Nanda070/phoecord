@@ -162,9 +162,9 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/aob.rs` | `Pattern`: parse `48 8B ?? …`, `find_all`, `find_unique` (ambiguous = miss) | All-wildcard patterns are rejected on purpose |
 | `build.rs`, `exports.txt` | Generates one assembly forwarding stub per `version.dll` export and `/EXPORT` link args (MSVC x86_64) | A Windows test checks `exports.txt` against the real DLL |
 | `src/proxy_dll.rs` | `FORWARD_TABLE`, `resolve_export`: loads the real DLL from `GetSystemDirectoryW` on first call | Never load by name: it would resolve to this DLL |
-| `src/entry.rs` | `DllMain` (only `DisableThreadLibraryCalls` + `CreateThread`), the worker: log, detect build, load signatures | No work under the loader lock; panics are caught |
+| `src/entry.rs` | `DllMain` (only `DisableThreadLibraryCalls` + `CreateThread`, and no worker at all when the command line has `--type=`), the worker: log, detect the build from the mapped image (`GetModuleHandleW(null)`, logs the time in ms), load signatures | No work under the loader lock; panics are caught; child processes must still forward every export |
 | `src/log.rs` | Loader log in `%LOCALAPPDATA%\PhoeCord\loader.log` | |
-| `src/pe.rs`, `src/version.rs` | PE parsing, file version resource, `.text` SHA-256 | Pure, tested on every OS |
+| `src/pe.rs`, `src/version.rs` | PE parsing (file or mapped image: `Pe::parse_mapped`, `Pe::image_size`), file version resource, `.text` SHA-256 (`detect` for a file, `detect_mapped` for memory, same hash), `is_child_process` | Pure, tested on every OS; the hash must stay equal for file and image, `signatures/*.toml` depend on it |
 | `src/signatures.rs` | `SignatureSet::load_dir`, `select`, `resolve_all` (`find_unique` + `rip`) | Format documented in `signatures/README.md` |
 | `src/hook.rs` | Inline detours (`retour`), installed with other threads suspended, `uninstall_all` | Hooks must be removed before `FreeLibrary` |
 | `examples/host.rs` | Throwaway exe that loads `version.dll` from its folder for manual checks | |
