@@ -9,6 +9,7 @@ toggle-on = `{ $id }` теперь включён.
 toggle-off = `{ $id }` теперь выключен.
 toggle-reconnect = Вступит в силу после переподключения Discord (Ctrl+R).
 toggle-failed = Не удалось переключить `{ $id }`: { $error }
+owned-no-reply = Команда `/phoecord { $name }` не сработала. Плагин включён? Включите его: `/phoecord toggle { $id }`.
 # fake_deafen
 fake_deafen-on = Fake deafen **включён**: остальные видят вас с выключенными микрофоном и звуком.
 fake_deafen-off = Fake deafen **выключен**.

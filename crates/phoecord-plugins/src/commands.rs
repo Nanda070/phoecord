@@ -434,7 +434,11 @@ impl Commands {
                 ]),
             ));
         }
-        frames.push(frame("MESSAGE_CREATE", msg));
+        // An empty answer shows nothing: the command already did its work in the open (for
+        // example it sent a real message to the channel).
+        if !text.is_empty() {
+            frames.push(frame("MESSAGE_CREATE", msg));
+        }
         frames
     }
 }
@@ -499,8 +503,134 @@ fn is_command_list(method: &str, route: &str) -> bool {
 }
 
 /// `POST /interactions`.
-fn is_interaction(method: &str, route: &str) -> bool {
+pub fn is_interaction(method: &str, route: &str) -> bool {
     method == "POST" && route.trim_end_matches('/') == "/interactions"
+}
+
+/// One `/phoecord <sub>` call as the plugin that owns `sub` reads it from `POST /interactions`.
+///
+/// A subcommand body runs inside this plugin, so its `Host::rest`, `fetch` and timers would count
+/// as `commands`. A plugin that needs them (or the channel the command was typed in) watches
+/// `POST /interactions` itself (it sits before this plugin in the chain), does the work as itself
+/// with [`invocation`], keeps the answer, and its [`FnCmd`] returns it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Invocation {
+    /// The subcommand name.
+    pub sub: String,
+    /// `(option name, value)` pairs, as typed.
+    pub options: Vec<(String, String)>,
+    /// The channel the command was typed in.
+    pub channel_id: Option<u64>,
+    /// Its guild (`None` in DMs).
+    pub guild_id: Option<u64>,
+}
+
+impl Invocation {
+    /// An option's value, trimmed; `None` when missing or blank.
+    pub fn get(&self, name: &str) -> Option<&str> {
+        self.options
+            .iter()
+            .find(|(k, _)| k == name)
+            .map(|(_, v)| v.trim())
+            .filter(|v| !v.is_empty())
+    }
+}
+
+/// The answer a plugin keeps for its [`kept_answer`] command between handling the interaction
+/// and the command plugin showing it.
+pub type Kept = crate::state::Shared<Option<String>>;
+
+/// A `/phoecord <name>` command whose work the owning plugin already did (see [`Invocation`]): it
+/// shows the answer the plugin kept in `kept` (an empty one shows nothing), or `owned-no-reply`
+/// when the plugin did not run.
+pub fn kept_answer(
+    plugin_id: &'static str,
+    name: &'static str,
+    description: &'static str,
+    kept: &Kept,
+) -> FnCmd {
+    let kept = kept.clone();
+    FnCmd::new(plugin_id, name, description, move |host, _| {
+        kept.lock()
+            .take()
+            .unwrap_or_else(|| host.t("owned-no-reply", &[("id", plugin_id), ("name", name)]))
+    })
+}
+
+/// A snowflake typed as digits or as a mention (`<@1>`, `<@!1>`, `<#1>`, `<@&1>`).
+pub fn snowflake_arg(s: &str) -> Option<u64> {
+    let s = s.trim();
+    let s = s
+        .strip_prefix('<')
+        .and_then(|s| s.strip_suffix('>'))
+        .map_or(s, |s| s.trim_start_matches(['@', '#', '!', '&']));
+    (!s.is_empty() && s.len() <= 20 && s.bytes().all(|b| b.is_ascii_digit()))
+        .then(|| s.parse().ok())
+        .flatten()
+}
+
+/// A message given as an id or a link (`https://discord.com/channels/<guild or @me>/<channel>/<id>`,
+/// also `ptb.`, `canary.` and `discordapp.com`): `(channel from the link, message id)`.
+pub fn message_ref(s: &str) -> Option<(Option<u64>, u64)> {
+    let s = s.trim().trim_start_matches('<').trim_end_matches('>');
+    if let Some(id) = snowflake_arg(s) {
+        return Some((None, id));
+    }
+    let rest = s
+        .strip_prefix("https://")
+        .or_else(|| s.strip_prefix("http://"))?;
+    let (host, path) = rest.split_once('/')?;
+    let host = host
+        .trim_start_matches("ptb.")
+        .trim_start_matches("canary.");
+    if host != "discord.com" && host != "discordapp.com" {
+        return None;
+    }
+    match path.split('/').collect::<Vec<_>>().as_slice() {
+        ["channels", g, c, m] if *g == "@me" || snowflake_arg(g).is_some() => {
+            Some((Some(snowflake_arg(c)?), snowflake_arg(m)?))
+        }
+        _ => None,
+    }
+}
+
+/// The `/phoecord` subcommand an interaction body calls, or `None` if it is not `/phoecord`.
+pub fn invocation(interaction: &Val) -> Option<Invocation> {
+    let data = interaction.get("data")?;
+    if data.get("name").and_then(text).as_deref() != Some(COMMAND_NAME) {
+        return None;
+    }
+    let sub = data
+        .get("options")?
+        .as_list()
+        .iter()
+        .find(|o| o.get("type").and_then(Val::as_i64) == Some(SUB_COMMAND))?;
+    let options = sub
+        .get("options")
+        .map(Val::as_list)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|o| {
+            let v = match o.get("value")? {
+                Val::Int(n) => n.to_string(),
+                Val::Bool(b) => b.to_string(),
+                v => text(v)?,
+            };
+            Some((text(o.get("name")?)?, v))
+        })
+        .collect();
+    let id = |key: &str| {
+        interaction.get(key).and_then(|v| match v {
+            Val::Int(_) | Val::Big(_) => v.as_i64().and_then(|n| u64::try_from(n).ok()),
+            v => text(v)?.parse().ok(),
+        })
+    };
+    Some(Invocation {
+        sub: sub.get("name").and_then(text)?,
+        options,
+        channel_id: id("channel_id"),
+        guild_id: id("guild_id"),
+    })
 }
 
 impl Plugin for Commands {
@@ -881,5 +1011,87 @@ mod fn_cmd_tests {
         assert_eq!(cmd.run(&mut host, &args), "got 1");
         host.plugins.insert("demo".into(), false);
         assert!(cmd.run(&mut host, &args).contains("is off"));
+    }
+}
+
+#[cfg(test)]
+mod invocation_tests {
+    use super::*;
+    use crate::testutil::j;
+
+    #[test]
+    fn invocation_reads_the_sub_its_options_and_where_it_was_typed() {
+        let body = j(
+            r#"{"type":2,"channel_id":"9","guild_id":"7","data":{"name":"phoecord",
+            "options":[{"type":1,"name":"tag","options":[
+                {"type":3,"name":"name","value":" hi "},{"type":4,"name":"n","value":3},
+                {"type":5,"name":"ephemeral","value":true}]}]}}"#,
+        );
+        let inv = invocation(&body).unwrap();
+        assert_eq!(inv.sub, "tag");
+        assert_eq!(inv.get("name"), Some("hi"));
+        assert_eq!(inv.get("n"), Some("3"));
+        assert_eq!(inv.get("ephemeral"), Some("true"));
+        assert_eq!(inv.get("missing"), None);
+        assert_eq!((inv.channel_id, inv.guild_id), (Some(9), Some(7)));
+
+        let dm = j(r#"{"type":2,"channel_id":9,"data":{"name":"phoecord",
+            "options":[{"type":1,"name":"plugins"}]}}"#);
+        let inv = invocation(&dm).unwrap();
+        assert_eq!((inv.channel_id, inv.guild_id), (Some(9), None));
+        assert!(inv.options.is_empty());
+
+        assert_eq!(
+            invocation(&j(r#"{"type":2,"data":{"name":"giphy"}}"#)),
+            None
+        );
+    }
+
+    #[test]
+    fn an_empty_answer_only_ends_the_interaction() {
+        let p = Commands::empty();
+        let body = j(r#"{"type":2,"channel_id":"9","nonce":"5","data":{"name":"phoecord"}}"#);
+        let frames = p.local_frames(&body, "");
+        assert_eq!(frames.len(), 1);
+        assert_eq!(frames[0].str_at(&["t"]), Some("INTERACTION_SUCCESS"));
+        assert_eq!(p.local_frames(&body, "hi").len(), 2);
+    }
+}
+
+#[cfg(test)]
+mod helper_tests {
+    use super::*;
+    use crate::testutil::Rec;
+
+    #[test]
+    fn ids_and_message_links() {
+        assert_eq!(snowflake_arg(" 123 "), Some(123));
+        assert_eq!(snowflake_arg("<@!42>"), Some(42));
+        assert_eq!(snowflake_arg("<#7>"), Some(7));
+        assert_eq!(snowflake_arg("12a"), None);
+        assert_eq!(snowflake_arg(""), None);
+        assert_eq!(snowflake_arg("123456789012345678901"), None);
+        assert_eq!(message_ref("99"), Some((None, 99)));
+        assert_eq!(
+            message_ref("https://discord.com/channels/1/2/3"),
+            Some((Some(2), 3))
+        );
+        assert_eq!(
+            message_ref("<https://canary.discord.com/channels/@me/2/3>"),
+            Some((Some(2), 3))
+        );
+        assert_eq!(message_ref("https://evil.example/channels/1/2/3"), None);
+        assert_eq!(message_ref("https://discord.com/channels/1/2"), None);
+    }
+
+    #[test]
+    fn kept_answer_shows_the_kept_text_once() {
+        let kept = Kept::default();
+        let cmd = kept_answer("demo", "demo", "Demo", &kept);
+        let mut host = Rec::default();
+        let args = Args { options: vec![] };
+        *kept.lock() = Some("done".into());
+        assert_eq!(cmd.run(&mut host, &args), "done");
+        assert!(cmd.run(&mut host, &args).contains("did not run"));
     }
 }

@@ -9,6 +9,7 @@ toggle-on = `{ $id }` is now on.
 toggle-off = `{ $id }` is now off.
 toggle-reconnect = Takes effect when Discord reconnects (Ctrl+R).
 toggle-failed = Could not switch `{ $id }`: { $error }
+owned-no-reply = The `/phoecord { $name }` command did not run. Is the plugin on? Switch it on with `/phoecord toggle { $id }`.
 # fake_deafen
 fake_deafen-on = Fake deafen is **on**: others see you muted and deafened.
 fake_deafen-off = Fake deafen is **off**.
