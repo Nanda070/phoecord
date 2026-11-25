@@ -166,6 +166,13 @@ pub trait Host {
         let _ = (file, line);
         Err("Host::append_data is not available in this host".into())
     }
+    /// A string of this plugin's own bundle (`i18n/<lang>.ftl`) in the user's language, with
+    /// `args` filled into its `{ $name }` placeholders. Lookup: the user's language, then English,
+    /// then the key itself. The default returns the key, so a host without bundles still works.
+    fn t(&self, key: &str, args: &[(&str, &str)]) -> String {
+        let _ = args;
+        key.to_string()
+    }
     /// Called by the plugin chain right after `begin_plugin` with the hosts the plugin's manifest
     /// lists in `fetch`, so [`Host::fetch`] can check its allow-list. Plugins never call this.
     fn set_fetch_hosts(&mut self, hosts: &[String]) {
