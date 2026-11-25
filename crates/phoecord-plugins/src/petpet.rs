@@ -236,9 +236,24 @@ fn load(host: &mut dyn Host, url: &str) -> Result<Vec<u8>, String> {
     }
 }
 
-/// A picture (its first frame for a GIF) as RGBA.
+/// Largest picture petpet decodes, per side: a bigger one (a huge attachment) is refused instead of
+/// taking hundreds of MB inside the proxy.
+const MAX_INPUT_SIDE: u32 = 4096;
+/// Most memory the decoder may take for one picture.
+const MAX_INPUT_ALLOC: u64 = 64 * 1024 * 1024;
+
+/// A picture (its first frame for a GIF) as RGBA, within [`MAX_INPUT_SIDE`] and [`MAX_INPUT_ALLOC`].
 fn decode(bytes: &[u8]) -> Result<RgbaImage, String> {
-    image::load_from_memory(bytes)
+    let mut reader = image::ImageReader::new(std::io::Cursor::new(bytes))
+        .with_guessed_format()
+        .map_err(|e| e.to_string())?;
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(MAX_INPUT_SIDE);
+    limits.max_image_height = Some(MAX_INPUT_SIDE);
+    limits.max_alloc = Some(MAX_INPUT_ALLOC);
+    reader.limits(limits);
+    reader
+        .decode()
         .map(|i| i.to_rgba8())
         .map_err(|e| e.to_string())
 }
@@ -315,6 +330,20 @@ impl Plugin for Petpet {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_huge_picture_is_refused() {
+        let big = RgbaImage::new(MAX_INPUT_SIDE + 1, 1);
+        let mut png = Vec::new();
+        big.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .unwrap();
+        assert!(decode(&png).is_err());
+        let ok = RgbaImage::new(8, 8);
+        let mut png = Vec::new();
+        ok.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .unwrap();
+        assert_eq!(decode(&png).unwrap().dimensions(), (8, 8));
+    }
+
     use super::*;
     use crate::commands::Args;
     use crate::testutil::j;
