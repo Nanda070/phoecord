@@ -81,9 +81,9 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.2.13** 🟡 | Presence: CustomRPC, MusicRichPresence, IgnoreActivities, AutoDNDWhilePlaying, CustomIdle | anyone | ⏳ |
 | **1.2.14** 🟡 | Profiles: NoProfileThemes, FakeProfileThemes, USRBG, Decor (data part) | anyone | ⏳ |
 | **1.2.15** 🟡 | External services: Dearrow, GifProviderSwitcher, FixImagesQuality | anyone | ⏳ |
-| **1.2.16** 🟡 | Data parts of UI plugins: ValidUser, ValidReply, NewGuildSettings, OverrideForumDefaults, MessageLinkEmbeds, PlatformIndicators, TypingIndicator, MemberCount, MutualGroupDMs, WhoReacted, and the other 🌐 + 🎨 rows of `docs/PLUGINS.md` marked 1.2.16 | Kennurken | 🔎 in review (17 data parts, `/phoecord` commands; synthetic payload tests, no live account check yet) |
+| **1.2.16** 🟡 | Data parts of UI plugins: ValidUser, ValidReply, NewGuildSettings, OverrideForumDefaults, MessageLinkEmbeds, PlatformIndicators, TypingIndicator, MemberCount, MutualGroupDMs, WhoReacted, and the other 🌐 + 🎨 rows of `docs/PLUGINS.md` marked 1.2.16 | Kennurken | ✅ 25.11, PR #68 (17 data parts, off by default; synthetic payload tests only, a live test-account check is still due) |
 | **1.2.17** 🟡 | Translate, ReviewDB, VoiceMessages (data part), XSOverlay | anyone | ⏳ |
-| **1.2.18** 🟢 | ShowHiddenChannels, ShowHiddenThings, Experiments (data part) | Kennurken | 🔎 in review (3 data parts; READY rewrites behind extra settings, off) |
+| **1.2.18** 🟢 | ShowHiddenChannels, ShowHiddenThings, Experiments (data part) | Kennurken | ✅ 25.11, PR #68 (3 data parts, off by default; READY rewrites behind their own settings, also off; synthetic tests only) |
 | **1.2.19** 🟡 | Owner's userplugins: SilentDelete, FakeDeafen, FakeDeafenDetector, localDevBadges, FollowUser, VoiceChatUtilities, rmcord, AntiRickroll (network parts) | Nanda | ⏳ |
 | **1.3.1** 🔴 | `wit/phoecord.wit` | Nanda | ✅ 23.11, PR #24 |
 | **1.3.2** 🔴 | WASM backend for `Chain` on wasmtime | Nanda | ✅ 23.11, PR #24 |
@@ -97,7 +97,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.4.2** 🔴 | CA and proxy autostart | Nanda | ✅ 23.11, PR #23; `phoecord setup` uses it since PR #33 |
 | **1.4.3** 🟡 | Installer GUI: dark red theme, tabs, motion, as easy as BetterDiscord/Vencord; terms screen; Plugins tab (install from file or link, rights shown first, on/off, remove) | Kennurken | ✅ 24.11, PR #66 (window + NSIS/MSI/DMG installers; checked by the owner on Windows 11 with Canary; macOS and Linux real installs after the release) |
 | **1.4.4** 🔴 | Full rollback | Nanda | ✅ 23.11, PR #23; `phoecord uninstall` since PR #33 |
-| **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Kennurken | 🔎 in review (`release.yml`; the tag-triggered run happens when the owner tags `v0.5.0`) |
+| **1.4.5** 🟡 | Releases: builds, `SHA256SUMS`, no signing | Kennurken | ✅ 25.11, PR #68 (`release.yml`; dry run passed on the fork; the first real run is the owner's `v0.5.0` tag) |
 | **1.4.6** 🔴 | Manual check on real Windows, macOS and Linux machines: `setup` → reboot → proxy runs and Discord connects; `uninstall` leaves no file, trust entry or autostart entry | Nanda | ✅ 24.11 on Windows (setup, shortcut, client through the proxy, proxy reuse, uninstall; owner's Stable untouched). After the release: real reboot, macOS, Linux, and a re-run once 1.4.9 lands |
 | **1.4.7** 🔴 | Terms of use (`TERMS.md`, English and Russian) that must be accepted before install, in the GUI and in `phoecord setup` | Nanda | ✅ 23.11, PR #38; text approved by the owner (the GUI screen is part of 1.4.3) |
 | **1.4.8** 🔴 | Fixes from the Windows check (1.4.6): `uninstall` removes a CA made by any command and stops a running proxy; `launch --channel stable/ptb/canary` (no silent default to Stable); `launch` reuses a running proxy; a Start-menu shortcut that starts the client through the proxy, so autostart is useful | Nanda | ✅ 24.11, PR #52 (all five fixed with tests; the Windows re-check is part of 1.4.6) |
@@ -107,7 +107,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ✅ 23.11, PR #10 |
 | **1.5.4** 🔴 | Inline detours and hook removal | Nanda | ✅ 23.11, PR #10 |
 | **1.5.5** 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
-| **1.5.6** 🟡 | Reinstall after a Discord update | Kennurken | 🔎 in review (`setup --loader` installs `version.dll`, `run`/`launch` put it back after an update; tests on fake Windows folders, no real Windows run yet) |
+| **1.5.6** 🟡 | Reinstall after a Discord update | Kennurken | ✅ 25.11, PR #68 (`setup --loader`, reinstall on `run`/`launch`; tests on fake Windows folders; real Windows check after the release) |
 | **1.5.7** 🔴 | Verify on 3 client versions | Nanda | ✅ 24.11 on Canary 1.0.1355 (loaded in all 7 processes, build detected, no crash). After the release: the 10-minute run on 3 consecutive client versions |
 | **1.5.8** 🟡 | Loader cost: act only in the main client process (skip `--type=` child processes) and hash `.text` from the mapped image instead of reading the whole exe (224 MB, about 140 ms in each of 7 processes) | Nanda | ⏳ |
 | **1.6.1** 🔴 | A map of GPUI | Nanda | ✅ 23.11, PR #12 |

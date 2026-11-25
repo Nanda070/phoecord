@@ -68,8 +68,8 @@ Branches, commits and PRs: [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for peopl
 <p>
   <a href="https://github.com/Nanda070" title="Nanda070"><img src="https://github.com/Nanda070.png?size=96" width="64" height="64" alt="Nanda070" /></a>
   <a href="https://github.com/matveee" title="matveee"><img src="https://github.com/matveee.png?size=96" width="64" height="64" alt="matveee" /></a>
-  <a href="https://github.com/buslan07" title="buslan07"><img src="https://github.com/buslan07.png?size=96" width="64" height="64" alt="buslan07" /></a>
   <a href="https://github.com/Kennurken" title="Kennurken"><img src="https://github.com/Kennurken.png?size=96" width="64" height="64" alt="Kennurken" /></a>
+  <a href="https://github.com/buslan07" title="buslan07"><img src="https://github.com/buslan07.png?size=96" width="64" height="64" alt="buslan07" /></a>
 </p>
 <!-- contributors:end -->
 
