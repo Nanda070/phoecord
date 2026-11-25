@@ -4,6 +4,10 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Changed
+
+- macOS: the minimum is now macOS 13 (Ventura), because the client is started with `open --env`, which macOS 13 added. Macs on macOS 11 and 12 cannot install 0.5.1.
+
 ### Fixed
 
 - Twelve data parts from 1.2.16 (MemberCount, MessageLinkEmbeds, ReadAllNotificationsButton, PauseInvitesForever, PlatformIndicators, UserVoiceShow, TypingIndicator, VcNarrator, NewGuildSettings, ValidReply, ValidUser, OverrideForumDefaults) read gateway dispatches as bare data while the proxy hands plugins the whole `{op, t, d}` frame, so they saw nothing in a real session; they now read `d` through `state::dispatch_data`, with a real-frame test each.

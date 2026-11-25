@@ -57,6 +57,8 @@ Write down right away: when it started (UTC), Discord client and version, PhoeCo
 - "address used by another program, not PhoeCord": something else holds the port; change `listen` in `config.toml`.
 - `phoecord setup --channel canary` adds a Start-menu shortcut "Discord Canary (PhoeCord)"; `phoecord uninstall` removes it.
 
+macOS 13 (Ventura) or later is required (the client starts with `open --env`).
+
 ### macOS: "Operation not permitted" / `installer.db` / "Installation paused"
 
 `launch.log` (`~/Library/Application Support/phoecord/`) shows `Reading .../discord/settings.json: Operation not permitted` or `unable to open database file: .../installer.db`, and Discord's updater says "Installation paused". macOS (TCC) denied a client that PhoeCord started as its own child. Fixed in 0.5.1: the client is started with `open -n -a`. On 0.5.0: update PhoeCord; or allow PhoeCord under System Settings, Privacy and Security, App Management / Full Disk Access, then start Discord again.

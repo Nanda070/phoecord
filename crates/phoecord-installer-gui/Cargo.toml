@@ -69,7 +69,7 @@ resources = [
 ]
 
 [package.metadata.packager.macos]
-minimum-system-version = "11.0"
+minimum-system-version = "13.0"
 
 [package.metadata.packager.nsis]
 # Per-user install (no administrator prompt), like Discord itself.
