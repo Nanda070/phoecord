@@ -3043,7 +3043,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "phoecord-cli"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -3070,7 +3070,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-core"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "flate2",
@@ -3079,7 +3079,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-i18n"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "fluent-bundle",
  "sys-locale",
@@ -3089,7 +3089,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-installer"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "dirs",
@@ -3102,7 +3102,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-installer-gui"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "dirs",
@@ -3125,7 +3125,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-loader"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "retour",
  "serde",
@@ -3136,7 +3136,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-plugin-runtime"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "phoecord-core",
  "serde",
@@ -3146,11 +3146,11 @@ dependencies = [
 
 [[package]]
 name = "phoecord-plugin-sdk"
-version = "0.1.0"
+version = "0.5.0"
 
 [[package]]
 name = "phoecord-plugins"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "phoecord-core",
  "phoecord-plugin-runtime",
@@ -3161,7 +3161,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-proxy"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "bytes",

@@ -4,6 +4,8 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-25
+
 ### Added
 
 - 1.2.16: data parts of 17 plugins with an on-screen part, all off by default: ValidUser, ValidReply, MessageLinkEmbeds, NewGuildSettings, OverrideForumDefaults (traffic fixes and settings), PauseInvitesForever, ReadAllNotificationsButton (commands), PlatformIndicators, TypingIndicator, UserVoiceShow, VcNarrator, MemberCount, BetterSessions, ImplicitRelationships, MutualGroupDMs, WhoReacted, MessageLatency (collected state shown by `/phoecord` commands or notifications). Shared trackers for them in `phoecord-plugins/src/state.rs`, `FnCmd` for closure commands. Their on-screen parts come in Phase 2.
