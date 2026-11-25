@@ -13,6 +13,27 @@ use std::path::{Path, PathBuf};
 
 /// The largest package accepted (unpacked), and the largest download.
 pub const MAX_BYTES: u64 = 32 * 1024 * 1024;
+/// A package's `i18n/<lang>.ftl` files: at most this many, each at most this big.
+const MAX_FTL_FILES: usize = 16;
+const MAX_FTL_BYTES: u64 = phoecord_plugin_runtime::package::MAX_FTL_BYTES;
+
+/// `i18n/<lang>.ftl` with `<lang>` like `ru` or `pt-BR`, nothing deeper.
+fn is_ftl(rel: &str) -> bool {
+    let Some(lang) = rel
+        .strip_prefix("i18n/")
+        .and_then(|r| r.strip_suffix(".ftl"))
+    else {
+        return false;
+    };
+    let b = lang.as_bytes();
+    let lower = |x: &[u8]| x.iter().all(u8::is_ascii_lowercase);
+    match b.len() {
+        2 => lower(b),
+        5 => lower(&b[..2]) && b[2] == b'-' && b[3..].iter().all(u8::is_ascii_uppercase),
+        _ => false,
+    }
+}
+
 /// Files copied out of a package; anything else in it is ignored.
 const KEEP: &[&str] = &[
     "plugin.toml",
@@ -189,6 +210,27 @@ impl Store {
                 total += m.len();
             }
         }
+        // `i18n/<lang>.ftl`: a file name that does not fit the pattern is ignored.
+        let mut ftl: Vec<(String, PathBuf)> = std::fs::read_dir(dir.join("i18n"))
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter_map(|e| {
+                let name = format!("i18n/{}", e.file_name().to_str()?);
+                (is_ftl(&name) && e.path().is_file()).then(|| (name, e.path()))
+            })
+            .collect();
+        ftl.sort();
+        if ftl.len() > MAX_FTL_FILES {
+            return Err(Error::TooBig);
+        }
+        for (_, path) in &ftl {
+            let len = std::fs::metadata(path)?.len();
+            if len > MAX_FTL_BYTES {
+                return Err(Error::TooBig);
+            }
+            total += len;
+        }
         if total > MAX_BYTES {
             return Err(Error::TooBig);
         }
@@ -199,6 +241,12 @@ impl Store {
             let from = dir.join(f);
             if from.is_file() {
                 std::fs::copy(&from, unpacked.join(f))?;
+            }
+        }
+        if !ftl.is_empty() {
+            std::fs::create_dir(unpacked.join("i18n"))?;
+            for (name, from) in &ftl {
+                std::fs::copy(from, unpacked.join(name))?;
             }
         }
         self.finish(work, verify)
@@ -233,29 +281,53 @@ impl Store {
         let unpacked = work.join("package");
         std::fs::create_dir(&unpacked)?;
         let mut total = 0u64;
-        for i in 0..zip.len() {
-            let mut f = zip.by_index(i).map_err(|_| Error::NotAPackage)?;
-            let Some(p) = f.enclosed_name() else {
-                return Err(Error::UnsafePath(f.name().to_string()));
-            };
-            let Ok(rel) = p.strip_prefix(&prefix) else {
-                continue;
-            };
-            let Some(name) = rel.to_str().filter(|n| KEEP.contains(n)) else {
-                continue;
-            };
-            if f.is_dir() {
-                continue;
+        let mut ftl_files = 0usize;
+        let mut unpack = |work: &Path| -> Result<(), Error> {
+            for i in 0..zip.len() {
+                let mut f = zip.by_index(i).map_err(|_| Error::NotAPackage)?;
+                let Some(p) = f.enclosed_name() else {
+                    return Err(Error::UnsafePath(f.name().to_string()));
+                };
+                let Ok(rel) = p.strip_prefix(&prefix) else {
+                    continue;
+                };
+                // Compare with `/` between components on every OS.
+                let name = rel
+                    .components()
+                    .map(|c| c.as_os_str().to_str().unwrap_or("\u{0}"))
+                    .collect::<Vec<_>>()
+                    .join("/");
+                let ftl = is_ftl(&name);
+                if !(KEEP.contains(&name.as_str()) || ftl) || f.is_dir() {
+                    continue;
+                }
+                let cap = if ftl {
+                    ftl_files += 1;
+                    if ftl_files > MAX_FTL_FILES {
+                        return Err(Error::TooBig);
+                    }
+                    MAX_FTL_BYTES
+                } else {
+                    MAX_BYTES
+                };
+                let mut buf = Vec::new();
+                (&mut f).take(cap + 1).read_to_end(&mut buf)?;
+                total += buf.len() as u64;
+                if buf.len() as u64 > cap || total > MAX_BYTES {
+                    return Err(Error::TooBig);
+                }
+                let to = work.join("package").join(&name);
+                if ftl {
+                    std::fs::create_dir_all(to.parent().unwrap())?;
+                }
+                std::fs::write(to, buf)?;
             }
-            let mut buf = Vec::new();
-            (&mut f).take(MAX_BYTES + 1 - total).read_to_end(&mut buf)?;
-            total += buf.len() as u64;
-            if total > MAX_BYTES {
-                let _ = std::fs::remove_dir_all(&work);
-                self.tidy();
-                return Err(Error::TooBig);
-            }
-            std::fs::write(unpacked.join(name), buf)?;
+            Ok(())
+        };
+        if let Err(e) = unpack(&work) {
+            let _ = std::fs::remove_dir_all(&work);
+            self.tidy();
+            return Err(e);
         }
         if !unpacked.join("plugin.wasm").is_file() {
             let _ = std::fs::remove_dir_all(&work);
@@ -532,6 +604,93 @@ fetch = ["api.example.com"]
             Error::UnsafePath(_)
         ));
         assert!(!t.path().join("data/evil.txt").exists());
+    }
+
+    #[test]
+    fn only_plain_language_files_count_as_strings() {
+        for ok in ["i18n/ru.ftl", "i18n/en.ftl", "i18n/pt-BR.ftl"] {
+            assert!(is_ftl(ok), "{ok}");
+        }
+        for bad in [
+            "i18n/RU.ftl",
+            "i18n/rus.ftl",
+            "i18n/pt-br.ftl",
+            "i18n/sub/ru.ftl",
+            "i18n/../x.ftl",
+            "i18n/ru.txt",
+            "ru.ftl",
+            "xi18n/ru.ftl",
+        ] {
+            assert!(!is_ftl(bad), "{bad}");
+        }
+    }
+
+    #[test]
+    fn strings_survive_staging_from_a_zip_and_a_folder() {
+        let t = tempfile::tempdir().unwrap();
+        let s = store(t.path());
+        let z = zip_of(&[
+            ("pkg/plugin.toml", TOML.as_bytes()),
+            ("pkg/plugin.wasm", b"x"),
+            ("pkg/i18n/ru.ftl", "hi = Привет".as_bytes()),
+            ("pkg/i18n/deeper/en.ftl", b"hi = no"),
+            ("pkg/i18n/notes.txt", b"no"),
+        ]);
+        let c = s.stage_zip(&z, &ok).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(c.dir.join("i18n/ru.ftl")).unwrap(),
+            "hi = Привет"
+        );
+        assert!(!c.dir.join("i18n/deeper").exists());
+        assert!(!c.dir.join("i18n/notes.txt").exists());
+        s.discard(&c);
+
+        let src = t.path().join("src");
+        std::fs::create_dir_all(src.join("i18n")).unwrap();
+        std::fs::write(src.join("plugin.toml"), TOML).unwrap();
+        std::fs::write(src.join("plugin.wasm"), b"x").unwrap();
+        std::fs::write(src.join("i18n/en.ftl"), "hi = Hi").unwrap();
+        std::fs::write(src.join("i18n/junk.ftl"), "hi = no").unwrap();
+        let c = s.stage_path(&src, &ok).unwrap();
+        assert!(c.dir.join("i18n/en.ftl").is_file());
+        assert!(!c.dir.join("i18n/junk.ftl").exists());
+    }
+
+    #[test]
+    fn unsafe_oversized_and_too_many_strings_are_refused() {
+        let t = tempfile::tempdir().unwrap();
+        let s = store(t.path());
+        let base = [("plugin.toml", TOML.as_bytes()), ("plugin.wasm", &b"x"[..])];
+        let with = |extra: &[(&str, &[u8])]| zip_of(&[&base[..], extra].concat());
+        // A real escape is refused; `i18n/../x.ftl` stays inside the archive, is not an
+        // `i18n/<lang>.ftl` and is ignored.
+        assert!(matches!(
+            s.stage_zip(&with(&[("../x.ftl", b"x")]), &ok).unwrap_err(),
+            Error::UnsafePath(_)
+        ));
+        let c = s.stage_zip(&with(&[("i18n/../x.ftl", b"x")]), &ok).unwrap();
+        assert!(!c.dir.join("x.ftl").exists() && !c.dir.join("i18n").exists());
+        s.discard(&c);
+        let big = vec![b'a'; MAX_FTL_BYTES as usize + 1];
+        assert_eq!(
+            s.stage_zip(&with(&[("i18n/ru.ftl", &big)]), &ok)
+                .unwrap_err(),
+            Error::TooBig
+        );
+        let names: Vec<String> = (b'a'..=b'z')
+            .take(17)
+            .map(|c| format!("i18n/{}{}.ftl", c as char, c as char))
+            .collect();
+        let many: Vec<(&str, &[u8])> = names.iter().map(|n| (n.as_str(), &b"k = v"[..])).collect();
+        assert_eq!(s.stage_zip(&with(&many), &ok).unwrap_err(), Error::TooBig);
+        // A folder with an oversized file is refused too, and nothing is left staged.
+        let src = t.path().join("src");
+        std::fs::create_dir_all(src.join("i18n")).unwrap();
+        std::fs::write(src.join("plugin.toml"), TOML).unwrap();
+        std::fs::write(src.join("plugin.wasm"), b"x").unwrap();
+        std::fs::write(src.join("i18n/ru.ftl"), &big).unwrap();
+        assert_eq!(s.stage_path(&src, &ok).unwrap_err(), Error::TooBig);
+        assert!(!s.staging.exists());
     }
 
     #[test]

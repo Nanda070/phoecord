@@ -99,7 +99,7 @@ Same logic, different packaging: a crate built for `wasm32-wasip2` against `wit/
 Notification titles and bodies, `/phoecord` answers and anything else the user reads go through `host.t(key, args)` (WIT: `host.t`, no right needed). `args` are `(name, value)` string pairs for `{ $name }` placeholders; pass numbers as text and avoid plural forms in the message (write "Sessions: 3", not "3 sessions").
 
 - **Built-in plugin:** `crates/phoecord-plugins/i18n/en/<plugin_id>.ftl` and `.../ru/<plugin_id>.ftl` (one file per plugin: keys cannot clash and a plugin's strings are found in one place), plus the two lines in `I18N` in `crates/phoecord-plugins/src/lib.rs`. `scripts/check_i18n.py` fails when a `ru` key or variable is missing or a file is not listed. The text of a `/phoecord` subcommand answer is built while the `commands` plugin runs, so its keys go to `commands.ftl`, prefixed with your plugin id.
-- **WASM package:** `plugins/<id>/i18n/<lang>.ftl` (`en`, `ru`) next to `plugin.toml`; it is loaded with the package and reloaded when edited.
+- **WASM package:** `plugins/<id>/i18n/<lang>.ftl` (`en`, `ru`) next to `plugin.toml`; it is loaded with the package and reloaded when edited. A file over 256 KB is skipped and reported in the log. The installer window copies `i18n/<lang>.ftl` too (`<lang>` like `ru` or `pt-BR`, nothing deeper, at most 16 files of 256 KB).
 - Lookup: the user's language, then your `en` file, then the key itself. English is the source: write `en` first and keep the key names `lower-case-with-hyphens`.
 - Text the *user* writes (templates, rules) stays theirs: translate only your defaults and titles.
 
