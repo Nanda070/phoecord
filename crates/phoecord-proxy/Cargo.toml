@@ -40,3 +40,8 @@ workspace = true
 
 [dev-dependencies]
 phoecord-plugins.workspace = true
+criterion = { version = "0.8", default-features = false }
+
+[[bench]]
+name = "chain"
+harness = false
