@@ -67,7 +67,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.1.12** 🟡 | Transport boundary: the proxy as one backend of the plugin chain, ready for an in-process backend | Nanda | ⏳ |
 | **1.1.13** 🔴 | `Host::rest` (Discord API calls as the user's own client session) and `Host::fetch` (listed outside HTTPS hosts) | Nanda | ✅ 24.11, PR #59 |
 | **1.2.1** 🔴 | `silent_typing` | matvee | ✅ |
-| **1.2.2** 🟡 | `unindent` | matvee | ✅ |
+| **1.2.2** 🟡 | `unindent` | matvee | ✅ 25.11, PR #81 (sent and edited messages; text inside `payload_json` of uploads is not unindented) |
 | **1.2.3** 🟡 | `game_activity_toggle` | Nanda | ✅ 23.11, PR #21 |
 | **1.2.4** 🟡 | `relationship_notifier` | Nanda | ✅ 23.11, PR #21 |
 | **1.2.5** 🔴 | `fake_nitro` (emoji) | Nanda | ✅ 23.11, PR #21 |

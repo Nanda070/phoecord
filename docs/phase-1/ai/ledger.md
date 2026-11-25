@@ -107,3 +107,4 @@ Ruling: PhoeCord supports macOS 13 (Ventura) and later (owner Nanda, 2026-11-25,
 2026-11-25 16:30 | 1.2.19 | complete | Kennurken | merged in PR #79 on the owner's word ("проверь сразу все пр и мержи", translated: "check all PRs at once and merge"), which also confirms the 1.2.19 rulings Kennurken relayed
 2026-11-25 16:30 | 1.5.8 | complete | loader-cost-1-5-8/Claude | merged in PR #73 on the owner's word, before the Canary check; check after the release: the .text hash in loader.log stays dcf46eba..., one `client build` line per start, detection under 20 ms
 2026-11-24 00:10 | 1.2.2 | review | matvee | native `unindent` with 6 tests, branch feat/unindent
+2026-11-25 17:00 | 1.2.2 | complete | matvee | merged in PR #81 after the coordinator rebased it onto main (88 commits behind) and added `Manifest.fetch`; uploads with `payload_json` are a follow-up
