@@ -110,6 +110,7 @@ plugin-desc-silent_typing = Your typing indicator is never sent
 plugin-desc-clear_urls = Strip tracking parameters from links you send
 plugin-desc-unindent = Strip shared indentation from code blocks you send
 plugin-desc-friend_invites = Create, list and revoke friend invite links with commands
+plugin-desc-server_info = Show facts about a server: owner, age, boosts, channels, roles
 plugin-desc-view_raw = View the raw JSON of a message, channel, server, role or user
 plugin-desc-unsuppress_embeds = Show the embeds of a message again, or hide them
 plugin-desc-commands = The /phoecord slash command: plugins, toggle

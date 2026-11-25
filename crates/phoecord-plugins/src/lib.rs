@@ -39,6 +39,7 @@ pub mod read_all_notifications;
 pub mod relationship_notifier;
 pub mod rmcord;
 pub mod send_timestamps;
+pub mod server_info;
 pub mod show_hidden_channels;
 pub mod show_hidden_things;
 pub mod silent_delete;
@@ -141,6 +142,16 @@ pub const I18N: &[(&str, &str, &str)] = &[
     ("rmcord", "en", include_str!("../i18n/en/rmcord.ftl")),
     ("rmcord", "ru", include_str!("../i18n/ru/rmcord.ftl")),
     (
+        "server_info",
+        "en",
+        include_str!("../i18n/en/server_info.ftl"),
+    ),
+    (
+        "server_info",
+        "ru",
+        include_str!("../i18n/ru/server_info.ftl"),
+    ),
+    (
         "silent_delete",
         "en",
         include_str!("../i18n/en/silent_delete.ftl"),
@@ -224,6 +235,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let quest_master = quest_master::QuestMaster::new();
     let quest_master_command = quest_master.command();
     // Stage 1.2.12 commands (off by default).
+    let server_info = server_info::ServerInfo::new();
+    let server_info_command = server_info.command();
     let view_raw = view_raw::ViewRaw::new();
     let view_raw_command = view_raw.command();
     let unsuppress_embeds = unsuppress_embeds::UnsuppressEmbeds::new();
@@ -318,6 +331,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     }
     commands = commands.with(unsuppress_embeds_command);
     commands = commands.with(view_raw_command);
+    commands = commands.with(server_info_command);
     for c in friend_invites_commands {
         commands = commands.with(c);
     }

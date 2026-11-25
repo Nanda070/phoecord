@@ -154,7 +154,7 @@ fn line(host: &dyn Host, invite: &Val, created: bool) -> String {
 }
 
 /// Unix seconds of an ISO 8601 time such as `2026-11-25T17:00:00.123+00:00` or `…Z`.
-fn iso_unix(s: &str) -> Option<i64> {
+pub(crate) fn iso_unix(s: &str) -> Option<i64> {
     let (date, time) = s.split_once('T')?;
     let mut d = date.split('-').map(|p| p.parse::<i64>().ok());
     let (y, m, day) = (d.next()??, d.next()??, d.next()??);
