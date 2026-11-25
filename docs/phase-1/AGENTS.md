@@ -25,7 +25,7 @@ If unsure, stop and ask the human to check `docs/phase-1/README.md`.
 
 ## Step 2: work
 
-- Branches: `feat/<short>`, `fix/<short>`, `docs/<short>` from a fresh `origin/main`. One task per PR. Nanda merges with **Squash and merge** after green CI.
+- Branches: `feat/<short>`, `fix/<short>`, `docs/<short>` from a fresh `origin/main`. One task per PR. Nanda merges with **Rebase and merge** after green CI, so every commit lands in `main`: keep commits clean (one logical change, Conventional Commits, builds where it can). A branch with `wip` or fixup commits is squash-merged instead.
 - Before pushing: `bash scripts/check.sh` (Windows: `powershell -File scripts/check.ps1`).
 - Do not change `crates/phoecord-core/src/plugin.rs` unless the task says so and the developer is Nanda. A contributor who needs an API change writes a `blocked` line in the ledger and tells their human.
 - Porting a Vencord plugin: read its Vencord source first and reuse its logic, data and setting names, with the attribution header (`docs/PORTING_PLUGINS.md` §0).
