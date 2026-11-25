@@ -17,6 +17,7 @@ pub mod fake_deafen;
 pub mod fake_deafen_detector;
 pub mod fake_nitro;
 pub mod follow_user;
+pub mod friend_invites;
 pub mod game_activity_toggle;
 pub mod i_love_spam;
 pub mod implicit_relationships;
@@ -82,6 +83,16 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "follow_user",
         "ru",
         include_str!("../i18n/ru/follow_user.ftl"),
+    ),
+    (
+        "friend_invites",
+        "en",
+        include_str!("../i18n/en/friend_invites.ftl"),
+    ),
+    (
+        "friend_invites",
+        "ru",
+        include_str!("../i18n/ru/friend_invites.ftl"),
     ),
     (
         "relationship_notifier",
@@ -198,6 +209,9 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let silent_delete_commands = silent_delete.commands();
     let quest_master = quest_master::QuestMaster::new();
     let quest_master_command = quest_master.command();
+    // Stage 1.2.12 commands (off by default).
+    let friend_invites = friend_invites::FriendInvites::new();
+    let friend_invites_commands = friend_invites.commands();
     let mut plugins: Vec<Box<dyn Plugin>> = vec![
         Box::new(no_track::NoTrack::new()),
         Box::new(silent_typing::SilentTyping::new()),
@@ -243,6 +257,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(rmcord),
         Box::new(silent_delete),
         Box::new(quest_master),
+        Box::new(friend_invites),
     ];
     // `/phoecord plugins` lists everything above and the commands plugin itself. Register more
     // `/phoecord` subcommands here with `Commands::with`.
@@ -280,6 +295,9 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         commands = commands.with(c);
     }
     for c in follow_user_commands {
+        commands = commands.with(c);
+    }
+    for c in friend_invites_commands {
         commands = commands.with(c);
     }
     plugins.push(Box::new(commands));
