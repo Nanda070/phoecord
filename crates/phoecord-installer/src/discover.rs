@@ -494,7 +494,8 @@ mod tests {
     #[test]
     fn a_linked_folder_is_listed_once() {
         let t = tempfile::tempdir().unwrap();
-        let real = t.path().join("D/DiscordCanary");
+        // Join part by part: `mklink` below rejects a path with `/` in it.
+        let real = t.path().join("D").join("DiscordCanary");
         touch(&real.join("app-1.0.1360/DiscordCanary.exe"));
         let local = t.path().join("Local");
         fs::create_dir_all(&local).unwrap();
@@ -510,7 +511,13 @@ mod tests {
                     .arg(&link)
                     .arg(&real)
                     .status()
-                    .map(|_| ())
+                    .and_then(|s| {
+                        if s.success() {
+                            Ok(())
+                        } else {
+                            Err(std::io::Error::other(format!("mklink /J failed: {s}")))
+                        }
+                    })
             })
             .unwrap();
         let found = discover_in(&Roots {
