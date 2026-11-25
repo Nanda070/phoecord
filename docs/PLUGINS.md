@@ -33,7 +33,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | AlwaysExpandRoles | Expand the role list in profile popouts | 🎨 UI | 2 |
 | AlwaysTrust | Skip untrusted-domain and suspicious-file warnings | 🎨 UI | 2 |
 | AnonymiseFileNames | Anonymise uploaded file names | 🌐 Network | done (cloud uploads; the per-file toggle button is Phase 2) |
-| AutoDNDWhilePlaying | Set your status automatically while a game runs | 🌐 Network | 1.2.13 |
+| AutoDNDWhilePlaying | Set your status automatically while a game runs | 🌐 Network | done (shown status only, the setting stays) |
 | BetterFolders | Server folders in their own sidebar | 🎨 UI | 2 |
 | BetterGifAltText | GIF alt text from tags or file name | 🎨 UI | 2 (Vencord only changes how the client renders the image; nothing is sent) |
 | BetterGifPicker | Open the GIF picker on favourites | 🎨 UI | 2 |
@@ -60,6 +60,9 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | CustomCommands | Your own slash commands and tags | 🌐 Network | done — `/phoecord tags`, `/phoecord tag` |
 | CustomIdle | Change or disable auto-idle | 🌐 Network | 1.2.13 |
 | CustomRPC | Fully custom Rich Presence | 🌐 Network | 1.2.13 |
+| CustomCommands | Your own slash commands and tags | 🌐 Network | 1.2.12 |
+| CustomIdle | Change or disable auto-idle | 🌐 Network | done (0 or over 10 minutes; `/phoecord exitidle`) |
+| CustomRPC | Fully custom Rich Presence | 🌐 Network | done — settings in `config.toml`, `/phoecord rpc` / 2 (settings page, preview) |
 | Dearrow | Less clickbait YouTube embed titles and thumbnails | 🌐 Network | 1.2.15 |
 | Decor | Custom avatar decorations | 🌐 + 🎨 | 1.2.14 / 2 |
 | DevCompanion | Vencord developer companion | ⛔ N/A | Vencord dev tool |
@@ -84,7 +87,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | GifProviderSwitcher | Tenor or Giphy for GIF search | 🌐 Network | 1.2.15 |
 | GreetStickerPicker | Pick any greet sticker | 🎨 UI | 2 |
 | HideMedia | Hide attachments and embeds per message | 🎨 UI | 2 |
-| IgnoreActivities | Hide chosen activities from your status | 🌐 Network | 1.2.13 |
+| IgnoreActivities | Hide chosen activities from your status | 🌐 Network | done — `/phoecord activities`, `/phoecord ignoreactivity` |
 | iLoveSpam | Show messages from likely spammers | 🌐 Network | done |
 | ImageFilename | Image file name on hover | 🎨 UI | 2 |
 | ImageLink | Never hide image links | 🎨 UI | 2 (the client decides from the embed type; no wire field keeps the link) |
@@ -101,7 +104,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | MessageLinkEmbeds | Previews of linked messages | 🌐 + 🎨 | done: data — a rich embed per linked message, `/phoecord linkembeds` / 2 (message component) |
 | MessageLogger | Keep deleted and edited messages | 🌐 + 🎨 | done: data / 2.3 |
 | MoreQuickReactions | More quick reactions | 🎨 UI | 2 |
-| MusicRichPresence | Last.fm and ListenBrainz Rich Presence | 🌐 Network | 1.2.13 |
+| MusicRichPresence | Last.fm and ListenBrainz Rich Presence | 🌐 Network | done (no self-hosted ListenBrainz) |
 | MutedServersActivityBadge | Activity badge on muted servers | 🎨 UI | 2 |
 | MutualGroupDMs | Mutual group DMs on profiles | 🌐 + 🎨 | done: data — `/phoecord mutualgdms <user>` / 2 (profile tab) |
 | NewGuildSettings | Auto-mute and set up servers you join | 🌐 Network | done: new servers get your mute/suppress settings, `/phoecord newguildsettings` |
