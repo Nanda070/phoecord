@@ -4,8 +4,8 @@
 //! (a missing key is logged once). Other crates keep their own strings in
 //! `crates/<crate>/i18n/{en,ru}/main.ftl`; `scripts/check_i18n.py` keeps the two in sync.
 
-use std::collections::HashSet;
-use std::sync::Mutex;
+use std::collections::{HashMap, HashSet};
+use std::sync::{Mutex, RwLock};
 
 use fluent_bundle::concurrent::FluentBundle;
 use fluent_bundle::{FluentArgs, FluentResource};
@@ -167,6 +167,97 @@ impl Localizer {
     }
 }
 
+/// The strings of plugins: one Fluent bundle per `(plugin id, language)`, from the plugin's own
+/// `i18n/<lang>.ftl` (built-in plugins ship theirs in `crates/phoecord-plugins/i18n/<lang>/<id>.ftl`).
+/// Behind `Host::t`. Lookup: the requested language, then English, then the key (logged once).
+#[derive(Default)]
+pub struct PluginStrings {
+    bundles: RwLock<HashMap<(String, String), Bundle>>,
+    reported: Mutex<HashSet<String>>,
+}
+
+impl PluginStrings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set (or replace) the bundle of `plugin` for `lang`. A syntax error keeps the messages
+    /// that did parse.
+    pub fn set(&self, plugin: &str, lang: &str, ftl: &str) {
+        let Some(code) = normalize(lang) else {
+            tracing::warn!(
+                plugin,
+                lang,
+                "plugin strings: unsupported language; ignored"
+            );
+            return;
+        };
+        let b = bundle(&code, ftl);
+        self.bundles
+            .write()
+            .unwrap()
+            .insert((plugin.to_string(), code), b);
+    }
+
+    /// Replace everything `plugin` has with `files` (`(lang, ftl text)` pairs). Used when a plugin
+    /// package is (re)loaded, so a removed `.ftl` file disappears too.
+    pub fn replace_plugin(&self, plugin: &str, files: &[(String, String)]) {
+        let mut next = HashMap::new();
+        for (lang, ftl) in files {
+            match normalize(lang) {
+                Some(code) => {
+                    next.insert((plugin.to_string(), code.clone()), bundle(&code, ftl));
+                }
+                None => tracing::warn!(
+                    plugin,
+                    lang,
+                    "plugin strings: unsupported language; ignored"
+                ),
+            }
+        }
+        let mut all = self.bundles.write().unwrap();
+        all.retain(|(p, _), _| p != plugin);
+        all.extend(next);
+    }
+
+    /// Drop every bundle of `plugin`.
+    pub fn remove_plugin(&self, plugin: &str) {
+        self.bundles
+            .write()
+            .unwrap()
+            .retain(|(p, _), _| p != plugin);
+    }
+
+    /// The message `key` of `plugin` in `lang`, English, or the key itself. `args` are string
+    /// values for `{ $name }` placeholders.
+    pub fn t(&self, plugin: &str, lang: &str, key: &str, args: &[(&str, &str)]) -> String {
+        let mut fluent = FluentArgs::new();
+        for (k, v) in args {
+            fluent.set(k.to_string(), v.to_string());
+        }
+        let code = normalize(lang).unwrap_or_else(|| "en".to_string());
+        let bundles = self.bundles.read().unwrap();
+        for l in [code.as_str(), "en"] {
+            if let Some(text) = bundles
+                .get(&(plugin.to_string(), l.to_string()))
+                .and_then(|b| format(b, key, Some(&fluent)))
+            {
+                return text;
+            }
+        }
+        drop(bundles);
+        let first = self
+            .reported
+            .lock()
+            .map(|mut set| set.insert(format!("{plugin}/{key}")))
+            .unwrap_or(false);
+        if first {
+            tracing::warn!(plugin, key, lang = %code, "missing plugin translation key");
+        }
+        key.to_string()
+    }
+}
+
 fn source(code: &str) -> &'static str {
     match code {
         "ru" => RU,
@@ -279,5 +370,30 @@ mod tests {
         let x = resolve_language(Some("de"), None, Some("de"));
         assert_eq!((x.lang.as_str(), x.source), ("en", Source::Default));
         assert_eq!(x.warnings.len(), 1);
+    }
+
+    #[test]
+    fn plugin_strings_fall_back_to_english_then_the_key() {
+        let s = PluginStrings::new();
+        s.set(
+            "p",
+            "en",
+            "hi = Hello, { $who }!
+only-en = English only",
+        );
+        s.set("p", "ru", "hi = Привет, { $who }!");
+        assert_eq!(s.t("p", "ru", "hi", &[("who", "Мир")]), "Привет, Мир!");
+        assert_eq!(s.t("p", "en", "hi", &[("who", "World")]), "Hello, World!");
+        assert_eq!(s.t("p", "ru", "only-en", &[]), "English only");
+        assert_eq!(s.t("p", "ru", "nope", &[]), "nope");
+        assert_eq!(
+            s.t("other", "ru", "hi", &[]),
+            "hi",
+            "bundles are per plugin"
+        );
+        s.replace_plugin("p", &[("en".into(), "hi = New".into())]);
+        assert_eq!(s.t("p", "ru", "hi", &[]), "New");
+        s.remove_plugin("p");
+        assert_eq!(s.t("p", "en", "hi", &[]), "hi");
     }
 }
