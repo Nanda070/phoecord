@@ -16,10 +16,12 @@ pub mod commands;
 pub mod custom_commands;
 pub mod custom_idle;
 pub mod custom_rpc;
+pub mod dearrow;
 pub mod experiments;
 pub mod fake_deafen;
 pub mod fake_deafen_detector;
 pub mod fake_nitro;
+pub mod fix_images_quality;
 pub mod follow_user;
 pub mod friend_invites;
 pub mod game_activity_toggle;
@@ -321,6 +323,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let auto_dnd_while_playing = auto_dnd_while_playing::AutoDndWhilePlaying::new();
     let mut plugins: Vec<Box<dyn Plugin>> = vec![
         Box::new(no_track::NoTrack::new()),
+        Box::new(dearrow::Dearrow::new()),
+        Box::new(fix_images_quality::FixImagesQuality::new()),
         Box::new(silent_typing::SilentTyping::new()),
         Box::new(clear_urls::ClearUrls::new()),
         Box::new(unindent::Unindent::new()),

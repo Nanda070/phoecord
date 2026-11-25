@@ -60,7 +60,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | CustomCommands | Your own slash commands and tags | 🌐 Network | done — `/phoecord tags`, `/phoecord tag` |
 | CustomIdle | Change or disable auto-idle | 🌐 Network | done (0 or over 10 minutes; `/phoecord exitidle`) |
 | CustomRPC | Fully custom Rich Presence | 🌐 Network | done — settings in `config.toml`, `/phoecord rpc` / 2 (settings page, preview) |
-| Dearrow | Less clickbait YouTube embed titles and thumbnails | 🌐 Network | 1.2.15 |
+| Dearrow | Less clickbait YouTube embed titles and thumbnails | 🌐 Network | done: titles and thumbnails replaced in new and loaded messages; the toggle button is Phase 2, thumbnails unverified on a live client |
 | Decor | Custom avatar decorations | 🌐 + 🎨 | 1.2.14 / 2 |
 | DevCompanion | Vencord developer companion | ⛔ N/A | Vencord dev tool |
 | DirectFileDownload | Download files directly | 🎨 UI | 2 |
@@ -74,14 +74,14 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | FakeProfileThemes | Profile themes hidden in the bio | 🌐 Network | 1.2.14 |
 | FavoriteEmojiFirst | Favourite emoji first in autocomplete | 🎨 UI | 2 |
 | FixCodeblockGap | Remove the gap under code blocks | 🖌️ Theme | 2.3 |
-| FixImagesQuality | Load images at original resolution | 🌐 Network | 1.2.15 |
+| FixImagesQuality | Load images at original resolution | 🌐 Network | partial: `originalImagesInChat` only (image attachments); the default optimised mode needs a UI hook *(2)*; unverified on a live client |
 | FixSpotifyEmbeds | Volume for Spotify embeds | 🎨 UI | 2 |
 | ForceOwnerCrown | Owner crown on large servers | 🎨 UI | 2 |
 | FriendInvites | Friend invite links via commands | 🌐 Network | done — `/phoecord create-friend-invite`, `view-friend-invites`, `revoke-friend-invites` |
 | FullSearchContext | Full context menus on search results | 🎨 UI | 2 |
 | GameActivityToggle | Toggle showing your game | 🌐 Network | done |
 | GifPaste | Insert GIF links instead of sending | 🎨 UI | 2 |
-| GifProviderSwitcher | Tenor or Giphy for GIF search | 🌐 Network | 1.2.15 |
+| GifProviderSwitcher | Tenor or Giphy for GIF search | 🌐 Network | 1.2.15, blocked: the GIF search text is in the query string, which plugin routes do not carry |
 | GreetStickerPicker | Pick any greet sticker | 🎨 UI | 2 |
 | HideMedia | Hide attachments and embeds per message | 🎨 UI | 2 |
 | IgnoreActivities | Hide chosen activities from your status | 🌐 Network | done — `/phoecord activities`, `/phoecord ignoreactivity` |
