@@ -151,3 +151,31 @@ fn editing_an_ftl_file_is_picked_up_by_the_hot_reload() {
         "Привет, Мир!|English only!"
     );
 }
+
+#[test]
+fn an_oversized_ftl_is_skipped_and_reported() {
+    use phoecord_plugin_runtime::package::MAX_FTL_BYTES;
+    let root = TempDir::new();
+    let dir = write_package(&root.0, "greeter", 1, "events = [\"dispatch\"]");
+    write_ftl(&dir, "en", EN);
+    let big = format!(
+        "greeting = {}
+",
+        "x".repeat(MAX_FTL_BYTES as usize)
+    );
+    write_ftl(&dir, "ru", &big);
+    let strings = Arc::new(PluginStrings::new());
+    let plugin = PackagePlugin::load_with(&common::runtime(), &dir, Some(strings.clone())).unwrap();
+    let chain = Chain::new(vec![Box::new(plugin) as Box<dyn Plugin>]);
+    let mut host = StringsHost::new(&strings, "ru");
+    // Russian was skipped, so English answers.
+    assert_eq!(asked(&chain, &mut host), "Hello, Мир!|English only");
+    assert!(
+        host.inner
+            .logs
+            .iter()
+            .any(|l| l.contains("ru.ftl") && l.contains("skipped")),
+        "{:?}",
+        host.inner.logs
+    );
+}

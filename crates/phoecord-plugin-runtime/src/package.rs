@@ -325,12 +325,23 @@ fn ftl_files(dir: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+/// The largest `i18n/<lang>.ftl` the runtime reads; a bigger file is skipped and reported.
+pub const MAX_FTL_BYTES: u64 = 256 * 1024;
+
 /// The package's strings as `(language, ftl text)`. An unreadable file is skipped and reported
 /// in `problems`.
 fn read_i18n(dir: &Path, problems: &mut Vec<String>) -> Vec<(String, String)> {
     let mut out = Vec::new();
     for p in ftl_files(dir) {
         let lang = p.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
+        if std::fs::metadata(&p).is_ok_and(|m| m.len() > MAX_FTL_BYTES) {
+            problems.push(format!(
+                "{} is larger than {} KB and was skipped",
+                p.display(),
+                MAX_FTL_BYTES / 1024
+            ));
+            continue;
+        }
         match std::fs::read_to_string(&p) {
             Ok(text) => out.push((lang.to_string(), text)),
             Err(e) => problems.push(format!("cannot read {}: {e}", p.display())),
