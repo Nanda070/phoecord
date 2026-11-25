@@ -14,6 +14,7 @@ pub mod better_sessions;
 pub mod clear_urls;
 pub mod commands;
 pub mod custom_commands;
+pub mod custom_idle;
 pub mod experiments;
 pub mod fake_deafen;
 pub mod fake_deafen_detector;
@@ -92,6 +93,14 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "custom_commands",
         "ru",
         include_str!("../i18n/ru/custom_commands.ftl"),
+        "custom_idle",
+        "en",
+        include_str!("../i18n/en/custom_idle.ftl"),
+    ),
+    (
+        "custom_idle",
+        "ru",
+        include_str!("../i18n/ru/custom_idle.ftl"),
     ),
     (
         "follow_user",
@@ -288,6 +297,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let friend_invites = friend_invites::FriendInvites::new();
     let friend_invites_commands = friend_invites.commands();
     // Stage 1.2.13 presence plugins (off by default).
+    let custom_idle = custom_idle::CustomIdle::new();
+    let custom_idle_command = custom_idle.command();
     let ignore_activities = ignore_activities::IgnoreActivities::new();
     let ignore_activities_commands = ignore_activities.commands();
     let auto_dnd_while_playing = auto_dnd_while_playing::AutoDndWhilePlaying::new();
@@ -339,6 +350,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(quest_master),
         Box::new(friend_invites),
         Box::new(unsuppress_embeds),
+        Box::new(custom_idle),
         Box::new(ignore_activities),
     ];
     // `/phoecord plugins` lists everything above and the commands plugin itself. Register more
@@ -395,6 +407,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     for c in ignore_activities_commands {
         commands = commands.with(c);
     }
+    commands = commands.with(custom_idle_command);
     plugins.push(Box::new(commands));
     plugins
 }

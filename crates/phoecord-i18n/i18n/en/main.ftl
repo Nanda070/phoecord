@@ -116,6 +116,7 @@ plugin-desc-spotify_share_commands = Share your current Spotify track, album or 
 plugin-desc-server_info = Show facts about a server: owner, age, boosts, channels, roles
 plugin-desc-view_raw = View the raw JSON of a message, channel, server, role or user
 plugin-desc-unsuppress_embeds = Show the embeds of a message again, or hide them
+plugin-desc-custom_idle = Change or switch off the time before you show as idle
 plugin-desc-ignore_activities = Keep chosen games and activities out of your status for others
 plugin-desc-auto_dnd_while_playing = Show Do Not Disturb (or another status) while you play a game
 plugin-desc-commands = The /phoecord slash command: plugins, toggle
