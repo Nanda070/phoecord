@@ -9,6 +9,7 @@ use phoecord_core::Plugin;
 
 pub mod anonymise_file_names;
 pub mod anti_rickroll;
+pub mod auto_dnd_while_playing;
 pub mod better_sessions;
 pub mod clear_urls;
 pub mod commands;
@@ -21,6 +22,7 @@ pub mod follow_user;
 pub mod friend_invites;
 pub mod game_activity_toggle;
 pub mod i_love_spam;
+pub mod ignore_activities;
 pub mod implicit_relationships;
 pub mod local_dev_badges;
 pub mod member_count;
@@ -36,6 +38,7 @@ pub mod override_forum_defaults;
 pub mod pause_invites_forever;
 pub mod petpet;
 pub mod platform_indicators;
+pub mod presence;
 pub mod quest_master;
 pub mod read_all_notifications;
 pub mod relationship_notifier;
@@ -187,6 +190,16 @@ pub const I18N: &[(&str, &str, &str)] = &[
     ("petpet", "en", include_str!("../i18n/en/petpet.ftl")),
     ("petpet", "ru", include_str!("../i18n/ru/petpet.ftl")),
     (
+        "ignore_activities",
+        "en",
+        include_str!("../i18n/en/ignore_activities.ftl"),
+    ),
+    (
+        "ignore_activities",
+        "ru",
+        include_str!("../i18n/ru/ignore_activities.ftl"),
+    ),
+    (
         "quest_master",
         "en",
         include_str!("../i18n/en/quest_master.ftl"),
@@ -274,11 +287,16 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let unsuppress_embeds_command = unsuppress_embeds.command();
     let friend_invites = friend_invites::FriendInvites::new();
     let friend_invites_commands = friend_invites.commands();
+    // Stage 1.2.13 presence plugins (off by default).
+    let ignore_activities = ignore_activities::IgnoreActivities::new();
+    let ignore_activities_commands = ignore_activities.commands();
+    let auto_dnd_while_playing = auto_dnd_while_playing::AutoDndWhilePlaying::new();
     let mut plugins: Vec<Box<dyn Plugin>> = vec![
         Box::new(no_track::NoTrack::new()),
         Box::new(silent_typing::SilentTyping::new()),
         Box::new(clear_urls::ClearUrls::new()),
         Box::new(unindent::Unindent::new()),
+        Box::new(auto_dnd_while_playing),
         Box::new(game_activity_toggle::GameActivityToggle::new()),
         Box::new(relationship_notifier::RelationshipNotifier::new()),
         Box::new(fake_nitro::FakeNitro::new()),
@@ -321,6 +339,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(quest_master),
         Box::new(friend_invites),
         Box::new(unsuppress_embeds),
+        Box::new(ignore_activities),
     ];
     // `/phoecord plugins` lists everything above and the commands plugin itself. Register more
     // `/phoecord` subcommands here with `Commands::with`.
@@ -371,6 +390,9 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     }
     commands = commands.with(petpet_command);
     for c in friend_invites_commands {
+        commands = commands.with(c);
+    }
+    for c in ignore_activities_commands {
         commands = commands.with(c);
     }
     plugins.push(Box::new(commands));
