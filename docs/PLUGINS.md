@@ -171,7 +171,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | Translate | Translate messages | 🌐 + 🎨 | 1.2.17 / 2 |
 | TypingIndicator | Who is typing, per channel | 🌐 + 🎨 | done: data — `/phoecord typing` / 2 (dots and avatars) |
 | TypingTweaks | Avatars and role colours in typing | 🎨 UI | 2 |
-| Unindent | Trim indentation in code blocks | 🌐 Network | done |
+| Unindent | Trim indentation in code blocks | 🌐 Network | done: shared indentation removed from fenced code blocks of sent and edited messages (not yet inside `payload_json` of uploads) |
 | UnlockedAvatarZoom | More zoom when cropping avatars | 🎨 UI | 2 |
 | UnsuppressEmbeds | Unsuppress embeds | 🌐 + 🎨 | 1.2.12 / 2 |
 | UserMessagesPronouns | Pronouns in chat | 🎨 UI | 2 |
@@ -208,7 +208,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 
 ## Owner's userplugins
 
-From Nanda's Vencord `userplugins` folder. They behave 1:1 like the owner's original scripts, with no caps or confirmations of PhoeCord's own (owner's ruling, 2026-11-25); their requests still go through the proxy's built-in rate limiter (1 request/s per plugin, Discord's buckets respected). Discord can treat heavy automation of a user account as self-botting, so bulk actions (`VoiceChatUtilities`, `rmcord`, `SilentDelete`, `FollowUser`) carry a warning in their docs and command help; QuestMaster fakes quest progress, which is inauthentic engagement under Discord's Community Guidelines.
+From Nanda's Vencord `userplugins` folder. They behave 1:1 like the owner's original scripts, with no caps or confirmations of PhoeCord's own (owner's ruling, 2026-11-25); their requests still go through the proxy's built-in rate limiter (5 requests per 5 s per plugin, 5/s overall, Discord's buckets respected). Discord can treat heavy automation of a user account as self-botting, so bulk actions (`VoiceChatUtilities`, `rmcord`, `SilentDelete`, `FollowUser`) carry a warning in their docs and command help; QuestMaster fakes quest progress, which is inauthentic engagement under Discord's Community Guidelines.
 
 | Plugin | What it does | Layer | Where |
 |:---|:---|:---|:---|

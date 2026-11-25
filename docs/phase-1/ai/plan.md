@@ -142,7 +142,7 @@ Tasks are grouped by stage. Each has files, steps and "done when". Statuses and 
 
 **Done when:** p99 ≤ 1 ms per frame, or a ledger line explaining the gap and the plan.
 
-### 1.1.11. Upstream proxy (anyone)
+### 1.1.11. Upstream proxy (buslan07)
 
 **Files:** `crates/phoecord-proxy/src/server.rs`, `crates/phoecord-proxy/src/config.rs`
 
@@ -162,7 +162,7 @@ Tasks are grouped by stage. Each has files, steps and "done when". Statuses and 
 
 Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.rs`; tests for the matching rule and a chain test; a config section with defaults; its row in `docs/PLUGINS.md`; user-facing strings ready for 1.7.
 
-### 1.2.1. `silent_typing` (anyone)
+### 1.2.1. `silent_typing` (matvee)
 
 **Files:** `crates/phoecord-plugins/src/silent_typing.rs`
 
@@ -170,7 +170,7 @@ Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.
 
 **Done when:** with the plugin on, others never see you typing.
 
-### 1.2.2. `unindent` (anyone)
+### 1.2.2. `unindent` (matvee)
 
 **Files:** `crates/phoecord-plugins/src/unindent.rs`
 
@@ -178,7 +178,7 @@ Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.
 
 **Done when:** a pasted indented code block is sent flush-left; v0 tests pass.
 
-### 1.2.3. `game_activity_toggle` (anyone)
+### 1.2.3. `game_activity_toggle` (Nanda)
 
 **Files:** `crates/phoecord-plugins/src/game_activity_toggle.rs`
 
@@ -186,7 +186,7 @@ Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.
 
 **Done when:** `phoecord toggle game_activity_toggle` hides or shows your game at once.
 
-### 1.2.4. `relationship_notifier` (anyone)
+### 1.2.4. `relationship_notifier` (Nanda)
 
 **Files:** `crates/phoecord-plugins/src/relationship_notifier.rs`
 
@@ -211,7 +211,7 @@ Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.
 
 **Done when:** a deleted message stays visible with a "deleted" marker and shows up in `phoecord log`.
 
-### 1.2.7. `clear_urls` (anyone)
+### 1.2.7. `clear_urls` (matvee)
 
 **Files:** `crates/phoecord-plugins/src/clear_urls.rs`
 
@@ -227,7 +227,7 @@ Each plugin: port or write it on Plugin API v1 from `docs/_template/code/plugin.
 
 **Done when:** `/phoecord plugins` lists plugins in the client without anything reaching Discord.
 
-### 1.2.9. `phoecord import-vencord` (anyone)
+### 1.2.9. `phoecord import-vencord` (buslan07)
 
 **Files:** `crates/phoecord-installer/src/vencord.rs`, `crates/phoecord-cli/src/**`
 
@@ -241,15 +241,15 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 
 | Task | Needs from the host (spec §3.1) | Owner |
 |:---|:---|:---|
-| 1.2.10 Message filters | `RestResponse` and `Dispatch` rewriting only | anyone |
-| 1.2.11 Outgoing text | `RestRequest` body rewriting; multipart file names for AnonymiseFileNames | anyone |
+| 1.2.10 Message filters | `RestResponse` and `Dispatch` rewriting only | Nanda |
+| 1.2.11 Outgoing text | `RestRequest` body rewriting; multipart file names for AnonymiseFileNames | Nanda |
 | 1.2.12 Commands | the `/phoecord` command framework from 1.2.8; `Host::rest` for FriendInvites and UnsuppressEmbeds | anyone |
 | 1.2.13 Presence | `Send` op 3 rewriting; `Host::emit_send`; `Host::fetch` for MusicRichPresence (Last.fm, ListenBrainz) | anyone |
 | 1.2.14 Profiles | `RestResponse` rewriting of profile responses; `Host::fetch` for USRBG and Decor | anyone |
 | 1.2.15 External services | `Host::fetch` (DeArrow API, Tenor/Giphy) | anyone |
-| 1.2.16 Data parts | `Host::rest` (ValidUser, ValidReply, NewGuildSettings); `Dispatch` `extra` payloads | Nanda |
+| 1.2.16 Data parts | `Host::rest` (ValidUser, ValidReply, NewGuildSettings); `Dispatch` `extra` payloads | Kennurken |
 | 1.2.17 Translate etc. | `Host::fetch` (translation backend, ReviewDB API); XSOverlay over a local UDP right | anyone |
-| 1.2.18 Hidden things | `Dispatch` `READY` / `GUILD_CREATE` rewriting; experiment assignments | Nanda |
+| 1.2.18 Hidden things | `Dispatch` `READY` / `GUILD_CREATE` rewriting; experiment assignments | Kennurken |
 | 1.2.19 Userplugins | `Host::rest` with the rate limiter (VoiceChatUtilities, rmcord); `Send` op 4 (FakeDeafen, FollowUser) | Kennurken |
 
 **Done when:** every 🌐 row of `docs/PLUGINS.md` is ✅ and every 🌐 + 🎨 row has its data part ✅ (on-screen part waits for Phase 2).
@@ -497,7 +497,7 @@ Found in 1.5.7 on 24.11 (Discord Canary 1.0.1355): Electron starts 7 processes, 
 
 **Done when:** the draft answers "where would a palette, a settings tab list and a message row be built".
 
-### 1.6.2. Reference build (anyone)
+### 1.6.2. Reference build (Nanda)
 
 **Files:** `research/gpui-reference/**`
 
@@ -513,7 +513,7 @@ Found in 1.5.7 on 24.11 (Discord Canary 1.0.1355): Electron starts 7 processes, 
 
 **Done when:** at least one unique signature per target in the reference build.
 
-### 1.6.4. Themes in Zed (anyone)
+### 1.6.4. Themes in Zed (Nanda)
 
 **Files:** `docs/research/gpui.md` (section)
 
@@ -547,7 +547,7 @@ Found in 1.5.7 on 24.11 (Discord Canary 1.0.1355): Electron starts 7 processes, 
 
 **Done when:** on a Russian OS the CLI speaks Russian with no config.
 
-### 1.7.3. Russian translation (anyone)
+### 1.7.3. Russian translation (Nanda)
 
 **Files:** `crates/*/i18n/ru/main.ftl`
 
@@ -563,7 +563,7 @@ Found in 1.5.7 on 24.11 (Discord Canary 1.0.1355): Electron starts 7 processes, 
 
 **Done when:** a built-in plugin's notification appears in Russian.
 
-### 1.7.5. CI key check (anyone)
+### 1.7.5. CI key check (Nanda)
 
 **Files:** `scripts/check_i18n.py`, `.github/workflows/ci.yml`, `scripts/check.{sh,ps1}`
 
