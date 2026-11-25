@@ -57,7 +57,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | CopyFileContents | Copy text attachment contents | 🎨 UI | 2 |
 | CopyUserURLs | Copy user URL from the context menu | 🎨 UI | 2 |
 | CrashHandler | Recover from crashes | ♻️ Replaced | loader degradation (ARCHITECTURE.md) |
-| CustomCommands | Your own slash commands and tags | 🌐 Network | 1.2.12 |
+| CustomCommands | Your own slash commands and tags | 🌐 Network | done — `/phoecord tags`, `/phoecord tag` |
 | CustomIdle | Change or disable auto-idle | 🌐 Network | 1.2.13 |
 | CustomRPC | Fully custom Rich Presence | 🌐 Network | 1.2.13 |
 | Dearrow | Less clickbait YouTube embed titles and thumbnails | 🌐 Network | 1.2.15 |
@@ -77,7 +77,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | FixImagesQuality | Load images at original resolution | 🌐 Network | 1.2.15 |
 | FixSpotifyEmbeds | Volume for Spotify embeds | 🎨 UI | 2 |
 | ForceOwnerCrown | Owner crown on large servers | 🎨 UI | 2 |
-| FriendInvites | Friend invite links via commands | 🌐 Network | 1.2.12 |
+| FriendInvites | Friend invite links via commands | 🌐 Network | done — `/phoecord create-friend-invite`, `view-friend-invites`, `revoke-friend-invites` |
 | FullSearchContext | Full context menus on search results | 🎨 UI | 2 |
 | GameActivityToggle | Toggle showing your game | 🌐 Network | done |
 | GifPaste | Insert GIF links instead of sending | 🎨 UI | 2 |
@@ -128,7 +128,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | PauseInvitesForever | Pause invites indefinitely | 🌐 + 🎨 | done: data — `/phoecord pauseinvites` / 2 (invite dialog link) |
 | PermissionFreeWill | No client-side permission limits | 🎨 UI | 2 |
 | PermissionsViewer | View user, channel and role permissions | 🎨 UI | 2 |
-| petpet | /petpet headpat GIF command | 🌐 Network | 1.2.12 |
+| petpet | /petpet headpat GIF command | 🌐 Network | done — `/phoecord petpet` |
 | PictureInPicture | Picture-in-picture for videos | 🎨 UI | 2 |
 | PinDMs | Pin DMs to the top | 🎨 UI | 2 |
 | PlainFolderIcon | Plain folder icons | 🎨 UI | 2 |
@@ -147,7 +147,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | RoleColorEverywhere | Top role colour everywhere | 🎨 UI | 2 |
 | SecretRingToneEnabler | Always the secret ringtone | 🎨 UI | 2 |
 | SendTimestamps | Send timestamps with shortcuts | 🌐 Network | done (the picker button is Phase 2) |
-| ServerInfo | Server info view | 🌐 + 🎨 | 1.2.12 / 2 |
+| ServerInfo | Server info view | 🌐 + 🎨 | done: data — `/phoecord serverinfo` / 2 (menu item, modal, friends and blocked tabs) |
 | ServerListIndicators | Online friends or server count in the list | 🎨 UI | 2 |
 | ShikiCodeblocks | VS Code-style code blocks | 🎨 UI | 2 |
 | ShowAllMessageButtons | Always show all message buttons | 🎨 UI | 2 |
@@ -161,7 +161,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | SortFriendRequests | Sort friend requests by date | 🎨 UI | 2 |
 | SpotifyControls | Spotify player above the account panel | 🎨 UI | 2 |
 | SpotifyCrack | Free listen-along, no auto-pause | ⛔ N/A | Spotify-side, out of scope |
-| SpotifyShareCommands | /track, /album, /artist commands | 🌐 Network | 1.2.12 |
+| SpotifyShareCommands | /track, /album, /artist commands | 🌐 Network | done — `/phoecord track`, `album`, `artist` |
 | StartupTimings | Startup timings in settings | ♻️ Replaced | PhoeCord status in its settings tab |
 | StickerPaste | Insert stickers instead of sending | 🎨 UI | 2 |
 | StreamerModeOnStream | Streamer mode while streaming | 🎨 UI | 2 |
@@ -173,7 +173,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | TypingTweaks | Avatars and role colours in typing | 🎨 UI | 2 |
 | Unindent | Trim indentation in code blocks | 🌐 Network | done: shared indentation removed from fenced code blocks of sent and edited messages (not yet inside `payload_json` of uploads) |
 | UnlockedAvatarZoom | More zoom when cropping avatars | 🎨 UI | 2 |
-| UnsuppressEmbeds | Unsuppress embeds | 🌐 + 🎨 | 1.2.12 / 2 |
+| UnsuppressEmbeds | Unsuppress embeds | 🌐 + 🎨 | done: data — `/phoecord unsuppress` / 2 (message menu item) |
 | UserMessagesPronouns | Pronouns in chat | 🎨 UI | 2 |
 | UserVoiceShow | Show who is in voice | 🌐 + 🎨 | done: data — `/phoecord voice` / 2 (badge, profile section) |
 | USRBG | Community banners without Nitro | 🌐 Network | 1.2.14 |
@@ -183,7 +183,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | VencordToolbox | Quick actions button | ♻️ Replaced | PhoeCord toolbox in the client (2.3) |
 | VesktopPatches | Vesktop patches | ⛔ N/A | Vesktop only |
 | ViewIcons | Click avatars and banners to view them | 🎨 UI | 2 |
-| ViewRaw | View raw message, channel or server JSON | 🌐 + 🎨 | 1.2.12 / 2 |
+| ViewRaw | View raw message, channel or server JSON | 🌐 + 🎨 | done: data — `/phoecord viewraw` / 2 (menus, modal, copy buttons) |
 | VoiceChatDoubleClick | Join voice on double-click | 🎨 UI | 2 |
 | VoiceDownload | Download voice messages | 🎨 UI | 2 |
 | VoiceMessages | Send voice messages like on mobile | 🌐 + 🎨 | 1.2.17 / 2 |

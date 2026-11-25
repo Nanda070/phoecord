@@ -77,7 +77,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.2.9** 🟢 | `phoecord import-vencord` | buslan07 | ✅ 24.11, PR #54 (plugin names only, settings not copied) |
 | **1.2.10** 🟡 | Message filters: iLoveSpam, NoBlockedMessages, NoReplyMention (ImageLink and NoPendingCount are UI-only, moved to Phase 2) | Nanda | ✅ 23.11, PR #45 |
 | **1.2.11** 🟡 | Outgoing text: TextReplace, SendTimestamps, AnonymiseFileNames, SilentMessageToggle (`/phoecord silent`); BetterGifAltText is UI-only, moved to Phase 2 | Nanda | ✅ 23.11, PR #49 |
-| **1.2.12** 🟡 | Commands: CustomCommands, FriendInvites, petpet, SpotifyShareCommands, ServerInfo, ViewRaw, UnsuppressEmbeds | matvee | ⏳ |
+| **1.2.12** 🟡 | Commands: CustomCommands, FriendInvites, petpet, SpotifyShareCommands, ServerInfo, ViewRaw, UnsuppressEmbeds | matvee | 🔎 in review (branch `feat/commands-1-2-12`: all seven as `/phoecord` subcommands, off by default; ServerInfo, ViewRaw and UnsuppressEmbeds are data parts, their menus wait for Phase 2; synthetic tests only, not run on a live account) |
 | **1.2.13** 🟡 | Presence: CustomRPC, MusicRichPresence, IgnoreActivities, AutoDNDWhilePlaying, CustomIdle | matvee | ⏳ |
 | **1.2.14** 🟡 | Profiles: NoProfileThemes, FakeProfileThemes, USRBG, Decor (data part) | anyone | ⏳ |
 | **1.2.15** 🟡 | External services: Dearrow, GifProviderSwitcher, FixImagesQuality | anyone | ⏳ |

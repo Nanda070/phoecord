@@ -58,6 +58,7 @@ Ask: *"Could a program between the client and Discord do this by changing the tr
 | `fetch` / `PluginNative` HTTP to an outside host with custom headers | `host.fetch_with(method, url, &[(name, value)], body)`; list the host in `Manifest.fetch` (`*.example.com` for one subdomain label) | no `Authorization`, `Cookie`, `Host`, `Proxy-*` or hop-by-hop headers |
 | `setTimeout` / `await sleep(ms)` / `setInterval` | `host.schedule(ms, tag)`, then handle `Event::Dispatch { name: TIMER_EVENT }` (`d.tag`); `host.cancel_schedule(tag)` to stop | never sleep inside `on_event`; keep the loop's state in the plugin and do one step per timer |
 | `sendBotMessage` | `Host::emit_dispatch` with a local `MESSAGE_CREATE` (a message only the user sees) | `crates/phoecord-plugins/src/commands.rs` |
+| a command that needs its channel, `rest`, `fetch` or kv as itself (`execute(args, { channel })`) | the plugin watches `POST /interactions`, reads the call with `commands::invocation`, does the work and keeps the answer; `commands::kept_answer` shows it (an empty answer shows nothing, e.g. after sending a real message) | e.g. `custom_commands.rs`, `petpet.rs` |
 | `UserStore.getCurrentUser()` | `host.self_id()` | more account facts: `host.guild_emojis`, `host.channel_guild` |
 | React components, context menus, chat bar buttons | Phase 2 UI hooks *(2)*; until then a `/phoecord` command or a setting | |
 | `start()` / `stop()` | nothing: the host calls `wants` / `on_event` only while the plugin is enabled | keep state inside the plugin struct |

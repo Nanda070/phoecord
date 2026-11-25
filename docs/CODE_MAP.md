@@ -122,6 +122,13 @@ The transport boundary (task 1.1.12): everything between "an event arrived" and 
 | `src/clear_urls.rs` | ClearURLs: strips tracking query parameters from links in sent and edited messages; `extra_rules` setting | Only `content` of JSON bodies; messages with attachments (multipart) are not cleaned yet |
 | `src/silent_typing.rs` | SilentTyping: answers `POST /channels/{id}/typing` locally with 204 | Only that exact route; `wants` must stay as narrow as `on_event` |
 | `src/unindent.rs` | Unindent: removes the indentation shared by every line of fenced code blocks in sent and edited messages | The opening line (language) and text outside blocks must stay byte for byte |
+| `src/custom_commands.rs` | CustomCommands: `/phoecord tags` manages tags in the kv store (`tagsList`), `/phoecord tag` fills `{{arg=default}}` and sends or shows one | Argument parsing mirrors Vencord's regex `{{(.+?)}}`, quirks included |
+| `src/friend_invites.rs` | FriendInvites: create, list and revoke friend invites via `/users/@me/invites`; `iso_unix` for ISO 8601 times | The create body (`{}`) is unverified on a live account |
+| `src/petpet.rs` | petpet: Vencord's ten hand frames (fetched once) over an avatar or Discord-hosted picture, encoded as a GIF with `image`, uploaded with `rest_files` | Runs inside the proxy: resolution capped at 512 px; `url` only on Discord's image hosts (manifest `fetch`) |
+| `src/server_info.rs` | ServerInfo data part: `/phoecord serverinfo` from the guild (`with_counts`), its channels and your member object | Friends/blocked tabs not ported (one call per user) |
+| `src/spotify_share_commands.rs` | SpotifyShareCommands: remembers your Spotify activity from presence sends (op 3) and `SESSIONS_REPLACE`; `/phoecord track`, `album`, `artist` send the link | Activity field names unverified on a live client; the presence is never changed |
+| `src/unsuppress_embeds.rs` | UnsuppressEmbeds data part: `/phoecord unsuppress` reads a message's flags and flips `SUPPRESS_EMBEDS` with `PATCH` | Keep the other flag bits |
+| `src/view_raw.rs` | ViewRaw data part: `/phoecord viewraw` shows a message, channel, guild, role or user as 4-space JSON (`sortKeys`, `stripSensitiveData`) | Answers are cut at 2000 characters; code fences inside are broken with a zero-width space |
 | `src/i_love_spam.rs` | iLoveSpam: clears the likely-spammer bit (`1<<20`) from user `flags` / `public_flags` in messages, history and member events | Keep every other bit |
 | `src/no_blocked_messages.rs` | NoBlockedMessages: learns blocked (type 2) and ignored users, drops their live messages; settings `apply_to_ignored_users` (true), `filter_history` (false) | Filtering history makes pages shorter than `limit`, which can stop the client loading older messages; that is why it is off by default |
 | `src/no_reply_mention.rs` | NoReplyMention: sets `allowed_mentions.replied_user = false` on replies per Vencord's rules; settings `user_list`, `role_list`, `should_ping_listed`; remembers authors of 5000 messages | An unknown replied-to message counts as "not listed" |
@@ -164,7 +171,7 @@ The transport boundary (task 1.1.12): everything between "an event arrived" and 
 | `src/relationship_notifier.rs` | RelationshipNotifier: `notify` on unfriend, server and group removal; your own actions in the last 60 s are ignored | Own-action memory must match the REST routes |
 | `src/fake_nitro.rs` | FakeNitro (emoji): rewrites unusable emoji in outgoing messages as CDN links; `premium_type` 2 in `READY` only for tier 0 | Learns the real tier from `READY`; needs Ctrl+R after enabling |
 | `src/message_logger.rs` | MessageLogger: LRU cache of messages, deletes turned into marked updates, edit history, `messages.jsonl` via `Host::append_data` | Ids may be JSON strings or ETF ints |
-| `src/commands.rs` | `/phoecord plugins` and `toggle`: injects the command into search/index answers, answers `POST /interactions` locally; `Subcommand` trait | Command shapes not yet checked on a live client |
+| `src/commands.rs` | `/phoecord plugins` and `toggle`: injects the command into search/index answers, answers `POST /interactions` locally; `Subcommand` trait; `invocation` / `kept_answer` for plugins that do a command's work as themselves; `snowflake_arg`, `message_ref` | Command shapes not yet checked on a live client |
 
 ### `phoecord-loader`
 
