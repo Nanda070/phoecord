@@ -67,6 +67,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | File | What | Easy to break |
 |:---|:---|:---|
 | `src/lib.rs` | Module list and status | |
+| `benches/chain.rs` | Criterion bench: decode → `Proxy::on_dispatch` with every built-in plugin → encode, for a ~5 MB READY, a MESSAGE_CREATE burst and a REST body; prints p50/p99. Report: `docs/chain-bench.md` | Generated payloads only, never real traffic; `-- --test` is the smoke run |
 | `src/config.rs`, `src/account.rs` | Live plugin configuration and account state available to plugins | Config reload must re-enable the chain and preserve the last live state |
 | `src/host.rs` | `ProxyHost`: scoped settings, KV, account, rate-limited notifications and REST/fetch hooks | Host state must be bound to the plugin currently running in `Chain` |
 | `GET /__phoecord` (in `src/server.rs`) | Identity answer (`phoecord <version>`) for loopback peers, so `launch` can reuse a running proxy | |

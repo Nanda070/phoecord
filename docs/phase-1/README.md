@@ -62,7 +62,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.1.7** 🔴 | CLI: `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `paths` | Nanda | ✅ |
 | **1.1.8** 🟡 | `selftest` against the real Discord | Nanda | ✅ |
 | **1.1.9** 🟡 | Gateway fixtures without personal data | anyone | ⏳ |
-| **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ⏳ |
+| **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | 🔎 in review (MESSAGE_CREATE p99 < 0.1 ms; READY ~150 ms, plan in docs/chain-bench.md) |
 | **1.1.11** 🟡 | Upstream proxy (SOCKS5 / HTTP) for outgoing connections, for VPN and zapret users | buslan07 | ✅ 24.11, PR #54 |
 | **1.1.12** 🟡 | Transport boundary: the proxy as one backend of the plugin chain, ready for an in-process backend | Nanda | ⏳ |
 | **1.1.13** 🔴 | `Host::rest` (Discord API calls as the user's own client session) and `Host::fetch` (listed outside HTTPS hosts) | Nanda | ✅ 24.11, PR #59 |
