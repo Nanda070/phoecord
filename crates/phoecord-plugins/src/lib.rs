@@ -12,6 +12,7 @@ pub mod anti_rickroll;
 pub mod better_sessions;
 pub mod clear_urls;
 pub mod commands;
+pub mod custom_commands;
 pub mod experiments;
 pub mod fake_deafen;
 pub mod fake_deafen_detector;
@@ -78,6 +79,16 @@ pub const I18N: &[(&str, &str, &str)] = &[
     ),
     ("commands", "en", include_str!("../i18n/en/commands.ftl")),
     ("commands", "ru", include_str!("../i18n/ru/commands.ftl")),
+    (
+        "custom_commands",
+        "en",
+        include_str!("../i18n/en/custom_commands.ftl"),
+    ),
+    (
+        "custom_commands",
+        "ru",
+        include_str!("../i18n/ru/custom_commands.ftl"),
+    ),
     (
         "follow_user",
         "en",
@@ -246,6 +257,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let quest_master = quest_master::QuestMaster::new();
     let quest_master_command = quest_master.command();
     // Stage 1.2.12 commands (off by default).
+    let custom_commands = custom_commands::CustomCommands::new();
+    let custom_commands_commands = custom_commands.commands();
     let spotify_share_commands = spotify_share_commands::SpotifyShareCommands::new();
     let spotify_share_commands_commands = spotify_share_commands.commands();
     let server_info = server_info::ServerInfo::new();
@@ -346,6 +359,9 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     commands = commands.with(view_raw_command);
     commands = commands.with(server_info_command);
     for c in spotify_share_commands_commands {
+        commands = commands.with(c);
+    }
+    for c in custom_commands_commands {
         commands = commands.with(c);
     }
     for c in friend_invites_commands {
