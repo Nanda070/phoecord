@@ -147,6 +147,31 @@ fn proxy_env(cmd: &mut Command, url: &str) {
     cmd.env("NO_PROXY", "localhost,127.0.0.1,::1");
 }
 
+/// The `Discord*.app` folder that holds `exe` (`…/Discord.app/Contents/MacOS/Discord`).
+fn app_bundle(exe: &std::path::Path) -> Option<PathBuf> {
+    exe.ancestors()
+        .find(|p| p.extension().is_some_and(|e| e == "app"))
+        .map(PathBuf::from)
+}
+
+/// macOS: start `app` through LaunchServices (`open`), so the client is its own responsible process.
+/// A child of PhoeCord.app would make TCC treat its reads of `~/Library/Application Support/discord`
+/// as PhoeCord.app reaching into another app's data, and deny them. `open` returns at once; the
+/// environment goes with `--env` because `open` does not pass its own on.
+fn mac_open_command(app: &std::path::Path, url: &str, flag: &str) -> Command {
+    let mut c = Command::new("open");
+    c.args(["-n", "-a"]).arg(app);
+    for (k, v) in [
+        ("HTTPS_PROXY", url),
+        ("HTTP_PROXY", url),
+        ("NO_PROXY", "localhost,127.0.0.1,::1"),
+    ] {
+        c.arg("--env").arg(format!("{k}={v}"));
+    }
+    c.args(["--args", flag]);
+    c
+}
+
 /// The command that starts `client` with `--proxy-server` pointing at `addr`.
 pub fn client_command(client: &Client, addr: &str) -> Command {
     let url = format!("http://{addr}");
@@ -178,6 +203,13 @@ pub fn client_command(client: &Client, addr: &str) -> Command {
             let mut c = Command::new("snap");
             c.args(["run", "discord", &flag]);
             c
+        }
+        (Source::Native, _) if cfg!(target_os = "macos") && app_bundle(&client.exe).is_some() => {
+            let app = app_bundle(&client.exe).unwrap_or_default();
+            // The environment is in the arguments; nothing more to set on `open` itself.
+            let mut c = mac_open_command(&app, &url, &flag);
+            phoecord_proxy::process::hide_console(&mut c);
+            return c;
         }
         _ => {
             let mut c = Command::new(&client.exe);
@@ -383,6 +415,37 @@ mod tests {
         )
         .unwrap();
         assert_eq!(args(&cmd), ["--x", "--proxy-server=http://127.0.0.1:1"]);
+    }
+
+    #[test]
+    fn macos_client_starts_through_open_with_env_in_args() {
+        let exe =
+            std::path::Path::new("/Applications/Discord Canary.app/Contents/MacOS/Discord Canary");
+        let app = app_bundle(exe).unwrap();
+        assert_eq!(
+            app,
+            std::path::Path::new("/Applications/Discord Canary.app")
+        );
+        let flag = "--proxy-server=http://127.0.0.1:18463";
+        let cmd = mac_open_command(&app, "http://127.0.0.1:18463", flag);
+        assert_eq!(cmd.get_program().to_string_lossy(), "open");
+        assert_eq!(
+            args(&cmd),
+            [
+                "-n",
+                "-a",
+                "/Applications/Discord Canary.app",
+                "--env",
+                "HTTPS_PROXY=http://127.0.0.1:18463",
+                "--env",
+                "HTTP_PROXY=http://127.0.0.1:18463",
+                "--env",
+                "NO_PROXY=localhost,127.0.0.1,::1",
+                "--args",
+                flag
+            ]
+        );
+        assert!(app_bundle(std::path::Path::new("/apps/x/discord")).is_none());
     }
 
     #[test]
