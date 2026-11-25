@@ -95,6 +95,8 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "custom_commands",
         "ru",
         include_str!("../i18n/ru/custom_commands.ftl"),
+    ),
+    (
         "custom_idle",
         "en",
         include_str!("../i18n/en/custom_idle.ftl"),
@@ -135,6 +137,28 @@ pub const I18N: &[(&str, &str, &str)] = &[
         include_str!("../i18n/ru/friend_invites.ftl"),
     ),
     (
+        "ignore_activities",
+        "en",
+        include_str!("../i18n/en/ignore_activities.ftl"),
+    ),
+    (
+        "ignore_activities",
+        "ru",
+        include_str!("../i18n/ru/ignore_activities.ftl"),
+    ),
+    ("petpet", "en", include_str!("../i18n/en/petpet.ftl")),
+    ("petpet", "ru", include_str!("../i18n/ru/petpet.ftl")),
+    (
+        "quest_master",
+        "en",
+        include_str!("../i18n/en/quest_master.ftl"),
+    ),
+    (
+        "quest_master",
+        "ru",
+        include_str!("../i18n/ru/quest_master.ftl"),
+    ),
+    (
         "relationship_notifier",
         "en",
         include_str!("../i18n/en/relationship_notifier.ftl"),
@@ -143,6 +167,28 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "relationship_notifier",
         "ru",
         include_str!("../i18n/ru/relationship_notifier.ftl"),
+    ),
+    ("rmcord", "en", include_str!("../i18n/en/rmcord.ftl")),
+    ("rmcord", "ru", include_str!("../i18n/ru/rmcord.ftl")),
+    (
+        "server_info",
+        "en",
+        include_str!("../i18n/en/server_info.ftl"),
+    ),
+    (
+        "server_info",
+        "ru",
+        include_str!("../i18n/ru/server_info.ftl"),
+    ),
+    (
+        "silent_delete",
+        "en",
+        include_str!("../i18n/en/silent_delete.ftl"),
+    ),
+    (
+        "silent_delete",
+        "ru",
+        include_str!("../i18n/ru/silent_delete.ftl"),
     ),
     (
         "spotify_share_commands",
@@ -185,50 +231,6 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "voice_chat_utilities",
         "ru",
         include_str!("../i18n/ru/voice_chat_utilities.ftl"),
-    ),
-    ("rmcord", "en", include_str!("../i18n/en/rmcord.ftl")),
-    ("rmcord", "ru", include_str!("../i18n/ru/rmcord.ftl")),
-    (
-        "server_info",
-        "en",
-        include_str!("../i18n/en/server_info.ftl"),
-    ),
-    (
-        "server_info",
-        "ru",
-        include_str!("../i18n/ru/server_info.ftl"),
-    ),
-    (
-        "silent_delete",
-        "en",
-        include_str!("../i18n/en/silent_delete.ftl"),
-    ),
-    (
-        "silent_delete",
-        "ru",
-        include_str!("../i18n/ru/silent_delete.ftl"),
-    ),
-    ("petpet", "en", include_str!("../i18n/en/petpet.ftl")),
-    ("petpet", "ru", include_str!("../i18n/ru/petpet.ftl")),
-    (
-        "ignore_activities",
-        "en",
-        include_str!("../i18n/en/ignore_activities.ftl"),
-    ),
-    (
-        "ignore_activities",
-        "ru",
-        include_str!("../i18n/ru/ignore_activities.ftl"),
-    ),
-    (
-        "quest_master",
-        "en",
-        include_str!("../i18n/en/quest_master.ftl"),
-    ),
-    (
-        "quest_master",
-        "ru",
-        include_str!("../i18n/ru/quest_master.ftl"),
     ),
 ];
 
