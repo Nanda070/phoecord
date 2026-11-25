@@ -84,7 +84,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.2.16** 🟡 | Data parts of UI plugins: ValidUser, ValidReply, NewGuildSettings, OverrideForumDefaults, MessageLinkEmbeds, PlatformIndicators, TypingIndicator, MemberCount, MutualGroupDMs, WhoReacted, and the other 🌐 + 🎨 rows of `docs/PLUGINS.md` marked 1.2.16 | Kennurken | ✅ 25.11, PR #68 (17 data parts, off by default; synthetic payload tests only, a live test-account check is still due) |
 | **1.2.17** 🟡 | Translate, ReviewDB, VoiceMessages (data part), XSOverlay | anyone | ⏳ |
 | **1.2.18** 🟢 | ShowHiddenChannels, ShowHiddenThings, Experiments (data part) | Kennurken | ✅ 25.11, PR #68 (3 data parts, off by default; READY rewrites behind their own settings, also off; synthetic tests only) |
-| **1.2.19** 🟡 | Owner's userplugins: SilentDelete, FakeDeafen, FakeDeafenDetector, localDevBadges, FollowUser, VoiceChatUtilities, rmcord, AntiRickroll, QuestMaster (network parts) | Kennurken | in review 25.11 (9 network parts on synthetic payloads, plus plugin timers `Host::schedule`; FakeDeafenDetector waits for a SPEAKING feed, QuestMaster's game and stream heartbeats are unverified on a live account) |
+| **1.2.19** 🟡 | Owner's userplugins: SilentDelete, FakeDeafen, FakeDeafenDetector, localDevBadges, FollowUser, VoiceChatUtilities, rmcord, AntiRickroll, QuestMaster (network parts) | Kennurken | ✅ 25.11, PR #79 (9 network parts, all off by default, plugin timers `Host::schedule`, `fetch_with`; synthetic payloads only: FakeDeafenDetector waits for a SPEAKING feed, QuestMaster's heartbeats are unverified on a live account) |
 | **1.3.1** 🔴 | `wit/phoecord.wit` | Nanda | ✅ 23.11, PR #24 |
 | **1.3.2** 🔴 | WASM backend for `Chain` on wasmtime | Nanda | ✅ 23.11, PR #24 |
 | **1.3.3** 🔴 | Limits: time, memory, disable on panic | Nanda | ✅ 23.11, PR #24 |
@@ -109,7 +109,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.5.5** 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
 | **1.5.6** 🟡 | Reinstall after a Discord update | Kennurken | ✅ 25.11, PR #68 (`setup --loader`, reinstall on `run`/`launch`; tests on fake Windows folders; real Windows check after the release) |
 | **1.5.7** 🔴 | Verify on 3 client versions | Nanda | ✅ 24.11 on Canary 1.0.1355 (loaded in all 7 processes, build detected, no crash). After the release: the 10-minute run on 3 consecutive client versions |
-| **1.5.8** 🟡 | Loader cost: act only in the main client process (skip `--type=` child processes) and hash `.text` from the mapped image instead of reading the whole exe (224 MB, about 140 ms in each of 7 processes) | Nanda | 🔎 in review (25.11; real check on Canary pending, see the PR) |
+| **1.5.8** 🟡 | Loader cost: act only in the main client process (skip `--type=` child processes) and hash `.text` from the mapped image instead of reading the whole exe (224 MB, about 140 ms in each of 7 processes) | Nanda | ✅ 25.11, PR #73 (no worker in `--type=` child processes, build detected from the mapped image; the owner's Canary check of the hash and the timing is after the release) |
 | **1.6.1** 🔴 | A map of GPUI | Nanda | ✅ 23.11, PR #12 |
 | **1.6.2** 🔴 | GPUI reference build | Nanda | ✅ 23.11, PR #12 |
 | **1.6.3** 🟡 | What of GPUI is visible in a release binary | Nanda | ✅ 23.11, PR #12 |
