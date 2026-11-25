@@ -41,7 +41,7 @@ none
 | | Nanda | Contributors |
 |:---|:---|:---|
 | Area | core, Plugin API, proxy, CA and trust, loader, installer, runtime, releases, review and merging | plugins, SDK examples, tests and fixtures, translations, docs, research |
-| Tasks | 1.0, 1.1 (except 1.1.9), 1.2.3–1.2.6, 1.2.8, 1.3 (except 1.3.6, 1.3.7), 1.4 (except 1.4.3, 1.4.5), 1.5 (except 1.5.6), 1.6, 1.7.1–1.7.5 | 1.1.9, 1.2.1 (matvee, done), 1.2.2 and 1.2.7 (matvee), 1.1.11 and 1.2.9 (buslan07, done), 1.2.16, 1.2.18, 1.4.3, 1.4.5, 1.5.6 (Kennurken), 1.3.6, 1.3.7 |
+| Tasks | 1.0, 1.1 (except 1.1.9), 1.2.3–1.2.6, 1.2.8, 1.3 (except 1.3.6, 1.3.7), 1.4 (except 1.4.3, 1.4.5), 1.5 (except 1.5.6), 1.6, 1.7.1–1.7.5 | 1.1.9, 1.2.1 (matvee, done), 1.2.2 and 1.2.7 (matvee), 1.1.11 and 1.2.9 (buslan07, done), 1.2.16, 1.2.18, 1.2.19, 1.4.3, 1.4.5, 1.5.6 (Kennurken), 1.3.6, 1.3.7 |
 
 Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor plugins are written against an API that is already merged.
 
@@ -84,7 +84,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.2.16** 🟡 | Data parts of UI plugins: ValidUser, ValidReply, NewGuildSettings, OverrideForumDefaults, MessageLinkEmbeds, PlatformIndicators, TypingIndicator, MemberCount, MutualGroupDMs, WhoReacted, and the other 🌐 + 🎨 rows of `docs/PLUGINS.md` marked 1.2.16 | Kennurken | ✅ 25.11, PR #68 (17 data parts, off by default; synthetic payload tests only, a live test-account check is still due) |
 | **1.2.17** 🟡 | Translate, ReviewDB, VoiceMessages (data part), XSOverlay | anyone | ⏳ |
 | **1.2.18** 🟢 | ShowHiddenChannels, ShowHiddenThings, Experiments (data part) | Kennurken | ✅ 25.11, PR #68 (3 data parts, off by default; READY rewrites behind their own settings, also off; synthetic tests only) |
-| **1.2.19** 🟡 | Owner's userplugins: SilentDelete, FakeDeafen, FakeDeafenDetector, localDevBadges, FollowUser, VoiceChatUtilities, rmcord, AntiRickroll (network parts) | Nanda | ⏳ |
+| **1.2.19** 🟡 | Owner's userplugins: SilentDelete, FakeDeafen, FakeDeafenDetector, localDevBadges, FollowUser, VoiceChatUtilities, rmcord, AntiRickroll (network parts) | Kennurken | ⏳ |
 | **1.3.1** 🔴 | `wit/phoecord.wit` | Nanda | ✅ 23.11, PR #24 |
 | **1.3.2** 🔴 | WASM backend for `Chain` on wasmtime | Nanda | ✅ 23.11, PR #24 |
 | **1.3.3** 🔴 | Limits: time, memory, disable on panic | Nanda | ✅ 23.11, PR #24 |
