@@ -64,7 +64,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.1.9** 🟡 | Gateway fixtures without personal data | anyone | ⏳ |
 | **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ✅ 25.11, PR #74 (MESSAGE_CREATE p99 < 0.1 ms; a 5 MB READY takes 130–300 ms, mostly the JSON codec: plan in `docs/chain-bench.md`) |
 | **1.1.11** 🟡 | Upstream proxy (SOCKS5 / HTTP) for outgoing connections, for VPN and zapret users | buslan07 | ✅ 24.11, PR #54 |
-| **1.1.12** 🟡 | Transport boundary: the proxy as one backend of the plugin chain, ready for an in-process backend | Nanda | 🔎 in review (PR, 25.11: `phoecord-transport` with `Engine`; the proxy goes through it) |
+| **1.1.12** 🟡 | Transport boundary: the proxy as one backend of the plugin chain, ready for an in-process backend | Nanda | 🔎 in review (PR #85, 25.11: `phoecord-transport` with `Engine`; the proxy goes through it) |
 | **1.1.13** 🔴 | `Host::rest` (Discord API calls as the user's own client session) and `Host::fetch` (listed outside HTTPS hosts) | Nanda | ✅ 24.11, PR #59 |
 | **1.2.1** 🔴 | `silent_typing` | matvee | ✅ 23.11, PR #19 |
 | **1.2.2** 🟡 | `unindent` | matvee | ✅ 25.11, PR #81 (sent and edited messages; text inside `payload_json` of uploads is not unindented) |
