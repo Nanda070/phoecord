@@ -45,6 +45,7 @@ pub mod show_hidden_things;
 pub mod silent_delete;
 pub mod silent_message_toggle;
 pub mod silent_typing;
+pub mod spotify_share_commands;
 pub mod state;
 pub mod text_replace;
 pub mod typing_indicator;
@@ -106,6 +107,16 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "relationship_notifier",
         "ru",
         include_str!("../i18n/ru/relationship_notifier.ftl"),
+    ),
+    (
+        "spotify_share_commands",
+        "en",
+        include_str!("../i18n/en/spotify_share_commands.ftl"),
+    ),
+    (
+        "spotify_share_commands",
+        "ru",
+        include_str!("../i18n/ru/spotify_share_commands.ftl"),
     ),
     (
         "unsuppress_embeds",
@@ -235,6 +246,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let quest_master = quest_master::QuestMaster::new();
     let quest_master_command = quest_master.command();
     // Stage 1.2.12 commands (off by default).
+    let spotify_share_commands = spotify_share_commands::SpotifyShareCommands::new();
+    let spotify_share_commands_commands = spotify_share_commands.commands();
     let server_info = server_info::ServerInfo::new();
     let server_info_command = server_info.command();
     let view_raw = view_raw::ViewRaw::new();
@@ -332,6 +345,9 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     commands = commands.with(unsuppress_embeds_command);
     commands = commands.with(view_raw_command);
     commands = commands.with(server_info_command);
+    for c in spotify_share_commands_commands {
+        commands = commands.with(c);
+    }
     for c in friend_invites_commands {
         commands = commands.with(c);
     }
