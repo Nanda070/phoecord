@@ -31,6 +31,7 @@ pub mod member_count;
 pub mod message_latency;
 pub mod message_link_embeds;
 pub mod message_logger;
+pub mod music_rich_presence;
 pub mod mutual_group_dms;
 pub mod new_guild_settings;
 pub mod no_blocked_messages;
@@ -308,6 +309,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let friend_invites = friend_invites::FriendInvites::new();
     let friend_invites_commands = friend_invites.commands();
     // Stage 1.2.13 presence plugins (off by default).
+    let music_rich_presence = music_rich_presence::MusicRichPresence::new();
     let custom_rpc = custom_rpc::CustomRpc::new();
     let custom_rpc_command = custom_rpc.command();
     let custom_idle = custom_idle::CustomIdle::new();
@@ -364,6 +366,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(friend_invites),
         Box::new(unsuppress_embeds),
         Box::new(custom_rpc),
+        Box::new(music_rich_presence),
         Box::new(custom_idle),
         Box::new(ignore_activities),
     ];
