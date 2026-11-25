@@ -127,10 +127,114 @@ impl Owned {
     }
 }
 
+/// The asset id Rich Presence wants for an image `key` of application `app` (the client's
+/// `ApplicationAssetUtils.fetchAssetIds`): a link becomes `mp:<path>` through
+/// `POST /applications/{app}/external-assets`, a name is looked up in
+/// `GET /oauth2/applications/{app}/assets`. Answers are kept in `cache`; `None` when Discord has
+/// no such asset or refused.
+///
+/// Unverified against a live client: both routes are the ones Rich Presence tools use.
+pub fn asset_id(
+    host: &mut dyn phoecord_core::Host,
+    cache: &mut std::collections::HashMap<String, String>,
+    app: &str,
+    key: &str,
+) -> Option<String> {
+    let cache_key = format!("{app}\u{0}{key}");
+    // A refusal is kept too (as ""), so a missing asset is not asked for on every presence.
+    if let Some(id) = cache.get(&cache_key) {
+        return (!id.is_empty()).then(|| id.clone());
+    }
+    let ok = |r: Result<phoecord_core::plugin::HostResponse, String>| match r {
+        Ok(r) if (200..300).contains(&r.status) => r.body,
+        _ => None,
+    };
+    let id = lookup(host, app, key, ok).unwrap_or_default();
+    cache.insert(cache_key, id.clone());
+    (!id.is_empty()).then_some(id)
+}
+
+fn lookup(
+    host: &mut dyn phoecord_core::Host,
+    app: &str,
+    key: &str,
+    ok: impl Fn(Result<phoecord_core::plugin::HostResponse, String>) -> Option<Val>,
+) -> Option<String> {
+    let id = if key.starts_with("https://") || key.starts_with("http://") {
+        let mut body = Val::map();
+        body.set("urls", Val::List(vec![Val::Str(key.to_string())]));
+        let answer = ok(host.rest(
+            "POST",
+            &format!("/applications/{app}/external-assets"),
+            Some(&body),
+        ))?;
+        let path = answer.as_list().first()?.str_at(&["external_asset_path"])?;
+        format!("mp:{path}")
+    } else {
+        let answer = ok(host.rest("GET", &format!("/oauth2/applications/{app}/assets"), None))?;
+        let asset = answer
+            .as_list()
+            .iter()
+            .find(|a| a.str_at(&["name"]) == Some(key))?;
+        text(asset, "id")?
+    };
+    Some(id)
+}
+
+/// Drop the empty fields of an activity (`null`, `""`, `[]`, `{}`), except `type` (Vencord does
+/// this before sending one).
+pub fn drop_empty(activity: &mut Val) {
+    if let Val::Map(fields) = activity {
+        fields.retain(|(k, v)| {
+            k.as_str() == Some("type")
+                || !matches!(v, Val::Null)
+                    && !matches!(v, Val::Str(s) if s.is_empty())
+                    && !matches!(v, Val::List(l) if l.is_empty())
+                    && !matches!(v, Val::Map(m) if m.is_empty())
+        });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::testutil::j;
+
+    #[test]
+    fn assets_from_links_and_names_are_cached() {
+        let mut h = crate::testutil::Rec::default()
+            .answer(
+                "POST",
+                "/applications/5/external-assets",
+                200,
+                r#"[{"url":"https://x/a.png","external_asset_path":"external/abc"}]"#,
+            )
+            .answer(
+                "GET",
+                "/oauth2/applications/5/assets",
+                200,
+                r#"[{"id":"77","name":"logo","type":1}]"#,
+            );
+        let mut cache = std::collections::HashMap::new();
+        assert_eq!(
+            asset_id(&mut h, &mut cache, "5", "https://x/a.png").as_deref(),
+            Some("mp:external/abc")
+        );
+        assert_eq!(
+            asset_id(&mut h, &mut cache, "5", "logo").as_deref(),
+            Some("77")
+        );
+        assert_eq!(
+            asset_id(&mut h, &mut cache, "5", "logo").as_deref(),
+            Some("77")
+        );
+        assert_eq!(asset_id(&mut h, &mut cache, "5", "missing"), None);
+        assert_eq!(asset_id(&mut h, &mut cache, "5", "missing"), None);
+        assert_eq!(h.rest_calls.len(), 3, "answers and refusals are cached");
+        let mut a = j(r#"{"type":0,"name":"x","state":"","buttons":[],"assets":{},"party":null}"#);
+        drop_empty(&mut a);
+        assert_eq!(a, j(r#"{"type":0,"name":"x"}"#));
+    }
 
     #[test]
     fn finds_the_presence_in_identify_and_updates() {

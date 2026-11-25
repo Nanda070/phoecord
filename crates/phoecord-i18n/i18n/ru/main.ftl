@@ -121,6 +121,7 @@ plugin-desc-spotify_share_commands = Делится текущим треком,
 plugin-desc-server_info = Показывает сведения о сервере: владелец, возраст, бусты, каналы, роли
 plugin-desc-view_raw = Показывает исходный JSON сообщения, канала, сервера, роли или пользователя
 plugin-desc-unsuppress_embeds = Снова показывает встраивания сообщения или скрывает их
+plugin-desc-custom_rpc = Добавляет полностью настраиваемую Rich Presence в ваш профиль
 plugin-desc-custom_idle = Меняет или отключает время до статуса «Отошёл»
 plugin-desc-ignore_activities = Скрывает выбранные игры и активности из вашего статуса для других
 plugin-desc-auto_dnd_while_playing = Показывает «Не беспокоить» (или другой статус), пока вы играете

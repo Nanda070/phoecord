@@ -15,6 +15,7 @@ pub mod clear_urls;
 pub mod commands;
 pub mod custom_commands;
 pub mod custom_idle;
+pub mod custom_rpc;
 pub mod experiments;
 pub mod fake_deafen;
 pub mod fake_deafen_detector;
@@ -101,6 +102,16 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "custom_idle",
         "ru",
         include_str!("../i18n/ru/custom_idle.ftl"),
+    ),
+    (
+        "custom_rpc",
+        "en",
+        include_str!("../i18n/en/custom_rpc.ftl"),
+    ),
+    (
+        "custom_rpc",
+        "ru",
+        include_str!("../i18n/ru/custom_rpc.ftl"),
     ),
     (
         "follow_user",
@@ -297,6 +308,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let friend_invites = friend_invites::FriendInvites::new();
     let friend_invites_commands = friend_invites.commands();
     // Stage 1.2.13 presence plugins (off by default).
+    let custom_rpc = custom_rpc::CustomRpc::new();
+    let custom_rpc_command = custom_rpc.command();
     let custom_idle = custom_idle::CustomIdle::new();
     let custom_idle_command = custom_idle.command();
     let ignore_activities = ignore_activities::IgnoreActivities::new();
@@ -350,6 +363,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(quest_master),
         Box::new(friend_invites),
         Box::new(unsuppress_embeds),
+        Box::new(custom_rpc),
         Box::new(custom_idle),
         Box::new(ignore_activities),
     ];
@@ -408,6 +422,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         commands = commands.with(c);
     }
     commands = commands.with(custom_idle_command);
+    commands = commands.with(custom_rpc_command);
     plugins.push(Box::new(commands));
     plugins
 }
