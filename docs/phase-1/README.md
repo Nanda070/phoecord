@@ -41,7 +41,7 @@ none
 | | Nanda | Contributors |
 |:---|:---|:---|
 | Area | core, Plugin API, proxy, CA and trust, loader, installer, runtime, releases, review and merging | plugins, SDK examples, tests and fixtures, translations, docs, research |
-| Tasks | 1.0.1, 1.0.2, 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.1.5, 1.1.6, 1.1.7, 1.1.8, 1.1.10, 1.1.12, 1.1.13, 1.2.3, 1.2.4, 1.2.5, 1.2.6, 1.2.8, 1.2.10, 1.2.11, 1.3.1, 1.3.2, 1.3.3, 1.3.4, 1.3.5, 1.3.8, 1.4.1, 1.4.2, 1.4.4, 1.4.6, 1.4.7, 1.4.8, 1.4.9, 1.5.1, 1.5.2, 1.5.3, 1.5.4, 1.5.5, 1.5.7, 1.5.8, 1.6.1, 1.6.2, 1.6.3, 1.6.4, 1.6.5, 1.7.1, 1.7.2, 1.7.3, 1.7.4, 1.7.5 (open: 1.1.12, 1.5.5) | 1.2.1, 1.2.2, 1.2.7 (matvee; all done); 1.1.11, 1.2.9 (buslan07; all done); 1.2.16, 1.2.18, 1.2.19, 1.4.3, 1.4.5, 1.5.6 (Kennurken; all done); 1.1.9, 1.2.12, 1.2.13, 1.2.14, 1.2.15, 1.2.17, 1.3.6, 1.3.7 (open to anyone; open) |
+| Tasks | 1.0.1, 1.0.2, 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.1.5, 1.1.6, 1.1.7, 1.1.8, 1.1.10, 1.1.12, 1.1.13, 1.2.3, 1.2.4, 1.2.5, 1.2.6, 1.2.8, 1.2.10, 1.2.11, 1.3.1, 1.3.2, 1.3.3, 1.3.4, 1.3.5, 1.3.8, 1.4.1, 1.4.2, 1.4.4, 1.4.6, 1.4.7, 1.4.8, 1.4.9, 1.5.1, 1.5.2, 1.5.3, 1.5.4, 1.5.5, 1.5.7, 1.5.8, 1.6.1, 1.6.2, 1.6.3, 1.6.4, 1.6.5, 1.7.1, 1.7.2, 1.7.3, 1.7.4, 1.7.5 (open: 1.1.12; in review: 1.5.5) | 1.2.1, 1.2.2, 1.2.7 (matvee; all done); 1.1.11, 1.2.9 (buslan07; all done); 1.2.16, 1.2.18, 1.2.19, 1.4.3, 1.4.5, 1.5.6 (Kennurken; all done); 1.1.9, 1.2.12, 1.2.13, 1.2.14, 1.2.15, 1.2.17, 1.3.6, 1.3.7 (open to anyone; open) |
 
 Plugin API changes (`phoecord-core::plugin`) are made by Nanda only: contributor plugins are written against an API that is already merged.
 
@@ -106,7 +106,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.5.2** 🔴 | `DllMain` and the worker thread | Nanda | ✅ 23.11, PR #10 |
 | **1.5.3** 🔴 | Client version detection and `signatures/*.toml` | Nanda | ✅ 23.11, PR #10 |
 | **1.5.4** 🔴 | Inline detours and hook removal | Nanda | ✅ 23.11, PR #10 |
-| **1.5.5** 🟡 | Loader ↔ proxy IPC | Nanda | ⏳ |
+| **1.5.5** 🟡 | Loader ↔ proxy IPC | Nanda | 🔎 in review (PR on `feat/loader-ipc`: per-user named pipe with a user-only ACL, JSON-lines protocol, `hello`/`status`/`settings`/`ui.event`; unit tests on every OS, a Windows integration test with a fake loader; the Canary check by hand is in the PR) |
 | **1.5.6** 🟡 | Reinstall after a Discord update | Kennurken | ✅ 25.11, PR #68 (`setup --loader`, reinstall on `run`/`launch`; tests on fake Windows folders; real Windows check after the release) |
 | **1.5.7** 🔴 | Verify on 3 client versions | Nanda | ✅ 24.11 on Canary 1.0.1355 (loaded in all 7 processes, build detected, no crash). After the release: the 10-minute run on 3 consecutive client versions |
 | **1.5.8** 🟡 | Loader cost: act only in the main client process (skip `--type=` child processes) and hash `.text` from the mapped image instead of reading the whole exe (224 MB, about 140 ms in each of 7 processes) | Nanda | ✅ 25.11, PR #73 (no worker in `--type=` child processes, build detected from the mapped image; the owner's Canary check of the hash and the timing is after the release) |

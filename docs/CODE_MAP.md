@@ -40,7 +40,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | Crate | Path | Kind | Depends on (ours) |
 |:---|:---|:---|:---|
 | `phoecord-core` | `crates/phoecord-core/` | lib | none |
-| `phoecord-proxy` | `crates/phoecord-proxy/` | lib | core |
+| `phoecord-proxy` | `crates/phoecord-proxy/` | lib | core, loader (IPC types and pipe only, without the `dll` feature) |
 | `phoecord-plugin-runtime` | `crates/phoecord-plugin-runtime/` | lib | core |
 | `phoecord-plugin-sdk` | `crates/phoecord-plugin-sdk/` | lib (guest side) | none, by design |
 | `phoecord-plugins` | `crates/phoecord-plugins/` | lib | core |
@@ -79,6 +79,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 
 | `src/hostnet.rs` | `Net`: the client's session headers kept in memory only (30 min TTL, dropped on 401), `Host::rest` to the client's own Discord API host with route checks, per-plugin 1/s + global 5/s caps and Discord's rate-limit buckets; `Host::rest_files` (multipart upload, 10 files, 25 MB); `Host::fetch` to allow-listed HTTPS hosts (5 MB cap, no redirects, no credentials, raw `bytes` for non-JSON answers); a small dedicated runtime so plugin calls never block the proxy | Never log or persist the session headers; `Debug` is redacted |
 | `src/timers.rs` | `Timers`: plugin timers from `Host::schedule` (50 ms min, 24 h max, 64 per plugin, memory only) and the `drive` task that fires them through `Proxy::fire_timer` | Holds only a `Weak<Proxy>` |
+| `src/ipc.rs` | The proxy's end of the loader IPC (1.5.5): `spawn` (pipe server thread on Windows, no-op elsewhere), `serve_connection` (any `BufRead`/`Write`), `ConfigSettings` (`[loader]` in `config.toml`) | Settings are only the `[loader]` table, scalar values; garbage drops the connection; at most 8 connections |
 | `src/live.rs` | `LiveGateways`: registry of bridged gateway connections; sends queued outside a frame go to the newest one at once | A `LiveGuard` unregisters on drop |
 | `tests/hostnet.rs` | Loopback fake Discord and outside servers: capture/reuse, refusals, rate limits, allow-list, caps, a `Chain` test | |
 
@@ -165,6 +166,8 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/proxy_dll.rs` | `FORWARD_TABLE`, `resolve_export`: loads the real DLL from `GetSystemDirectoryW` on first call | Never load by name: it would resolve to this DLL |
 | `src/entry.rs` | `DllMain` (only `DisableThreadLibraryCalls` + `CreateThread`, and no worker at all when the command line has `--type=`), the worker: log, detect the build from the mapped image (`GetModuleHandleW(null)`, logs the time in ms), load signatures | No work under the loader lock; panics are caught; child processes must still forward every export |
 | `src/log.rs` | Loader log in `%LOCALAPPDATA%\PhoeCord\loader.log` | |
+| `src/ipc.rs` | Loader ↔ proxy protocol (1.5.5): `Msg` / `Envelope` (`hello`, `status`, `settings.get/set/value`, `ui.event`), `encode_line` / `decode_line` / `read_line` with the 64 KiB cap, `pipe_name`, `CONNECT_DELAYS_MS`, `describe_connection` (the proxy's log line) | No OS code, used by the proxy too: a change is a protocol change, bump `PROTOCOL_VERSION` |
+| `src/pipe.rs` | Windows named pipe: `PipeServer` (user-only DACL from the user's SID, `PIPE_REJECT_REMOTE_CLIENTS`, first instance), `connect`, `send_all`, `current_user_sid` | All the IPC `unsafe` lives here, each block with `// SAFETY:`; no work under the loader lock (only the worker calls it) |
 | `src/pe.rs`, `src/version.rs` | PE parsing (file or mapped image: `Pe::parse_mapped`, `Pe::image_size`), file version resource, `.text` SHA-256 (`detect` for a file, `detect_mapped` for memory, same hash), `is_child_process` | Pure, tested on every OS; the hash must stay equal for file and image, `signatures/*.toml` depend on it |
 | `src/signatures.rs` | `SignatureSet::load_dir`, `select`, `resolve_all` (`find_unique` + `rip`) | Format documented in `signatures/README.md` |
 | `src/hook.rs` | Inline detours (`retour`), installed with other threads suspended, `uninstall_all` | Hooks must be removed before `FreeLibrary` |

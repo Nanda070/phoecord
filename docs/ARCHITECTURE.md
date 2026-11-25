@@ -179,10 +179,20 @@ Built-in plugins stay native for now (`phoecord-plugins`); once the WASM runtime
 
 1. `DllMain(DLL_PROCESS_ATTACH)`: nothing heavy (loader lock). Load the real `version.dll` from `System32` by full path and start a worker thread.
 2. All exports (`GetFileVersionInfoW` and so on) forward to the system DLL.
-3. Worker thread: check the client version → load the signature set → install hooks → IPC with `phoecord-proxy` (named pipe).
+3. Worker thread: check the client version → load the signature set → install hooks → report to `phoecord-proxy` over IPC (see "Loader ↔ proxy IPC").
 4. Discord's updater puts a new version into a new `app-x.y.z` folder → `ensure_loader` copies the DLL there on the next `phoecord launch` or autostart (see "Installer and releases", loader step).
 
 macOS and Linux come later: `DYLD_INSERT_LIBRARIES` / `LD_PRELOAD` through the PhoeCord launcher.
+
+### Loader ↔ proxy IPC
+
+A Windows named pipe per user, `\\.\pipe\phoecord-<user SID>`. The proxy (`phoecord run` / `launch`) is the server; the loader, in the main client process only, is the client. On macOS and Linux the proxy side does nothing (the loader is Windows-only).
+
+- **Who may connect.** The pipe's security descriptor is `D:P(A;;GA;;;<your SID>)`: a protected ACL with one entry, generic-all for the user running the proxy. No `Everyone`, no `SYSTEM`, no `Administrators`; remote clients are refused (`PIPE_REJECT_REMOTE_CLIENTS`); the proxy creates it with `FILE_FLAG_FIRST_PIPE_INSTANCE`, so a second `phoecord run` gets an error instead of sharing the name. The client opens it with an anonymous impersonation level.
+- **Protocol.** JSON lines (UTF-8, newline-terminated), one message per line, each with `v` (protocol version, now 1) and `type`: `hello` (loader version, client build, `.text` hash, pid, detection time), `status` (UI layer on/off and why), `settings.get` / `settings.set` (answered by the proxy with `settings.value`, from the `[loader]` table of `config.toml`; keys are 1-64 characters of letters, digits, `_`, `-`; values are booleans, numbers or strings) and `ui.event` (name + JSON payload; logged at debug level and ignored until Phase 2). A line over 64 KiB, invalid JSON, an unknown `type` or another `v` drops the connection.
+- **Where it is defined.** `crates/phoecord-loader/src/ipc.rs` holds the message types and the line codec, with no OS code; the proxy depends on `phoecord-loader` with the `dll` feature off and uses the same types, so there is one definition and the loader never depends on the proxy. The pipe itself and all its `unsafe` are in `crates/phoecord-loader/src/pipe.rs`; the proxy serves it through that safe API (`crates/phoecord-proxy/src/ipc.rs`), which keeps the rule that `unsafe` lives in the loader crate only.
+- **The loader never blocks the client.** The worker connects after detecting the build and sends `hello` and `status`. Opening the pipe does not wait; it tries five times (0, 0.5, 2, 5 and 15 s apart) on its own thread and then gives up quietly, with one line in `loader.log`. A client started without a proxy runs as before.
+- **The proxy logs one line per loader connection:** `loader connected: build 1.0.1355, hash …, UI layer off (no signatures) (loader 0.5.0, pid …, detected in … ms)`.
 
 ### Finding functions
 

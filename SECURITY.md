@@ -20,7 +20,9 @@ All other traffic (CDN, media, voice, other sites) goes through a plain tunnel: 
 
 ## The loader (UI layer)
 
-Status: prototype merged (stages 1.5.1–1.5.4), not yet placed by the installer; checked with a test host only, not inside Discord. Requirements the loader must meet: `phoecord-loader` is placed next to the client as a proxy DLL; it loads only plugins installed in PhoeCord's own folder, never downloads code from the network and has no function that reads the token. The installer puts the DLL in place only on an explicit user command and can remove it.
+Status: prototype merged (stages 1.5.1–1.5.5), not yet placed by the installer; checked with a test host only, not inside Discord. Requirements the loader must meet: `phoecord-loader` is placed next to the client as a proxy DLL; it loads only plugins installed in PhoeCord's own folder, never downloads code from the network and has no function that reads the token. The installer puts the DLL in place only on an explicit user command and can remove it.
+
+**The IPC pipe is a local attack surface.** `phoecord run` / `launch` open the named pipe `\\.\pipe\phoecord-<user SID>`. Who can connect: only the Windows user who runs the proxy (a protected ACL with a single entry for that user's SID; no `Everyone`, no `SYSTEM`, no `Administrators`) and only from this computer (`PIPE_REJECT_REMOTE_CLIENTS`). What a connected process can do: tell the proxy about the client build (logged), read and write scalar keys of the `[loader]` table in `config.toml` (nothing else in the file), and send UI events (logged, ignored). It cannot read the token, plugin settings or traffic. Every other process of the same user can do this too, as it could edit `config.toml` directly. Lines over 64 KiB, bad JSON and unknown messages drop the connection; at most 8 connections are served. Known limits: another user who creates the same pipe name first can make the loader report to them (build and hash only; the loader never trusts what a pipe answers beyond its own settings); the proxy then reports that it could not create the pipe.
 
 ## Your Discord session
 
