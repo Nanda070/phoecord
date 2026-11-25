@@ -11,18 +11,27 @@
 //! Everything that touches Win32 is `#[cfg(windows)]`; the parsing and resolution logic is
 //! platform-independent and tested on every OS.
 //!
-//! Status: stage 1.5.1–1.5.4 (prototype): export forwarding, `DllMain` + worker, version detection,
-//! signatures, detours. IPC and survival of client updates are 1.5.5 and 1.5.6.
+//! Status: stage 1.5.1–1.5.5 (prototype): export forwarding, `DllMain` + worker, version detection,
+//! signatures, detours, and the IPC to the proxy ([`ipc`], [`pipe`]). Survival of client updates
+//! is 1.5.6.
+//!
+//! The `dll` feature (on by default) is the DLL itself. The proxy uses this crate without it, for
+//! the IPC protocol and the pipe server: that is the only way the `unsafe` of the pipe stays in
+//! this crate.
 
 pub mod aob;
+pub mod ipc;
 pub mod log;
 pub mod pe;
 pub mod signatures;
 pub mod version;
 
 #[cfg(windows)]
+pub mod pipe;
+
+#[cfg(all(windows, feature = "dll"))]
 pub mod entry;
-#[cfg(windows)]
+#[cfg(all(windows, feature = "dll"))]
 pub mod hook;
-#[cfg(windows)]
+#[cfg(all(windows, feature = "dll"))]
 pub mod proxy_dll;

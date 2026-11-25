@@ -14,26 +14,36 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 serde.workspace = true
+serde_json.workspace = true
 sha2 = "0.11"
 toml = "1.2"
 
 [target.'cfg(windows)'.dependencies]
-retour = { version = "0.3", default-features = false }
+retour = { version = "0.3", default-features = false, optional = true }
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_Security",
+    "Win32_Security_Authorization",
     "Win32_Storage_FileSystem",
     "Win32_System_Diagnostics_Debug",
     "Win32_System_Environment",
     "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_Kernel",
     "Win32_System_LibraryLoader",
+    "Win32_System_IO",
     "Win32_System_Memory",
+    "Win32_System_Pipes",
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices",
     "Win32_System_Threading",
 ] }
 
+
+[features]
+# The DLL itself: `DllMain`, export forwarding, hooks. The proxy depends on this crate without it,
+# for the IPC protocol and the pipe server only.
+default = ["dll"]
+dll = ["dep:retour"]
 
 [lints]
 workspace = true

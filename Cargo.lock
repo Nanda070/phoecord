@@ -3235,6 +3235,7 @@ version = "0.5.0"
 dependencies = [
  "retour",
  "serde",
+ "serde_json",
  "sha2",
  "toml 1.2.1+spec-1.1.0",
  "windows-sys 0.61.2",
@@ -3283,6 +3284,7 @@ dependencies = [
  "notify-rust",
  "phoecord-core",
  "phoecord-i18n",
+ "phoecord-loader",
  "phoecord-plugin-runtime",
  "phoecord-plugins",
  "rcgen",

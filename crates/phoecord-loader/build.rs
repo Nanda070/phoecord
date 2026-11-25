@@ -39,7 +39,10 @@ fn main() {
     .unwrap();
 
     // Export the stubs from the cdylib (MSVC only; global_asm symbols are not exported by default).
-    if env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc")
+    // Only with the `dll` feature: without it the stubs are not compiled in (the proxy uses this
+    // crate for the IPC alone) and exporting them would not link.
+    if env::var_os("CARGO_FEATURE_DLL").is_some()
+        && env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc")
         && env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("x86_64")
     {
         for n in &names {
