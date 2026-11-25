@@ -61,6 +61,20 @@ jobs:
       - name: cargo test
         run: cargo test --workspace
 
+  sdk-example:
+    name: SDK example (wasm32-wasip2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: examples/hello-plugin
+      - run: cargo build --release --target wasm32-wasip2 --locked
+        working-directory: examples/hello-plugin
+
   msrv:
     name: MSRV (1.88)
     runs-on: ubuntu-latest

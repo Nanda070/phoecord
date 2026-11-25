@@ -1,0 +1,23 @@
+# The smallest PhoeCord plugin written with the SDK (built for wasm32-wasip2).
+# Its own workspace, not a member of the PhoeCord workspace.
+[package]
+name = "hello-plugin"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# The SDK must be named `phoecord`: `#[phoecord::plugin]` expands to paths under that name.
+phoecord = { package = "phoecord-plugin-sdk", path = "../../crates/phoecord-plugin-sdk" }
+
+[workspace]
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
