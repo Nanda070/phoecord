@@ -1,9 +1,8 @@
-//! [`ProxyHost`]: the [`Host`] the proxy hands to plugins, plus the state it reads (account, KV
-//! store, rate limits).
+//! [`ProxyHost`]: the [`Host`] the engine hands to plugins, plus the state it reads (account, KV
+//! store, rate limits). The only network-shaped part is the [`Network`] a transport supplies.
 
 use crate::account::Account;
 use crate::config::Config;
-use crate::hostnet::{GLOBAL_PER_SECOND, Net};
 use crate::timers::Timers;
 use phoecord_core::{FilePart, Host, HostResponse, Val};
 use phoecord_i18n::PluginStrings;
@@ -11,6 +10,109 @@ use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock, RwLock};
 use std::time::{Duration, Instant};
+
+/// At most this many Discord API calls a second across all plugins.
+pub const GLOBAL_PER_SECOND: usize = 5;
+
+/// What a transport supplies for `Host::rest`, `Host::rest_files` and `Host::fetch`: the client's
+/// own Discord session and the outgoing HTTPS. Everything about headers, TLS and the upstream
+/// proxy stays behind it. `upstream` is the raw `upstream` setting of the config (`None` or empty
+/// means connect directly); the implementation parses it and reports a bad value as an `Err`.
+pub trait Network: Send + Sync {
+    /// Whether the client's session is known, so `rest` can be made as the client.
+    fn signed_in(&self) -> bool;
+
+    /// A Discord API call as the client's own session.
+    fn rest(
+        &self,
+        method: &str,
+        route: &str,
+        body: Option<&Val>,
+        upstream: Option<&str>,
+    ) -> Result<HostResponse, String>;
+
+    /// A Discord API call with files (`multipart/form-data`).
+    fn rest_files(
+        &self,
+        method: &str,
+        route: &str,
+        payload: Option<&Val>,
+        files: &[FilePart],
+        upstream: Option<&str>,
+    ) -> Result<HostResponse, String>;
+
+    /// HTTPS to an outside host of the plugin's `fetch` list (`allowed`), without credentials.
+    fn fetch(
+        &self,
+        allowed: &[String],
+        method: &str,
+        url: &str,
+        body: Option<&Val>,
+        upstream: Option<&str>,
+    ) -> Result<HostResponse, String>;
+
+    /// [`Network::fetch`] with the caller's extra request headers.
+    fn fetch_with(
+        &self,
+        allowed: &[String],
+        method: &str,
+        url: &str,
+        headers: &[(&str, &str)],
+        body: Option<&Val>,
+        upstream: Option<&str>,
+    ) -> Result<HostResponse, String>;
+}
+
+/// A transport without network access: every call fails with a clear error.
+pub struct NoNetwork;
+
+const NO_NETWORK: &str = "this transport has no network access for plugins";
+
+impl Network for NoNetwork {
+    fn signed_in(&self) -> bool {
+        false
+    }
+    fn rest(
+        &self,
+        _: &str,
+        _: &str,
+        _: Option<&Val>,
+        _: Option<&str>,
+    ) -> Result<HostResponse, String> {
+        Err(NO_NETWORK.into())
+    }
+    fn rest_files(
+        &self,
+        _: &str,
+        _: &str,
+        _: Option<&Val>,
+        _: &[FilePart],
+        _: Option<&str>,
+    ) -> Result<HostResponse, String> {
+        Err(NO_NETWORK.into())
+    }
+    fn fetch(
+        &self,
+        _: &[String],
+        _: &str,
+        _: &str,
+        _: Option<&Val>,
+        _: Option<&str>,
+    ) -> Result<HostResponse, String> {
+        Err(NO_NETWORK.into())
+    }
+    fn fetch_with(
+        &self,
+        _: &[String],
+        _: &str,
+        _: &str,
+        _: &[(&str, &str)],
+        _: Option<&Val>,
+        _: Option<&str>,
+    ) -> Result<HostResponse, String> {
+        Err(NO_NETWORK.into())
+    }
+}
 
 /// At most `max` hits per key within `window`.
 pub struct RateLimiter {
@@ -126,8 +228,9 @@ pub const PLUGIN_REST_WINDOW: Duration = Duration::from_secs(5);
 /// State shared by every [`ProxyHost`]. Each lock is taken per call, never held across the chain.
 pub struct Shared {
     pub account: Mutex<Account>,
-    /// The client's Discord session and the HTTP client behind `Host::rest` / `Host::fetch`.
-    pub net: Net,
+    /// The client's Discord session and the HTTP client behind `Host::rest` / `Host::fetch`,
+    /// supplied by the transport.
+    pub net: Arc<dyn Network>,
     rest_global: Mutex<RateLimiter>,
     kv: Mutex<KvStore>,
     plugins_dir: PathBuf,
@@ -176,9 +279,18 @@ impl Shared {
     }
 
     pub fn with_notifier(plugins_dir: PathBuf, notifier: Notifier) -> Shared {
+        Shared::with_parts(plugins_dir, notifier, Arc::new(NoNetwork))
+    }
+
+    /// State with the transport's `net` behind `Host::rest` and `Host::fetch`.
+    pub fn with_network(plugins_dir: PathBuf, net: Arc<dyn Network>) -> Shared {
+        Shared::with_parts(plugins_dir, Box::new(desktop_notify), net)
+    }
+
+    fn with_parts(plugins_dir: PathBuf, notifier: Notifier, net: Arc<dyn Network>) -> Shared {
         Shared {
             account: Mutex::new(Account::default()),
-            net: Net::new(),
+            net,
             rest_global: Mutex::new(RateLimiter::new(GLOBAL_PER_SECOND, Duration::from_secs(1))),
             kv: Mutex::new(KvStore::new(plugins_dir.clone())),
             plugins_dir,
@@ -360,8 +472,7 @@ impl Host for ProxyHost<'_> {
         body: Option<&Val>,
     ) -> Result<HostResponse, String> {
         self.rest_gate()?;
-        let upstream = self.upstream()?;
-        self.shared.net.rest(method, route, body, upstream)
+        self.shared.net.rest(method, route, body, self.upstream())
     }
 
     fn rest_files(
@@ -372,10 +483,9 @@ impl Host for ProxyHost<'_> {
         files: &[FilePart],
     ) -> Result<HostResponse, String> {
         self.rest_gate()?;
-        let upstream = self.upstream()?;
         self.shared
             .net
-            .rest_files(method, route, payload, files, upstream)
+            .rest_files(method, route, payload, files, self.upstream())
     }
 
     fn fetch(
@@ -384,10 +494,9 @@ impl Host for ProxyHost<'_> {
         url: &str,
         body: Option<&Val>,
     ) -> Result<HostResponse, String> {
-        let upstream = self.upstream()?;
         self.shared
             .net
-            .fetch(&self.fetch_hosts, method, url, body, upstream)
+            .fetch(&self.fetch_hosts, method, url, body, self.upstream())
     }
 
     fn fetch_with(
@@ -397,10 +506,14 @@ impl Host for ProxyHost<'_> {
         headers: &[(&str, &str)],
         body: Option<&Val>,
     ) -> Result<HostResponse, String> {
-        let upstream = self.upstream()?;
-        self.shared
-            .net
-            .fetch_with(&self.fetch_hosts, method, url, headers, body, upstream)
+        self.shared.net.fetch_with(
+            &self.fetch_hosts,
+            method,
+            url,
+            headers,
+            body,
+            self.upstream(),
+        )
     }
 }
 
@@ -437,14 +550,12 @@ impl ProxyHost<'_> {
         Ok(())
     }
 
-    fn upstream(&self) -> Result<Option<crate::egress::Upstream>, String> {
+    /// The `upstream` setting for the transport's [`Network`]; empty counts as unset.
+    fn upstream(&self) -> Option<&str> {
         self.config
             .upstream
             .as_deref()
             .filter(|s| !s.trim().is_empty())
-            .map(crate::egress::Upstream::parse)
-            .transpose()
-            .map_err(|e| format!("{e:#}"))
     }
 }
 

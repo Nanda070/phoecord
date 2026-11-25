@@ -6,7 +6,7 @@ use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdic
 use phoecord_plugin_runtime::Chain;
 use phoecord_proxy::config::Config;
 use phoecord_proxy::host::{ProxyHost, Shared};
-use phoecord_proxy::hostnet::Target;
+use phoecord_proxy::hostnet::{Net, Target};
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, Mutex};
@@ -83,11 +83,27 @@ fn json(status: u16, body: &str) -> Reply {
     )
 }
 
-fn shared(addr: SocketAddr) -> Shared {
+/// The host state plus the proxy's own [`Net`] behind it (what the proxy supplies to the engine).
+struct Rig {
+    shared: Shared,
+    net: Arc<Net>,
+}
+
+impl std::ops::Deref for Rig {
+    type Target = Shared;
+    fn deref(&self) -> &Shared {
+        &self.shared
+    }
+}
+
+fn shared(addr: SocketAddr) -> Rig {
     let dir = std::env::temp_dir().join(format!("phoecord-test-hostnet-{}", addr.port()));
-    let s = Shared::new(dir);
-    s.net.set_test_target(Target::Test { addr, tls: None });
-    s
+    let net = Arc::new(Net::new());
+    net.set_test_target(Target::Test { addr, tls: None });
+    Rig {
+        shared: Shared::with_network(dir, net.clone()),
+        net,
+    }
 }
 
 fn client_headers(auth: &str) -> HeaderMap {
@@ -99,7 +115,7 @@ fn client_headers(auth: &str) -> HeaderMap {
     h
 }
 
-fn sign_in(s: &Shared, auth: &str) {
+fn sign_in(s: &Rig, auth: &str) {
     s.net.observe(
         "discord.com",
         "/api/v9/channels/1/messages",

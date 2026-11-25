@@ -1,15 +1,14 @@
 //! PhoeCord network layer: the local MITM proxy between the client and Discord.
 //!
-//! [`Proxy`] owns the live config, the account state, the plugin [`Chain`] and the TLS setup.
-//! [`server`] accepts `CONNECT`, [`rest`] and [`gateway`] run Discord's traffic through the chain.
+//! [`Proxy`] is one transport of the plugin chain: it owns the TLS setup and the sockets and hands
+//! every event to the transport-neutral [`Engine`] (`phoecord-transport`), which owns the config,
+//! the account state and the plugin [`phoecord_plugin_runtime::Chain`]. [`server`] accepts
+//! `CONNECT`, [`rest`] and [`gateway`] run Discord's traffic through the engine.
 
-pub mod account;
 pub mod ca;
 pub mod codec;
-pub mod config;
 pub mod egress;
 pub mod gateway;
-pub mod host;
 pub mod hostnet;
 pub mod ipc;
 pub mod live;
@@ -19,16 +18,21 @@ pub mod server;
 pub mod timers;
 pub mod trust;
 
+pub use phoecord_transport::{DispatchResult, Effects, Engine, RequestOutcome, SendResult};
+pub use phoecord_transport::{account, config, host, queued_frame};
+
 use anyhow::Result;
 use ca::Authority;
 use config::{Config, Paths};
-use host::{ProxyHost, Shared};
+use host::Shared;
+use hostnet::Net;
 use live::LiveGateways;
-use phoecord_core::{EventKind, TIMER_EVENT, Val};
+use phoecord_core::Val;
+use phoecord_plugin_runtime::Chain;
 use phoecord_plugin_runtime::package::PackageSet;
-use phoecord_plugin_runtime::{Chain, Outcome};
+use std::ops::Deref;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, SystemTime};
 use tokio::sync::{broadcast, watch};
 
@@ -38,41 +42,14 @@ pub struct Stats {
     pub undecodable: AtomicU64,
 }
 
-/// What the chain decided about a REST request.
-#[derive(Debug, PartialEq)]
-pub enum RequestOutcome {
-    /// Forward it; `changed` says the body must be re-serialized.
-    Forward { changed: bool },
-    /// Answer locally, the request never reaches Discord.
-    Reply { status: u16, body: Option<Val> },
-}
-
-/// What the chain decided about a server → client gateway payload.
-#[derive(Debug)]
-pub struct DispatchResult {
-    pub payload: Val,
-    pub extra: Vec<Val>,
-    pub changed: bool,
-    pub drop: bool,
-    /// Client → server payloads plugins queued with `Host::emit_send`.
-    pub sends: Vec<(i64, Val)>,
-}
-
-/// What the chain decided about a client → server gateway payload.
-#[derive(Debug)]
-pub struct SendResult {
-    pub changed: bool,
-    pub drop: bool,
-    pub sends: Vec<(i64, Val)>,
-}
-
 pub struct Proxy {
     pub paths: Paths,
-    config: RwLock<Arc<Config>>,
-    pub shared: Shared,
-    pub chain: Chain,
-    /// Keeps the chain's dynamic segment in step with `data/plugins/` (WASM packages).
-    packages: Mutex<Option<PackageSet>>,
+    /// The transport boundary: config, account state, host state and the plugin chain. The proxy
+    /// reaches all of it through this; `Proxy` derefs to it.
+    pub engine: Engine,
+    /// The client's Discord session and HTTPS for `Host::rest` / `Host::fetch`: what this
+    /// transport supplies to the engine.
+    pub net: Arc<Net>,
     pub ca: Arc<Authority>,
     pub server_tls: Arc<rustls::ServerConfig>,
     pub upstream_tls: Arc<rustls::ClientConfig>,
@@ -88,6 +65,13 @@ pub struct Proxy {
     /// Decode (and re-encode) the gateway even when no plugin needs it (self-test).
     pub force_decode: bool,
     pub stats: Stats,
+}
+
+impl Deref for Proxy {
+    type Target = Engine;
+    fn deref(&self) -> &Engine {
+        &self.engine
+    }
 }
 
 pub fn upstream_tls(
@@ -113,14 +97,13 @@ impl Proxy {
     pub fn new(paths: Paths, cfg: Config, chain: Chain, force_decode: bool) -> Result<Arc<Proxy>> {
         let ca = Arc::new(Authority::load_or_create(&paths.data)?);
         let server_tls = ca.server_config();
-        let mut shared = Shared::new(paths.data.join("plugins"));
+        let net = Arc::new(Net::new());
+        let mut shared = Shared::with_network(paths.data.join("plugins"), net.clone());
         shared.config_path = paths.config.clone();
-        let proxy = Arc::new(Proxy {
+        Ok(Arc::new(Proxy {
             paths,
-            config: RwLock::new(Arc::new(Config::default())),
-            shared,
-            chain,
-            packages: Mutex::new(None),
+            engine: Engine::new(chain, shared, cfg),
+            net,
             ca,
             server_tls,
             upstream_tls: upstream_tls(None),
@@ -130,13 +113,7 @@ impl Proxy {
             timers_started: AtomicBool::new(false),
             force_decode,
             stats: Stats::default(),
-        });
-        proxy.apply(cfg);
-        Ok(proxy)
-    }
-
-    pub fn cfg(&self) -> Arc<Config> {
-        self.config.read().unwrap().clone()
+        }))
     }
 
     /// The `upstream` proxy from the live config; `None` means connect directly.
@@ -149,46 +126,22 @@ impl Proxy {
             .transpose()
     }
 
-    /// Make `cfg` the live config and switch the chain to the plugins it enables.
-    pub fn apply(&self, cfg: Config) {
-        self.set_enabled_from(&cfg);
-        *self.config.write().unwrap() = Arc::new(cfg);
-    }
-
-    fn set_enabled_from(&self, cfg: &Config) {
-        let enabled: Vec<String> = self
-            .chain
-            .ids()
-            .into_iter()
-            .filter(|id| cfg.is_enabled(id))
-            .collect();
-        self.chain.set_enabled(enabled);
-    }
-
     /// Follow `data/plugins/` with `packages`: load what is new now and on every later
     /// [`Proxy::sync_packages`].
     pub fn watch_packages(&self, packages: PackageSet) {
-        *self.packages.lock().unwrap() = Some(packages);
-        self.sync_packages();
+        if self.engine.watch_packages(packages) {
+            self.reloads.send_modify(|n| *n += 1);
+        }
     }
 
     /// Load new packages and unload removed ones, then switch the chain to what the config
-    /// enables. Does nothing when no packages are watched or nothing changed. Compiling a WASM
-    /// package takes a while, so call this off the async executor's threads.
+    /// enables. Compiling a WASM package takes a while, so call this off the async executor's
+    /// threads.
     pub fn sync_packages(&self) {
-        let logs = match self.packages.lock().unwrap().as_mut() {
-            Some(set) => set.sync(&self.chain),
-            None => return,
-        };
-        if logs.is_empty() {
-            return;
+        if self.engine.sync_packages() {
+            // Gateway tasks replay their state through the chain when this changes.
+            self.reloads.send_modify(|n| *n += 1);
         }
-        for line in &logs {
-            tracing::info!("{line}");
-        }
-        self.set_enabled_from(&self.cfg());
-        // Gateway tasks replay their state through the chain when this changes.
-        self.reloads.send_modify(|n| *n += 1);
     }
 
     /// Re-read config.toml whenever it changes (checked every 2 s, together with the `plugins/` folder). A broken file keeps the old config.
@@ -230,111 +183,42 @@ impl Proxy {
         ));
     }
 
-    /// A due timer: a [`TIMER_EVENT`] dispatch for `plugin` alone (skipped when it is off or does
-    /// not want it). What it queues goes out at once: sends to the live gateway through the Send
-    /// chain, client payloads to the client.
+    /// A due timer: what the plugin queues goes out at once (see [`Engine::fire_timer`]).
     pub fn fire_timer(&self, plugin: &str, tag: &str) {
-        let cfg = self.cfg();
-        let mut payload = timers::timer_payload(tag);
-        let mut extra = Vec::new();
-        let mut host = ProxyHost::new(&self.shared, &cfg);
-        let ran = self
-            .chain
-            .dispatch_to(&mut host, plugin, TIMER_EVENT, &mut payload, &mut extra);
-        if ran.is_none() {
-            tracing::debug!(
-                plugin,
-                tag,
-                "timer skipped: the plugin is off or not listening"
-            );
-        }
-        extra.append(&mut host.locals);
-        self.publish(extra);
-        self.push_sends(host.sends);
+        let effects = self.engine.fire_timer(plugin, tag);
+        self.deliver(effects);
     }
 
     /// Run sends plugins queued with `Host::emit_send` through the Send chain once and return
-    /// the frames (`{"op":…,"d":…}`) to send, in order. A send the chain drops is left out; sends
-    /// plugins queue while this runs follow the frame as they are (never chained again, so a
-    /// plugin cannot loop).
+    /// the frames to send, in order (see [`Engine::chain_queued`]).
     pub fn chain_queued(&self, sends: Vec<(i64, Val)>) -> Vec<Val> {
-        if sends.is_empty() {
-            return Vec::new();
-        }
-        let cfg = self.cfg();
-        let mut out = Vec::new();
-        for (op, payload) in sends {
-            let mut frame = queued_frame(op, payload);
-            let mut host = ProxyHost::new(&self.shared, &cfg);
-            let outcome = self.chain.send(&mut host, op, &mut frame);
-            self.publish(std::mem::take(&mut host.locals));
-            if !matches!(outcome, Outcome::Dropped { .. } | Outcome::Replied { .. }) {
-                out.push(frame);
-            }
-            out.extend(host.sends.into_iter().map(|(op, p)| queued_frame(op, p)));
-        }
-        out
+        let effects = self.engine.chain_queued(sends);
+        self.publish(effects.locals);
+        effects.frames
     }
 
-    /// Sends queued outside a gateway frame (REST events, timers): through the Send chain, then
-    /// to the newest live gateway connection at once (none: dropped with a log line).
-    fn push_sends(&self, sends: Vec<(i64, Val)>) {
-        let frames = self.chain_queued(sends);
-        self.live.push(frames);
+    /// Hand what plugins queued outside a gateway frame to the connections: payloads to the
+    /// client, frames to the newest live gateway connection (none: dropped with a log line).
+    fn deliver(&self, effects: Effects) {
+        self.publish(effects.locals);
+        self.live.push(effects.frames);
     }
 
     pub fn gateway_active(&self) -> bool {
-        self.force_decode || self.chain.wants_gateway()
-    }
-
-    pub fn wants_request(&self, method: &str, route: &str) -> bool {
-        self.chain.wants(&EventKind::RestRequest { method, route })
-    }
-
-    pub fn wants_response(&self, method: &str, route: &str) -> bool {
-        self.chain.wants(&EventKind::RestResponse { method, route })
+        self.force_decode || self.engine.wants_gateway()
     }
 
     pub fn on_request(&self, method: &str, route: &str, body: &mut Option<Val>) -> RequestOutcome {
-        let cfg = self.cfg();
-        self.shared
-            .account
-            .lock()
-            .unwrap()
-            .record_request(method, route, body.as_ref());
-        let mut host = ProxyHost::new(&self.shared, &cfg);
-        let outcome = self
-            .chain
-            .rest_request(&mut host, method, route, body.as_mut());
-        self.publish(std::mem::take(&mut host.locals));
-        self.push_sends(host.sends);
-        match outcome {
-            Outcome::Untouched => RequestOutcome::Forward { changed: false },
-            Outcome::Changed => RequestOutcome::Forward { changed: true },
-            Outcome::Replied { by, status, body } => {
-                tracing::debug!("{by}: answered {method} {route} locally ({status})");
-                RequestOutcome::Reply { status, body }
-            }
-            Outcome::Dropped { by } => {
-                tracing::debug!("{by}: dropped {method} {route}");
-                RequestOutcome::Reply {
-                    status: 204,
-                    body: None,
-                }
-            }
-        }
+        let (outcome, effects) = self.engine.on_request(method, route, body);
+        self.deliver(effects);
+        outcome
     }
 
     /// A REST answer: plugins may rewrite `body`; returns whether they did.
     pub fn on_response(&self, method: &str, route: &str, status: u16, body: &mut Val) -> bool {
-        let cfg = self.cfg();
-        let mut host = ProxyHost::new(&self.shared, &cfg);
-        let outcome = self
-            .chain
-            .rest_response(&mut host, method, route, status, body);
-        self.publish(std::mem::take(&mut host.locals));
-        self.push_sends(host.sends);
-        outcome == Outcome::Changed
+        let (changed, effects) = self.engine.on_response(method, route, status, body);
+        self.deliver(effects);
+        changed
     }
 
     /// Hand local server → client payloads to the gateway connections (none open: dropped).
@@ -345,79 +229,24 @@ impl Proxy {
     }
 
     /// A server → client payload: learn from it, then let plugins change it.
-    pub fn on_dispatch(&self, mut payload: Val) -> DispatchResult {
-        let cfg = self.cfg();
-        let mut extra = Vec::new();
-        let name = if payload.get("op").and_then(Val::as_i64) == Some(0) {
-            payload.str_at(&["t"]).map(str::to_string)
-        } else {
-            None
-        };
-        let Some(name) = name else {
-            return DispatchResult {
-                payload,
-                extra,
-                changed: false,
-                drop: false,
-                sends: Vec::new(),
-            };
-        };
-        if let Some(d) = payload.get("d") {
-            self.shared.account.lock().unwrap().track(&name, d);
-        }
-        let mut host = ProxyHost::new(&self.shared, &cfg);
-        let outcome = self
-            .chain
-            .dispatch(&mut host, &name, &mut payload, &mut extra);
-        let (changed, drop) = match outcome {
-            Outcome::Untouched => (false, false),
-            Outcome::Changed => (true, false),
-            Outcome::Dropped { .. } | Outcome::Replied { .. } => (false, true),
-        };
-        extra.append(&mut host.locals);
-        DispatchResult {
-            payload,
-            extra,
-            changed,
-            drop,
-            sends: host.sends,
-        }
+    pub fn on_dispatch(&self, payload: Val) -> DispatchResult {
+        self.engine.on_dispatch(payload)
     }
 
     /// A client → server payload.
     pub fn on_send(&self, payload: &mut Val) -> SendResult {
-        let cfg = self.cfg();
-        let Some(op) = payload.get("op").and_then(Val::as_i64) else {
-            return SendResult {
-                changed: false,
-                drop: false,
-                sends: Vec::new(),
-            };
-        };
-        let mut host = ProxyHost::new(&self.shared, &cfg);
-        let outcome = self.chain.send(&mut host, op, payload);
-        self.publish(std::mem::take(&mut host.locals));
-        SendResult {
-            changed: outcome == Outcome::Changed,
-            drop: matches!(outcome, Outcome::Dropped { .. } | Outcome::Replied { .. }),
-            sends: host.sends,
-        }
+        let mut result = self.engine.on_send(payload);
+        self.publish(std::mem::take(&mut result.locals));
+        result
     }
-}
-
-/// A payload a plugin queued with `Host::emit_send`, as a gateway frame: `{"op": op, "d": payload}`.
-pub fn queued_frame(op: i64, payload: Val) -> Val {
-    let mut v = Val::map();
-    v.set("op", Val::Int(op));
-    v.set("d", payload);
-    v
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use host::ProxyHost;
     use phoecord_core::plugin::API_VERSION;
-    use phoecord_core::{Event, Host, Layer, Manifest, Plugin, Verdict};
+    use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, TIMER_EVENT, Verdict};
 
     /// Rewrites MESSAGE_CREATE content and queues a presence re-send.
     struct Rewrite(Manifest);

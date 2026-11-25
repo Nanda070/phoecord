@@ -15,6 +15,7 @@ phoecord-i18n = { path = "../phoecord-i18n" }
 # The IPC protocol and the pipe server; without the DLL itself.
 phoecord-loader = { path = "../phoecord-loader", default-features = false }
 phoecord-plugin-runtime.workspace = true
+phoecord-transport.workspace = true
 anyhow.workspace = true
 dirs.workspace = true
 flate2.workspace = true

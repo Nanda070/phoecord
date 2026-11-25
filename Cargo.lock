@@ -3287,6 +3287,7 @@ dependencies = [
  "phoecord-loader",
  "phoecord-plugin-runtime",
  "phoecord-plugins",
+ "phoecord-transport",
  "rcgen",
  "ring",
  "rustls",
@@ -3300,6 +3301,24 @@ dependencies = [
  "tracing",
  "webpki-roots",
  "zstd",
+]
+
+[[package]]
+name = "phoecord-transport"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "dirs",
+ "notify-rust",
+ "phoecord-core",
+ "phoecord-i18n",
+ "phoecord-plugin-runtime",
+ "phoecord-plugins",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml 1.2.1+spec-1.1.0",
+ "tracing",
 ]
 
 [[package]]

@@ -16,6 +16,7 @@ authors = ["Cheterin Group"]
 # Internal crates
 phoecord-core = { path = "crates/phoecord-core" }
 phoecord-proxy = { path = "crates/phoecord-proxy" }
+phoecord-transport = { path = "crates/phoecord-transport" }
 phoecord-plugin-runtime = { path = "crates/phoecord-plugin-runtime" }
 phoecord-plugins = { path = "crates/phoecord-plugins" }
 

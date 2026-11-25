@@ -1,0 +1,29 @@
+[package]
+name = "phoecord-transport"
+description = "PhoeCord transport boundary: the one entry a transport (proxy or in-process) calls to run the plugin chain"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+phoecord-core.workspace = true
+phoecord-i18n = { path = "../phoecord-i18n" }
+phoecord-plugin-runtime.workspace = true
+anyhow.workspace = true
+dirs.workspace = true
+notify-rust = "4"
+serde = { workspace = true }
+serde_json.workspace = true
+toml = "1"
+tracing.workspace = true
+tokio = { version = "1", features = ["sync"] }
+
+[dev-dependencies]
+phoecord-plugins.workspace = true
+
+[lints]
+workspace = true

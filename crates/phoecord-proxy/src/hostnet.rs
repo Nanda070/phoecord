@@ -34,8 +34,7 @@ pub const MAX_REQUEST: usize = 1024 * 1024;
 pub const MAX_UPLOAD: usize = 25 * 1024 * 1024;
 /// Whole-call timeout, connect to last byte.
 pub const TIMEOUT: Duration = Duration::from_secs(15);
-/// At most this many Discord API calls a second across all plugins.
-pub const GLOBAL_PER_SECOND: usize = 5;
+pub use phoecord_transport::host::GLOBAL_PER_SECOND;
 
 /// Client headers that make a call look like the client's own. Cookies are deliberately absent.
 const KEPT: &[&str] = &[
@@ -447,6 +446,79 @@ impl Net {
             _ => wait(),
         }
     }
+}
+
+/// The proxy's [`Network`] for the transport boundary: the client's session headers, rate limits
+/// and the (optionally upstream-proxied) HTTPS above.
+impl phoecord_transport::host::Network for Net {
+    fn signed_in(&self) -> bool {
+        Net::signed_in(self)
+    }
+
+    fn rest(
+        &self,
+        method: &str,
+        route: &str,
+        body: Option<&Val>,
+        upstream: Option<&str>,
+    ) -> Result<HostResponse, String> {
+        Net::rest(self, method, route, body, parse_upstream(upstream)?)
+    }
+
+    fn rest_files(
+        &self,
+        method: &str,
+        route: &str,
+        payload: Option<&Val>,
+        files: &[FilePart],
+        upstream: Option<&str>,
+    ) -> Result<HostResponse, String> {
+        Net::rest_files(
+            self,
+            method,
+            route,
+            payload,
+            files,
+            parse_upstream(upstream)?,
+        )
+    }
+
+    fn fetch(
+        &self,
+        allowed: &[String],
+        method: &str,
+        url: &str,
+        body: Option<&Val>,
+        upstream: Option<&str>,
+    ) -> Result<HostResponse, String> {
+        Net::fetch(self, allowed, method, url, body, parse_upstream(upstream)?)
+    }
+
+    fn fetch_with(
+        &self,
+        allowed: &[String],
+        method: &str,
+        url: &str,
+        headers: &[(&str, &str)],
+        body: Option<&Val>,
+        upstream: Option<&str>,
+    ) -> Result<HostResponse, String> {
+        Net::fetch_with(
+            self,
+            allowed,
+            method,
+            url,
+            headers,
+            body,
+            parse_upstream(upstream)?,
+        )
+    }
+}
+
+fn parse_upstream(raw: Option<&str>) -> Result<Option<egress::Upstream>, String> {
+    raw.map(egress::Upstream::parse)
+        .transpose()
+        .map_err(|e| format!("{e:#}"))
 }
 
 impl Drop for Net {

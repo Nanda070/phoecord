@@ -173,9 +173,7 @@ async fn forward(
 ) -> Result<Response<Body>> {
     let (mut parts, body) = req.into_parts();
     // Keep the client's session headers in memory, for `Host::rest`.
-    app.shared
-        .net
-        .observe(&up.host, parts.uri.path(), &parts.headers);
+    app.net.observe(&up.host, parts.uri.path(), &parts.headers);
     let method = parts.method.as_str().to_string();
     let route = route_of(parts.uri.path());
 
