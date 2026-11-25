@@ -5,9 +5,10 @@ use crate::account::Account;
 use crate::config::Config;
 use crate::hostnet::{GLOBAL_PER_SECOND, Net};
 use phoecord_core::{FilePart, Host, HostResponse, Val};
+use phoecord_i18n::PluginStrings;
 use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 use std::time::{Duration, Instant};
 
 /// At most `max` hits per key within `window`.
@@ -122,6 +123,35 @@ pub struct Shared {
     notify_limit: Mutex<RateLimiter>,
     rest_limit: Mutex<RateLimiter>,
     notifier: Notifier,
+    /// The plugins' own strings (`Host::t`): built-in bundles and the `i18n/` of WASM packages.
+    pub strings: Arc<PluginStrings>,
+    /// `--lang`, the first source of the language `Host::t` answers in.
+    lang_flag: RwLock<Option<String>>,
+    /// The operating system language, looked up once (the last source before English).
+    os_lang: OnceLock<Option<String>>,
+}
+
+impl Shared {
+    /// Set the `--lang` value. `language` in the config and the OS language follow it.
+    pub fn set_language_flag(&self, flag: Option<String>) {
+        *self.lang_flag.write().unwrap() = flag;
+    }
+
+    /// Fix the OS language instead of asking the system (tests).
+    pub fn set_os_language(&self, lang: Option<String>) {
+        let _ = self.os_lang.set(lang);
+    }
+
+    /// The language plugins' strings are shown in: `--lang`, config `language`, the OS, `en`.
+    fn language(&self, config: &Config) -> String {
+        let os = self.os_lang.get_or_init(phoecord_i18n::detect_os_language);
+        phoecord_i18n::resolve_language(
+            self.lang_flag.read().unwrap().as_deref(),
+            config.language.as_deref(),
+            os.as_deref(),
+        )
+        .lang
+    }
 }
 
 impl Shared {
@@ -143,6 +173,9 @@ impl Shared {
             // 1 Discord API call a second per plugin.
             rest_limit: Mutex::new(RateLimiter::new(1, Duration::from_secs(1))),
             notifier,
+            strings: Arc::new(PluginStrings::new()),
+            lang_flag: RwLock::new(None),
+            os_lang: OnceLock::new(),
         }
     }
 }
@@ -225,6 +258,11 @@ impl Host for ProxyHost<'_> {
 
     fn log(&mut self, message: &str) {
         tracing::info!(plugin = %self.plugin, "{message}");
+    }
+
+    fn t(&self, key: &str, args: &[(&str, &str)]) -> String {
+        let lang = self.shared.language(self.config);
+        self.shared.strings.t(&self.plugin, &lang, key, args)
     }
 
     fn emit_send(&mut self, op: i64, payload: Val) {
@@ -431,6 +469,37 @@ mod tests {
         assert!(h.set_plugin_enabled("../x", true).is_err());
         h.emit_dispatch(Val::map());
         assert_eq!(h.locals.len(), 1);
+    }
+
+    #[test]
+    fn strings_come_from_the_plugin_bundle_in_the_configured_language() {
+        let shared = Shared::new(temp("strings"));
+        shared.set_os_language(Some("en".into()));
+        shared
+            .strings
+            .set("p", "en", "hi = Hello, { $who }!\nonly-en = English");
+        shared.strings.set("p", "ru", "hi = Привет, { $who }!");
+        let ru: Config = toml::from_str("language = \"ru\"\n").unwrap();
+        let en = Config::default();
+        let mut h = ProxyHost::new(&shared, &ru);
+        h.begin_plugin("p");
+        assert_eq!(h.t("hi", &[("who", "Мир")]), "Привет, Мир!");
+        assert_eq!(h.t("only-en", &[]), "English", "falls back to English");
+        assert_eq!(h.t("nope", &[]), "nope", "then to the key");
+        h.begin_plugin("q");
+        assert_eq!(
+            h.t("hi", &[]),
+            "hi",
+            "another plugin's bundle is not visible"
+        );
+        let mut h = ProxyHost::new(&shared, &en);
+        h.begin_plugin("p");
+        assert_eq!(h.t("hi", &[("who", "World")]), "Hello, World!");
+        // `--lang` beats the config.
+        shared.set_language_flag(Some("en".into()));
+        let mut h = ProxyHost::new(&shared, &ru);
+        h.begin_plugin("p");
+        assert_eq!(h.t("hi", &[("who", "World")]), "Hello, World!");
     }
 
     #[test]

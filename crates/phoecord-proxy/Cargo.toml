@@ -11,6 +11,7 @@ publish = false
 
 [dependencies]
 phoecord-core.workspace = true
+phoecord-i18n = { path = "../phoecord-i18n" }
 phoecord-plugin-runtime.workspace = true
 anyhow.workspace = true
 dirs.workspace = true
