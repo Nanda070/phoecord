@@ -40,13 +40,14 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | Crate | Path | Kind | Depends on (ours) |
 |:---|:---|:---|:---|
 | `phoecord-core` | `crates/phoecord-core/` | lib | none |
-| `phoecord-proxy` | `crates/phoecord-proxy/` | lib | core, loader (IPC types and pipe only, without the `dll` feature) |
+| `phoecord-transport` | `crates/phoecord-transport/` | lib | core, plugin-runtime, i18n |
+| `phoecord-proxy` | `crates/phoecord-proxy/` | lib | core, transport, plugin-runtime, loader (IPC types and pipe only, without the `dll` feature) |
 | `phoecord-plugin-runtime` | `crates/phoecord-plugin-runtime/` | lib | core |
 | `phoecord-plugin-sdk` | `crates/phoecord-plugin-sdk/` | lib (guest side) | none, by design |
 | `phoecord-plugins` | `crates/phoecord-plugins/` | lib | core |
 | `phoecord-loader` | `crates/phoecord-loader/` | cdylib + rlib | none |
 | `phoecord-installer` | `crates/phoecord-installer/` | lib | core |
-| `phoecord-cli` | `crates/phoecord-cli/` | bin `phoecord` | core, proxy, plugin-runtime, plugins |
+| `phoecord-cli` | `crates/phoecord-cli/` | bin `phoecord` | core, proxy, transport, plugin-runtime, plugins |
 | `phoecord-i18n` | `crates/phoecord-i18n/` | lib | none |
 | `phoecord-installer-gui` | `crates/phoecord-installer-gui/` | bin `phoecord-installer` | core, i18n, installer, plugin-runtime, plugins, proxy |
 
@@ -62,14 +63,23 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/route.rs` | `route_of` (`/api/v9/x` → `/x`), `message_route_channel` | Plugins match on the normalized route |
 | `src/plugin.rs` | Plugin API v1: `API_VERSION`, `Layer`, `Manifest`, `Event`, `EventKind`, `Verdict`, `Host`, `Plugin` | **The contract.** Changes need an `api` PR and the owner's review |
 
+### `phoecord-transport`
+
+The transport boundary (task 1.1.12): everything between "an event arrived" and "here is what to do with it", with no sockets, TLS or HTTP. A transport (the proxy today, the loader's in-process hooks later) calls `Engine` and supplies a `Network`.
+
+| File | What | Easy to break |
+|:---|:---|:---|
+| `src/lib.rs` | `Engine`: owns `Chain`, `Shared` and the live `Config`; `on_request`, `on_response`, `on_dispatch`, `on_send`, `chain_queued`, `fire_timer`, `apply`, `sync_packages`; result types `RequestOutcome`, `DispatchResult`, `SendResult`, `Effects` | No network or async types here: the loader must be able to link it. Keep the order of effects (locals, then frames) |
+| `src/host.rs` | `ProxyHost` and `Shared` (KV, rate limits, notifications, account, timers, strings), the `Network` trait a transport implements for `Host::rest` / `Host::fetch`, `NoNetwork` | Host state must be bound to the plugin currently running in `Chain`; the `upstream` string is passed through unparsed |
+| `src/config.rs`, `src/account.rs` | Live plugin configuration and account state available to plugins | Config reload must re-enable the chain and preserve the last live state |
+| `src/timers.rs` | `Timers`: the store of plugin timers from `Host::schedule` (50 ms min, 24 h max, 64 per plugin, memory only), `timer_payload` | The clock is the transport's: it calls `next_due` / `take_due` and `Engine::fire_timer` |
+
 ### `phoecord-proxy`
 
 | File | What | Easy to break |
 |:---|:---|:---|
-| `src/lib.rs` | Module list and status | |
+| `src/lib.rs` | `Proxy`: TLS setup, reload task, the live-gateway registry and the `locals` broadcast around an `Engine` (`Proxy` derefs to it); delivers `Effects` to the connections; re-exports `config`, `account`, `host` from `phoecord-transport` | The proxy calls the chain only through `Engine` |
 | `benches/chain.rs` | Criterion bench: decode → `Proxy::on_dispatch` with every built-in plugin → encode, for a ~5 MB READY, a MESSAGE_CREATE burst and a REST body; prints p50/p99. Report: `docs/chain-bench.md` | Generated payloads only, never real traffic; `-- --test` is the smoke run |
-| `src/config.rs`, `src/account.rs` | Live plugin configuration and account state available to plugins | Config reload must re-enable the chain and preserve the last live state |
-| `src/host.rs` | `ProxyHost`: scoped settings, KV, account, rate-limited notifications and REST/fetch hooks | Host state must be bound to the plugin currently running in `Chain` |
 | `GET /__phoecord` (in `src/server.rs`) | Identity answer (`phoecord <version>`) for loopback peers, so `launch` can reuse a running proxy | |
 | `src/server.rs`, `src/rest.rs`, `src/gateway.rs` | Proxy loop, REST and Gateway traffic routed through `Chain` | Keep REST decisions and Gateway encode/compress round-trips lossless |
 | `src/codec.rs` | `Codec` from the Gateway query (`encoding`, `compress`), `Inflater` / `Deflater` for zlib-stream and zstd-stream | Compression context is per connection: once a frame changes, everything after must use our context |
@@ -77,8 +87,8 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/trust.rs` | Install/remove the CA: Windows `certutil -user`, macOS keychain, Linux NSS (incl. Flatpak, Snap) | Platform code behind `cfg`; build on all 3 OSes before merging |
 | `src/process.rs` | `command` / `hide_console`: child processes that open no console window on Windows (`CREATE_NO_WINDOW`) | Every child of `phoecord` and the window goes through it: started without a console, a console program would flash its own window |
 
-| `src/hostnet.rs` | `Net`: the client's session headers kept in memory only (30 min TTL, dropped on 401), `Host::rest` to the client's own Discord API host with route checks, per-plugin 1/s + global 5/s caps and Discord's rate-limit buckets; `Host::rest_files` (multipart upload, 10 files, 25 MB); `Host::fetch` to allow-listed HTTPS hosts (5 MB cap, no redirects, no credentials, raw `bytes` for non-JSON answers); a small dedicated runtime so plugin calls never block the proxy | Never log or persist the session headers; `Debug` is redacted |
-| `src/timers.rs` | `Timers`: plugin timers from `Host::schedule` (50 ms min, 24 h max, 64 per plugin, memory only) and the `drive` task that fires them through `Proxy::fire_timer` | Holds only a `Weak<Proxy>` |
+| `src/hostnet.rs` | `Net` (the proxy's `Network` for the engine): the client's session headers kept in memory only (30 min TTL, dropped on 401), `Host::rest` to the client's own Discord API host with route checks, per-plugin 1/s + global 5/s caps and Discord's rate-limit buckets; `Host::rest_files` (multipart upload, 10 files, 25 MB); `Host::fetch` to allow-listed HTTPS hosts (5 MB cap, no redirects, no credentials, raw `bytes` for non-JSON answers); a small dedicated runtime so plugin calls never block the proxy | Never log or persist the session headers; `Debug` is redacted |
+| `src/timers.rs` | The `drive` task: sleeps until the earliest plugin timer and fires it through `Proxy::fire_timer` (store: `phoecord-transport::timers`) | Holds only a `Weak<Proxy>` |
 | `src/ipc.rs` | The proxy's end of the loader IPC (1.5.5): `spawn` (pipe server thread on Windows, no-op elsewhere), `serve_connection` (any `BufRead`/`Write`), `ConfigSettings` (`[loader]` in `config.toml`) | Settings are only the `[loader]` table, scalar values; garbage drops the connection; at most 8 connections |
 | `src/live.rs` | `LiveGateways`: registry of bridged gateway connections; sends queued outside a frame go to the newest one at once | A `LiveGuard` unregisters on drop |
 | `tests/hostnet.rs` | Loopback fake Discord and outside servers: capture/reuse, refusals, rate limits, allow-list, caps, a `Chain` test | |

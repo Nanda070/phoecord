@@ -93,6 +93,27 @@ The plugin chain does not know where an event comes from, so the same `Chain`, n
 | Survives client updates | Yes: only Discord's wire protocol matters | No: network hooks need fresh signatures after an update, like UI hooks |
 | Install | CA trust + autostart | Put `version.dll` and the config next to the client; uninstall deletes them |
 
+**The boundary between them** is `Engine` in `crates/phoecord-transport` (task 1.1.12). It owns the `Chain`, the host state (account facts, KV store, rate limits, timers, strings) and the live config, and knows nothing about sockets, TLS or HTTP. A transport calls its entry points and acts on what they return:
+
+| Entry point | Event | Gives back |
+|:---|:---|:---|
+| `Engine::on_request(method, route, body)` | REST request | `RequestOutcome` (forward, forward with a rewritten body, or a local reply) and `Effects` |
+| `Engine::on_response(method, route, status, body)` | REST response | whether the body was rewritten, and `Effects` |
+| `Engine::on_dispatch(payload)` | Gateway, server → client | `DispatchResult`: the payload, extra payloads, changed/drop, sends the plugins queued |
+| `Engine::on_send(payload)` | Gateway, client → server | `SendResult`: changed/drop, queued sends, local payloads |
+
+Around them: `Engine::chain_queued` runs queued sends through the Send chain once, `Engine::fire_timer` runs a due timer (the transport owns the clock: `Timers::next_due` / `take_due`), and `Engine::apply` / `sync_packages` follow config and `plugins/`. `Effects` is what plugins queued outside a gateway frame: `locals` go to the client, `frames` (already through the Send chain) go to the server.
+
+What each transport supplies:
+
+| | Proxy (`phoecord-proxy`) | In-process (loader, planned) |
+|:---|:---|:---|
+| Event source | `rest.rs` and `gateway.rs` decode HTTP and WebSocket frames from the intercepted TLS streams | Hooks on the client's own network read/write functions |
+| `Network` (`Host::rest`, `Host::fetch`) | `hostnet::Net`: session headers copied from the client's own requests, Discord's rate-limit buckets, TLS, the `upstream` proxy | Its own implementation over the client's HTTP stack or a small client; the engine only passes the raw `upstream` string |
+| Timer clock | A tokio task (`timers::drive`) | A thread or the client's own loop |
+| Delivering `Effects` | `locals` to a broadcast the gateway tasks read, `frames` to the newest live gateway connection (`live.rs`) | Write into the hooked connection |
+| Not needed | | CA, port, TLS, extra process |
+
 Why not in-process on today's client: Electron's network stack is Chromium's (BoringSSL) and the Gateway lives in the sandboxed renderer process, so hooks there are fragile and plugins could not read their config or data. Why not proxy-only on Phoenix: the loader is needed there anyway for the UI, so moving the network hooks into the same DLL removes the CA, the port and the extra process. Once 2.1 shows what Phoenix's network stack is, in-process becomes Phoenix's main transport and the proxy stays as the fallback when signatures for a new build are missing.
 
 For VPN and zapret users on the proxy transport, the proxy can send its upstream connections through an upstream proxy (SOCKS5 or HTTP), so Discord traffic takes the same tunnel it would without PhoeCord (task 1.1.11).
