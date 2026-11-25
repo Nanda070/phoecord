@@ -17,6 +17,10 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 - `Host::emit_send` from a REST event (for example a `/phoecord` command) or a timer goes to the live gateway connection at once instead of being lost; every plugin-queued send passes the Send chain once.
 - The per-plugin `Host::rest` limit allows bursts: 5 calls per 5 s (was 1 per second); a refusal says `retry in X s`. The 5/s overall cap and Discord's buckets are unchanged.
+- macOS: Discord started by PhoeCord could not read its own data ("Operation not permitted", `installer.db` could not be opened, the updater showed "Installation paused"), because as a child of PhoeCord.app it was treated as PhoeCord.app reaching into another app's data. A `.app` client is now started through LaunchServices (`open -n -a <Discord>.app --env ... --args --proxy-server=...`), so it is its own process. Windows and Linux are unchanged.
+- macOS: the downloaded `PhoeCord.app` said "damaged and can't be opened". The app is now ad-hoc signed after packaging and the `.dmg` is refreshed with the signed copy (`scripts/package/sign-macos.sh`); the installers job checks the signature with `codesign --verify`. macOS now shows the ordinary "unidentified developer" prompt with Open Anyway.
+- Release notes start with "Which file do I download?" and the macOS note has the `xattr -dr com.apple.quarantine` fallback.
+- `phoecord` with no command no longer silently starts the proxy: it prints what PhoeCord is and the main commands (English and Russian) and exits. Autostart (launchd, systemd, Run key), shortcuts and the installer window already pass `run` or `launch`, so entries written by 0.5.0 keep working without a rewrite.
 
 ## [0.5.0] - 2026-11-25
 

@@ -57,6 +57,14 @@ Write down right away: when it started (UTC), Discord client and version, PhoeCo
 - "address used by another program, not PhoeCord": something else holds the port; change `listen` in `config.toml`.
 - `phoecord setup --channel canary` adds a Start-menu shortcut "Discord Canary (PhoeCord)"; `phoecord uninstall` removes it.
 
+### macOS: "Operation not permitted" / `installer.db` / "Installation paused"
+
+`launch.log` (`~/Library/Application Support/phoecord/`) shows `Reading .../discord/settings.json: Operation not permitted` or `unable to open database file: .../installer.db`, and Discord's updater says "Installation paused". macOS (TCC) denied a client that PhoeCord started as its own child. Fixed in 0.5.1: the client is started with `open -n -a`. On 0.5.0: update PhoeCord; or allow PhoeCord under System Settings, Privacy and Security, App Management / Full Disk Access, then start Discord again.
+
+### macOS: "PhoeCord is damaged and can't be opened"
+
+The `.app` had no valid signature (0.5.0). From 0.5.1 it is ad-hoc signed and macOS shows "unidentified developer": System Settings, Privacy and Security, **Open Anyway**. On 0.5.0 run `xattr -dr com.apple.quarantine /Applications/PhoeCord.app`, or install 0.5.1.
+
 ## 3c. VPN, zapret, a blocked network
 
 Discord works without PhoeCord but not through it: the proxy connects to Discord itself, outside your VPN app's or zapret's per-app rules. Set `upstream = "socks5://127.0.0.1:1080"` (or `http://host:port`) in `config.toml` to send PhoeCord's connections through the same tunnel; `phoecord selftest` checks it. Credentials in the upstream address are not supported.
