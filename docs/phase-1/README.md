@@ -62,7 +62,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.1.7** 🔴 | CLI: `run`, `launch`, `setup`, `trust`, `untrust`, `plugins`, `enable`, `disable`, `paths` | Nanda | ✅ |
 | **1.1.8** 🟡 | `selftest` against the real Discord | Nanda | ✅ |
 | **1.1.9** 🟡 | Gateway fixtures without personal data | anyone | ⏳ |
-| **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | 🔎 in review (MESSAGE_CREATE p99 < 0.1 ms; READY ~150 ms, plan in docs/chain-bench.md) |
+| **1.1.10** 🟡 | Chain benchmark: ≤ 1 ms p99 | Nanda | ✅ 25.11, PR #74 (MESSAGE_CREATE p99 < 0.1 ms; a 5 MB READY takes 130–300 ms, mostly the JSON codec: plan in `docs/chain-bench.md`) |
 | **1.1.11** 🟡 | Upstream proxy (SOCKS5 / HTTP) for outgoing connections, for VPN and zapret users | buslan07 | ✅ 24.11, PR #54 |
 | **1.1.12** 🟡 | Transport boundary: the proxy as one backend of the plugin chain, ready for an in-process backend | Nanda | ⏳ |
 | **1.1.13** 🔴 | `Host::rest` (Discord API calls as the user's own client session) and `Host::fetch` (listed outside HTTPS hosts) | Nanda | ✅ 24.11, PR #59 |
@@ -118,7 +118,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.7.1** 🔴 | `phoecord-i18n` on Fluent, fallback to English | Nanda | ✅ 23.11, PR #9 |
 | **1.7.2** 🔴 | `language` setting, OS default | Nanda | ✅ 23.11, PR #34 |
 | **1.7.3** 🔴 | Russian translation of CLI, notifications, installer | Nanda | ✅ 23.11, PR #39 (CLI and installer messages; plugin notifications are 1.7.4) |
-| **1.7.4** 🟡 | `Host::t()` and per-plugin `.ftl` | Nanda | 🔎 in review (feat/plugin-i18n: `Host::t`, WIT `host.t`, built-in and package bundles; four plugins translated, the other data parts' `/phoecord` answers still English) |
+| **1.7.4** 🟡 | `Host::t()` and per-plugin `.ftl` | Nanda | ✅ 25.11, PR #75 (`Host::t`, WIT `host.t`, built-in and package bundles, kept by the installer window; four plugins translated, the other plugins' `/phoecord` answers still English) |
 | **1.7.5** 🟡 | CI check: every `en` key exists in `ru` | Nanda | ✅ 23.11, PR #9 |
 
 Order: 1.0 → 1.1 → (1.2 and 1.3 in parallel) → 1.4. Stages 1.5 and 1.6 do not depend on the network and run in parallel with 1.2–1.4. Stage 1.7 starts after 1.1.7 (once there are CLI strings to translate) and must land before 1.4.3.
