@@ -8,6 +8,8 @@ Discord's coming native client, Project Phoenix, is built on Rust and GPUI. Phoe
 
 Source links use the pinned Zed commit: `https://github.com/zed-industries/zed/blob/f126950f9d3b62666f97437ae5d4ccac2272c4db/<path>`, written below as `zed:<path>`. At this commit GPUI's platform code is split into `gpui_platform` plus `gpui_windows` (DirectX 11 + DirectWrite) / `gpui_macos` / `gpui_linux`.
 
+See also: [`phoenix-desktop.md`](phoenix-desktop.md), what is known about Desktop Phoenix itself and how a mod plugs into it (learned from sunbird, task 2.1 prep).
+
 ## 1. A map of GPUI (1.6.1)
 
 ### Objects

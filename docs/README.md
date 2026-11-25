@@ -16,7 +16,7 @@ One index page for `docs/`. The working rules are in [`AGENTS.md`](AGENTS.md) (t
 | Something broke | [`RUNBOOK.md`](RUNBOOK.md) |
 | Looking for a past decision | [`DECISIONS.md`](DECISIONS.md) (every `Ruling:` from the ledgers, by plan), [`CHANGELOG.md`](CHANGELOG.md) (what shipped and when) |
 | Who owns what, access and secrets | [`GOVERNANCE.md`](GOVERNANCE.md) |
-| Research notes | [`research/gpui.md`](research/gpui.md) (GPUI internals, stage 1.6) |
+| Research notes | [`research/gpui.md`](research/gpui.md) (GPUI internals, stage 1.6); [`research/phoenix-desktop.md`](research/phoenix-desktop.md) (Desktop Phoenix and how a mod plugs in, task 2.1 prep) |
 | Security | [`SECURITY.md`](../SECURITY.md) |
 
 ## Housekeeping
