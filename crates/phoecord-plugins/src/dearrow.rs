@@ -8,29 +8,34 @@
 //! asked; the first title (if its votes are not negative) replaces `title`, and the first
 //! thumbnail (votes not negative, not the original) replaces `thumbnail.proxy_url`.
 //!
-//! Settings, with Vencord's names: `replaceElements` (`0` titles and thumbnails, the default;
-//! `1` titles only; `2` thumbnails only) and `dearrowByDefault` (default `true`). Vencord's toggle
+//! Settings, with Vencord's names: `replaceElements` (`0` titles and thumbnails; `1` titles only,
+//! the default here; `2` thumbnails only) and `dearrowByDefault` (default `true`). Vencord's toggle
 //! button is Phase 2, so with `dearrowByDefault = false` there is nothing to switch with and
 //! embeds are left alone. `hideButton` has nothing to hide.
 //!
 //! Privacy and cost: DeArrow learns the ids of the videos in the messages you receive. Answers are
 //! kept in memory, and at most [`MAX_LOOKUPS`] new videos are asked about per event, because the
-//! event waits for them.
+//! event waits for them. After a failed lookup DeArrow is not asked again for [`PAUSE`], so an
+//! unreachable service does not hold up every message with a YouTube link.
 //!
-//! Unverified against a live client: whether it shows a thumbnail from `dearrow-thumb.ajay.app`
-//! (Vencord relaxes the client's content security policy for it; PhoeCord does not). If pictures
-//! break, set `replaceElements = 1`.
+//! Unlike Vencord, the default of `replaceElements` is `1`: thumbnails come from
+//! `dearrow-thumb.ajay.app`, which Vencord allows in the client's content security policy and
+//! PhoeCord does not, so they may not show. Unverified against a live client; set
+//! `replaceElements = 0` to try.
 
 use crate::state::{Shared, dispatch_data_mut};
 use phoecord_core::plugin::API_VERSION;
 use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
 use std::collections::{HashMap, VecDeque};
+use std::time::{Duration, Instant};
 
 const API_HOST: &str = "sponsor.ajay.app";
 /// New videos looked up for one event.
 const MAX_LOOKUPS: usize = 3;
 /// Videos whose answer is remembered.
 const CACHE_LIMIT: usize = 500;
+/// How long DeArrow is left alone after a failed lookup.
+const PAUSE: Duration = Duration::from_secs(5 * 60);
 
 /// What DeArrow offers for a video.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -43,6 +48,8 @@ struct Branding {
 struct Cache {
     by_id: HashMap<String, Branding>,
     order: VecDeque<String>,
+    /// No lookups until then: the last one failed.
+    paused_until: Option<Instant>,
 }
 
 impl Cache {
@@ -181,7 +188,7 @@ fn what_to_replace(host: &dyn Host) -> Option<Replace> {
     let choice = host
         .setting("replaceElements")
         .and_then(|v| v.as_i64())
-        .unwrap_or(0);
+        .unwrap_or(1);
     Some(Replace {
         titles: choice != 2,
         thumbnails: choice != 1,
@@ -189,10 +196,17 @@ fn what_to_replace(host: &dyn Host) -> Option<Replace> {
 }
 
 impl Dearrow {
-    /// The cached or fetched branding; `None` when it could not be had (not remembered).
+    /// The cached or fetched branding; `None` when it could not be had (not remembered, but
+    /// DeArrow is paused for [`PAUSE`]).
     fn lookup(&self, host: &mut dyn Host, id: &str, budget: &mut usize) -> Option<Branding> {
-        if let Some(known) = self.cache.lock().by_id.get(id) {
-            return Some(known.clone());
+        {
+            let cache = self.cache.lock();
+            if let Some(known) = cache.by_id.get(id) {
+                return Some(known.clone());
+            }
+            if cache.paused_until.is_some_and(|t| Instant::now() < t) {
+                return None;
+            }
         }
         if *budget == 0 {
             return None;
@@ -205,17 +219,24 @@ impl Dearrow {
             Ok(r) if r.status == 404 => Branding::default(),
             Ok(r) => {
                 host.log(&format!("DeArrow answered {}", r.status));
+                self.pause();
+                *budget = 0;
                 return None;
             }
             Err(e) => {
                 host.log(&format!("DeArrow: {e}"));
                 // Do not wait for an unreachable service once per video.
+                self.pause();
                 *budget = 0;
                 return None;
             }
         };
         self.cache.lock().insert(id.to_string(), found.clone());
         Some(found)
+    }
+
+    fn pause(&self) {
+        self.cache.lock().paused_until = Some(Instant::now() + PAUSE);
     }
 
     /// Rewrite the YouTube embeds of one message.
@@ -427,6 +448,7 @@ mod tests {
     fn replaces_title_and_thumbnail_and_remembers_the_answer() {
         let p = Dearrow::new();
         let mut h = Net::new(Ok((200, BRANDING)));
+        h.cfg = Cfg::default().with("replaceElements", Val::Int(0));
         let mut f = frame("dQw4w9WgXcQ");
         assert_eq!(dispatch(&p, &mut h, &mut f), Verdict::Changed);
         assert_eq!(embed(&f).str_at(&["title"]), Some("iPhone is a phone > ok"));
@@ -446,7 +468,7 @@ mod tests {
 
     #[test]
     fn settings_choose_what_changes() {
-        for (choice, title, thumb) in [(1, true, false), (2, false, true)] {
+        for (choice, title, thumb) in [(0, true, true), (1, true, false), (2, false, true)] {
             let p = Dearrow::new();
             let mut h = Net::new(Ok((200, BRANDING)));
             h.cfg = Cfg::default().with("replaceElements", Val::Int(choice));
@@ -482,15 +504,21 @@ mod tests {
     }
 
     #[test]
-    fn other_embeds_ask_nothing_and_failures_are_not_remembered() {
-        let mut h = Net::new(Err("offline"));
-        let p = Dearrow::new();
-        let mut short = frame("short");
-        dispatch(&p, &mut h, &mut short);
-        assert!(h.urls.is_empty());
-        dispatch(&p, &mut h, &mut frame("dQw4w9WgXcQ"));
-        dispatch(&p, &mut h, &mut frame("dQw4w9WgXcQ"));
-        assert_eq!(h.urls.len(), 2);
+    fn other_embeds_ask_nothing_and_a_failure_pauses_lookups() {
+        for answer in [Err("offline"), Ok((503, ""))] {
+            let mut h = Net::new(answer);
+            let p = Dearrow::new();
+            let mut short = frame("short");
+            dispatch(&p, &mut h, &mut short);
+            assert!(h.urls.is_empty());
+            dispatch(&p, &mut h, &mut frame("dQw4w9WgXcQ"));
+            dispatch(&p, &mut h, &mut frame("dQw4w9WgXcQ"));
+            assert_eq!(h.urls.len(), 1);
+            // The failure itself is not remembered: once the pause is over, it is asked again.
+            p.cache.lock().paused_until = None;
+            dispatch(&p, &mut h, &mut frame("dQw4w9WgXcQ"));
+            assert_eq!(h.urls.len(), 2);
+        }
     }
 
     #[test]

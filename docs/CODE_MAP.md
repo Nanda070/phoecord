@@ -125,7 +125,7 @@ The transport boundary (task 1.1.12): everything between "an event arrived" and 
 | `src/clear_urls.rs` | ClearURLs: strips tracking query parameters from links in sent and edited messages; `extra_rules` setting | Only `content` of JSON bodies; messages with attachments (multipart) are not cleaned yet |
 | `src/silent_typing.rs` | SilentTyping: answers `POST /channels/{id}/typing` locally with 204 | Only that exact route; `wants` must stay as narrow as `on_event` |
 | `src/unindent.rs` | Unindent: removes the indentation shared by every line of fenced code blocks in sent and edited messages | The opening line (language) and text outside blocks must stay byte for byte |
-| `src/dearrow.rs` | Dearrow: YouTube embed titles and thumbnails from `sponsor.ajay.app` in new and loaded messages | The event waits for lookups: keep `MAX_LOOKUPS` small |
+| `src/dearrow.rs` | Dearrow: YouTube embed titles and thumbnails from `sponsor.ajay.app` in new and loaded messages | The event waits for lookups: keep `MAX_LOOKUPS` small; a failed lookup pauses them for `PAUSE` |
 | `src/fix_images_quality.rs` | FixImagesQuality: with `originalImagesInChat`, image attachments are served from `cdn.discordapp.com` | Only image attachments on `media.discordapp.net/attachments/` |
 | `src/custom_commands.rs` | CustomCommands: `/phoecord tags` manages tags in the kv store (`tagsList`), `/phoecord tag` fills `{{arg=default}}` and sends or shows one | Argument parsing mirrors Vencord's regex `{{(.+?)}}`, quirks included |
 | `src/friend_invites.rs` | FriendInvites: create, list and revoke friend invites via `/users/@me/invites`; `iso_unix` for ISO 8601 times | The create body (`{}`) is unverified on a live account |

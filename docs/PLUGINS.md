@@ -60,7 +60,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | CustomCommands | Your own slash commands and tags | 🌐 Network | done — `/phoecord tags`, `/phoecord tag` |
 | CustomIdle | Change or disable auto-idle | 🌐 Network | done (0 or over 10 minutes; `/phoecord exitidle`) |
 | CustomRPC | Fully custom Rich Presence | 🌐 Network | done — settings in `config.toml`, `/phoecord rpc` / 2 (settings page, preview) |
-| Dearrow | Less clickbait YouTube embed titles and thumbnails | 🌐 Network | done: titles and thumbnails replaced in new and loaded messages; the toggle button is Phase 2, thumbnails unverified on a live client |
+| Dearrow | Less clickbait YouTube embed titles and thumbnails | 🌐 Network | done: titles replaced in new and loaded messages; thumbnails behind `replaceElements = 0` (off by default, unverified on a live client: the client's CSP may block them); the toggle button is Phase 2 |
 | Decor | Custom avatar decorations | 🌐 + 🎨 | 1.2.14 / 2 |
 | DevCompanion | Vencord developer companion | ⛔ N/A | Vencord dev tool |
 | DirectFileDownload | Download files directly | 🎨 UI | 2 |
