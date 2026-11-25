@@ -167,12 +167,19 @@ jobs:
               echo
             fi
             cat <<'NOTE'
+          ## Which file do I download?
+
+          - **Windows:** `PhoeCord_<version>_x64-setup.exe` (or the `.msi`).
+          - **Mac with Apple Silicon (M1 and newer):** `PhoeCord_<version>_aarch64.dmg`.
+          - **Intel Mac:** `PhoeCord_<version>_x64.dmg`.
+          - `phoecord-*` archives: the command-line tool, for advanced users. Most people want the installer above.
+
           ## Before you install
 
-          These builds are **not signed**. Check them against `SHA256SUMS` before you run them.
+          These builds have no publisher certificate (the Mac app is only ad-hoc signed). Check them against `SHA256SUMS` before you run them.
 
           - **Windows:** SmartScreen shows "Windows protected your PC". Click **More info**, then **Run anyway**. Verify a file with `Get-FileHash .\<file> -Algorithm SHA256` and compare it with the line in `SHA256SUMS`.
-          - **macOS:** Gatekeeper blocks the app on first start. Right-click it, choose **Open**, then **Open** again. If macOS still refuses, open System Settings, Privacy and Security, and choose **Open Anyway**.
+          - **macOS:** Gatekeeper blocks the app on first start. Right-click it, choose **Open**, then **Open** again. If macOS still refuses, open System Settings, Privacy and Security, scroll to the message about PhoeCord and choose **Open Anyway**. As a last resort, run `xattr -dr com.apple.quarantine /Applications/PhoeCord.app` in Terminal.
           - **Linux and anything else:** put the files and `SHA256SUMS` in one folder and run `sha256sum -c SHA256SUMS --ignore-missing`.
           NOTE
           } | sed 's/^          //' > notes.md
