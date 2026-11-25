@@ -38,7 +38,13 @@ fn message(id: &str) -> Val {
 fn the_sdk_example_loads_and_logs_messages() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/hello-plugin");
     let out = Command::new(env!("CARGO"))
-        .args(["build", "--release", "--target", "wasm32-wasip2"])
+        .args([
+            "build",
+            "--release",
+            "--target",
+            "wasm32-wasip2",
+            "--locked",
+        ])
         .current_dir(&dir)
         .env_remove("CARGO_TARGET_DIR")
         .env_remove("CARGO_ENCODED_RUSTFLAGS")

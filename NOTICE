@@ -12,9 +12,10 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 Exceptions and third-party notices:
 
-- crates/phoecord-plugin-sdk, wit/ and docs/_template/code/ are licensed under
-  the MIT license (LICENSES/MIT-sdk.txt), so third-party plugins built on them
-  may use any license.
+- crates/phoecord-plugin-sdk, crates/phoecord-plugin-sdk-macros, wit/ and
+  docs/_template/code/ are licensed under the MIT license
+  (LICENSES/MIT-sdk.txt), so third-party plugins built on them may use any
+  license.
 - Code from the v0 network proxy is MIT-licensed by its author; its notice is
   kept in LICENSES/MIT-v0.txt.
 - Code adapted from Vencord (GPL-3.0-or-later, Copyright (c) Vendicated and

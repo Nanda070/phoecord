@@ -43,7 +43,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `phoecord-transport` | `crates/phoecord-transport/` | lib | core, plugin-runtime, i18n |
 | `phoecord-proxy` | `crates/phoecord-proxy/` | lib | core, transport, plugin-runtime, loader (IPC types and pipe only, without the `dll` feature) |
 | `phoecord-plugin-runtime` | `crates/phoecord-plugin-runtime/` | lib | core |
-| `phoecord-plugin-sdk` | `crates/phoecord-plugin-sdk/` | lib (guest side) | none, by design |
+| `phoecord-plugin-sdk` | `crates/phoecord-plugin-sdk/` | lib (guest side) | plugin-sdk-macros, `wit-bindgen`; no host crates, by design |
 | `phoecord-plugin-sdk-macros` | `crates/phoecord-plugin-sdk-macros/` | proc-macro (guest side) | none |
 | `phoecord-plugins` | `crates/phoecord-plugins/` | lib | core |
 | `phoecord-loader` | `crates/phoecord-loader/` | cdylib + rlib | none |
@@ -110,8 +110,8 @@ The transport boundary (task 1.1.12): everything between "an event arrived" and 
 
 ### `phoecord-plugin-sdk`
 
-| File | What |
-|:---|:---|
+| File | What | Easy to break |
+|:---|:---|:---|
 | `src/lib.rs` | Bindings from `wit/phoecord.wit`, the guest `Plugin` trait, `Outcome` and `Tree` helpers, `__export!`. MIT-licensed (`license = "MIT"`), unlike the rest of the workspace | Must build without host crates; the WIT path is relative to the crate |
 | `../phoecord-plugin-sdk-macros/src/lib.rs` | `#[phoecord::plugin]`: appends `::phoecord::__export!(Type)` to the `impl` | The SDK must be the dependency named `phoecord` |
 

@@ -90,7 +90,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **1.3.3** 🔴 | Limits: time, memory, disable on panic | Nanda | ✅ 23.11, PR #24 |
 | **1.3.4** 🔴 | Packages `plugin.toml` + `plugin.wasm`, hot loading | Nanda | ✅ 23.11, PRs #24 and #28 (new packages load on the next 2 s scan, removed ones unload) |
 | **1.3.5** 🔴 | Rights from the manifest | Nanda | ✅ 23.11, PR #24 |
-| **1.3.6** 🟡 | SDK: bindings, macro, `examples/hello-plugin` | buslan07 | ⏳ in review: SDK, `#[phoecord::plugin]` and `examples/hello-plugin` |
+| **1.3.6** 🟡 | SDK: bindings, macro, `examples/hello-plugin` | buslan07 | ✅ 25.11, PR #96 (SDK with `Plugin` trait, `#[phoecord::plugin]` in `phoecord-plugin-sdk-macros`, `examples/hello-plugin` built in CI; not run against a live client) |
 | **1.3.7** 🟡 | TypeScript plugin template | matvee | ⏳ |
 | **1.3.8** 🔴 | `clear_urls` as a WASM plugin | Nanda | ✅ 23.11, PR #48 (`examples/plugins/clear_urls`, 79 KB, loads without a restart) |
 | **1.3.9** 🟡 | Plugin dev console: live plugin logs, events and verdicts, toggle, reload, replay (`phoecord dev console`) | Nanda | ⏳ |
