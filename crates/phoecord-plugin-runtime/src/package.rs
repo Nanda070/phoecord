@@ -34,11 +34,18 @@
 //! | `plugins`       | `plugin_enabled`, `set_plugin_enabled`            |
 //! | `data`          | `append_data` (`data/plugins/<id>/<file>`)        |
 //!
-//! A [`PackagePlugin`] watches its two files and swaps in a changed package between events.
+//! `t` (the plugin's own strings) needs no right.
+//!
+//! Strings: an optional `i18n/<lang>.ftl` (Fluent; `<lang>` is `en` or `ru`) next to the manifest
+//! holds the plugin's own messages. `Host::t` reads them in the user's language, falling back to
+//! English and then to the key. They load with the package and again on every hot reload.
+//!
+//! A [`PackagePlugin`] watches its files and swaps in a changed package between events.
 
 use crate::wasm::{Setup, WasmPlugin, WasmRuntime};
 use phoecord_core::plugin::API_VERSION;
 use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};
+use phoecord_i18n::PluginStrings;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -275,10 +282,12 @@ fn glob_match(glob: &str, text: &str) -> bool {
 // ---------------------------------------------------------------------------------------------
 
 /// What identifies a version of a package on disk.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct Stamp {
     toml: Option<(SystemTime, u64)>,
     wasm: Option<(SystemTime, u64)>,
+    /// `i18n/*.ftl`: file name, modified time, size; sorted by name.
+    i18n: Vec<(String, SystemTime, u64)>,
 }
 
 fn stamp(dir: &Path) -> Stamp {
@@ -286,17 +295,60 @@ fn stamp(dir: &Path) -> Stamp {
         let m = std::fs::metadata(dir.join(name)).ok()?;
         Some((m.modified().ok()?, m.len()))
     };
+    let mut i18n: Vec<(String, SystemTime, u64)> = ftl_files(dir)
+        .into_iter()
+        .filter_map(|p| {
+            let m = std::fs::metadata(&p).ok()?;
+            Some((
+                p.file_name()?.to_str()?.to_string(),
+                m.modified().ok()?,
+                m.len(),
+            ))
+        })
+        .collect();
+    i18n.sort();
     Stamp {
         toml: one("plugin.toml"),
         wasm: one("plugin.wasm"),
+        i18n,
     }
 }
 
-fn build(
-    runtime: &Arc<WasmRuntime>,
-    dir: &Path,
-    expect_id: Option<&str>,
-) -> Result<WasmPlugin, String> {
+/// `dir/i18n/*.ftl`, the plugin's own strings (file stem = language).
+fn ftl_files(dir: &Path) -> Vec<PathBuf> {
+    std::fs::read_dir(dir.join("i18n"))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "ftl") && p.is_file())
+        .collect()
+}
+
+/// The package's strings as `(language, ftl text)`. An unreadable file is skipped and reported
+/// in `problems`.
+fn read_i18n(dir: &Path, problems: &mut Vec<String>) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    for p in ftl_files(dir) {
+        let lang = p.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
+        match std::fs::read_to_string(&p) {
+            Ok(text) => out.push((lang.to_string(), text)),
+            Err(e) => problems.push(format!("cannot read {}: {e}", p.display())),
+        }
+    }
+    out.sort();
+    out
+}
+
+/// A package read from disk: the compiled plugin and its strings.
+struct Built {
+    plugin: WasmPlugin,
+    i18n: Vec<(String, String)>,
+    /// Non-fatal problems (an unreadable `.ftl`).
+    problems: Vec<String>,
+}
+
+fn build(runtime: &Arc<WasmRuntime>, dir: &Path, expect_id: Option<&str>) -> Result<Built, String> {
     let read =
         |name: &str| std::fs::read(dir.join(name)).map_err(|e| format!("cannot read {name}: {e}"));
     let text = String::from_utf8(read("plugin.toml")?)
@@ -318,8 +370,15 @@ fn build(
         ));
     }
     let wasm = read("plugin.wasm")?;
-    WasmPlugin::new(runtime, &wasm, Setup::from_package(package)?)
-        .map_err(|e| format!("plugin.wasm: {e:#}"))
+    let plugin = WasmPlugin::new(runtime, &wasm, Setup::from_package(package)?)
+        .map_err(|e| format!("plugin.wasm: {e:#}"))?;
+    let mut problems = Vec::new();
+    let i18n = read_i18n(dir, &mut problems);
+    Ok(Built {
+        plugin,
+        i18n,
+        problems,
+    })
 }
 
 /// A plugin loaded from a package folder that follows the files on disk.
@@ -330,6 +389,8 @@ pub struct PackagePlugin {
     /// the first load until PhoeCord restarts, because [`Plugin::manifest`] hands out a reference.
     manifest: Manifest,
     current: RwLock<WasmPlugin>,
+    /// Where the package's `i18n/<lang>.ftl` files go (the host's plugin strings), if anywhere.
+    strings: Option<Arc<PluginStrings>>,
     watch: Mutex<Watch>,
     /// Reload problems, logged on the next event (there is no host to log to while checking).
     problems: Mutex<Vec<String>>,
@@ -344,19 +405,34 @@ struct Watch {
 impl PackagePlugin {
     /// Load `dir` (`plugins/<id>`). Fails when the package is invalid.
     pub fn load(runtime: &Arc<WasmRuntime>, dir: &Path) -> Result<PackagePlugin, String> {
+        PackagePlugin::load_with(runtime, dir, None)
+    }
+
+    /// Like [`PackagePlugin::load`], and publish the package's `i18n/<lang>.ftl` files to
+    /// `strings` now and on every reload (this is what makes `Host::t` find them).
+    pub fn load_with(
+        runtime: &Arc<WasmRuntime>,
+        dir: &Path,
+        strings: Option<Arc<PluginStrings>>,
+    ) -> Result<PackagePlugin, String> {
         let seen = stamp(dir);
-        let plugin = build(runtime, dir, None)?;
+        let built = build(runtime, dir, None)?;
+        let manifest = built.plugin.manifest().clone();
+        if let Some(s) = &strings {
+            s.replace_plugin(&manifest.id, &built.i18n);
+        }
         Ok(PackagePlugin {
             runtime: runtime.clone(),
             dir: dir.to_path_buf(),
-            manifest: plugin.manifest().clone(),
-            current: RwLock::new(plugin),
+            manifest,
+            current: RwLock::new(built.plugin),
+            strings,
             watch: Mutex::new(Watch {
                 seen,
                 checked: Instant::now(),
                 every: Duration::from_secs(1),
             }),
-            problems: Mutex::new(Vec::new()),
+            problems: Mutex::new(built.problems),
         })
     }
 
@@ -386,11 +462,13 @@ impl PackagePlugin {
         }
         match build(&self.runtime, &self.dir, Some(&self.manifest.id)) {
             Ok(new) => {
-                *self.current.write().unwrap() = new;
-                self.problems
-                    .lock()
-                    .unwrap()
-                    .push(format!("plugin {} reloaded", self.manifest.id));
+                if let Some(s) = &self.strings {
+                    s.replace_plugin(&self.manifest.id, &new.i18n);
+                }
+                *self.current.write().unwrap() = new.plugin;
+                let mut problems = self.problems.lock().unwrap();
+                problems.extend(new.problems);
+                problems.push(format!("plugin {} reloaded", self.manifest.id));
             }
             Err(e) => self.problems.lock().unwrap().push(format!(
                 "plugin {} was changed on disk but not reloaded (the old version keeps running): {e}",
@@ -465,6 +543,8 @@ pub struct PackageSet {
     /// files change, so a half-copied package is picked up once it is complete and a broken one
     /// is reported once.
     failed: HashMap<String, Stamp>,
+    /// Receives the strings of every package this set loads.
+    strings: Option<Arc<PluginStrings>>,
 }
 
 impl PackageSet {
@@ -473,7 +553,15 @@ impl PackageSet {
             runtime,
             root,
             failed: HashMap::new(),
+            strings: None,
         }
+    }
+
+    /// Publish the `i18n/<lang>.ftl` files of loaded packages to `strings`, and remove them when
+    /// a package is unloaded.
+    pub fn with_strings(mut self, strings: Arc<PluginStrings>) -> PackageSet {
+        self.strings = Some(strings);
+        self
     }
 
     /// Load new packages and drop removed ones. Returns the lines to log, empty when nothing
@@ -503,7 +591,7 @@ impl PackageSet {
             if self.failed.get(name) == Some(&now) {
                 continue;
             }
-            match PackagePlugin::load(&self.runtime, dir) {
+            match PackagePlugin::load_with(&self.runtime, dir, self.strings.clone()) {
                 Ok(p) => {
                     self.failed.remove(name);
                     logs.push(format!("plugin {name} loaded from {}", dir.display()));
@@ -518,6 +606,9 @@ impl PackageSet {
         self.failed.retain(|name, _| present.contains(name));
         for p in &running {
             if !present.contains(&p.manifest().id) {
+                if let Some(s) = &self.strings {
+                    s.remove_plugin(&p.manifest().id);
+                }
                 logs.push(format!(
                     "plugin {} unloaded: its folder is gone",
                     p.manifest().id

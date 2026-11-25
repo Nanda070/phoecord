@@ -78,6 +78,17 @@ fn dispatch(name: &str) -> Outcome {
                 }),
             })),
         },
+        // The plugin's own strings: one key in the user's language, one only English has.
+        "STRINGS" => {
+            let hello = host::t("greeting", &[("who".to_string(), "Мир".to_string())]);
+            let fallback = host::t("only-en", &[]);
+            outcome(Verdict::Reply(Reply {
+                status: 200,
+                body: Some(Tree {
+                    nodes: vec![Node::String(format!("{hello}|{fallback}"))],
+                }),
+            }))
+        }
         "NOTIFY" => {
             let _ = host::notify("title", "body");
             outcome(Verdict::Pass)

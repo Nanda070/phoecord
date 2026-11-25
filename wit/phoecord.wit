@@ -189,6 +189,9 @@ interface host {
     set-plugin-enabled: func(id: string, on: bool) -> result<_, string>;
     /// Append one line to `data/plugins/<id>/<file>`; `file` is a bare file name. Right `data`.
     append-data: func(file: string, line: string) -> result<_, string>;
+    /// A string of the plugin's own `i18n/<lang>.ftl` in the user's language, with `args` filled
+    /// into its `{ $name }` placeholders. Falls back to English, then to `key`. Always allowed.
+    t: func(key: string, args: list<tuple<string, string>>) -> string;
 }
 
 world plugin {

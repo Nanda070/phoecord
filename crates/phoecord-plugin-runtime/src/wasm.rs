@@ -244,6 +244,7 @@ enum HostCall {
     PluginEnabled(String),
     SetPluginEnabled(String, bool),
     AppendData(String, String),
+    T(String, Vec<(String, String)>),
 }
 
 enum HostReply {
@@ -254,6 +255,7 @@ enum HostReply {
     Response(Result<HostResponse, String>),
     Flag(Option<bool>),
     Done(Result<(), String>),
+    Text(String),
 }
 
 /// Caller to worker.
@@ -461,6 +463,14 @@ impl wit_host::Host for State {
         self.allow(Right::Data)?;
         self.call_done(HostCall::AppendData(file, line))
     }
+    fn t(&mut self, key: String, args: Vec<(String, String)>) -> String {
+        // No right needed: a plugin may always read its own strings. On a host failure the key
+        // is the answer, the same as for a missing translation.
+        match self.call(HostCall::T(key.clone(), args)) {
+            Ok(HostReply::Text(text)) => text,
+            _ => key,
+        }
+    }
 }
 
 /// Start the clock for one guest call.
@@ -507,6 +517,11 @@ fn serve(host: &mut dyn Host, call: HostCall) -> HostReply {
         HostCall::PluginEnabled(id) => HostReply::Flag(host.plugin_enabled(&id)),
         HostCall::SetPluginEnabled(id, on) => HostReply::Done(host.set_plugin_enabled(&id, on)),
         HostCall::AppendData(f, l) => HostReply::Done(host.append_data(&f, &l)),
+        HostCall::T(key, args) => {
+            let args: Vec<(&str, &str)> =
+                args.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+            HostReply::Text(host.t(&key, &args))
+        }
     }
 }
 
