@@ -16,7 +16,7 @@ use std::{
     ptr,
 };
 use windows_sys::Win32::{
-    Foundation::{ERROR_PIPE_CONNECTED, HANDLE, INVALID_HANDLE_VALUE, LocalFree},
+    Foundation::{ERROR_NO_DATA, ERROR_PIPE_CONNECTED, HANDLE, INVALID_HANDLE_VALUE, LocalFree},
     Security::{
         Authorization::{
             ConvertSidToStringSidW, ConvertStringSecurityDescriptorToSecurityDescriptorW,
@@ -184,8 +184,13 @@ impl PipeServer {
         let ok = unsafe { ConnectNamedPipe(h.as_raw_handle(), ptr::null_mut()) };
         if ok == 0 {
             let e = io::Error::last_os_error();
-            // The client connected between `CreateNamedPipeW` and here: that is a success.
-            if e.raw_os_error() != Some(ERROR_PIPE_CONNECTED as i32) {
+            // The client connected between `CreateNamedPipeW` and here: that is a success. One
+            // that already wrote and closed again (`ERROR_NO_DATA`, "the pipe is being closed")
+            // is one too: what it wrote is still in the pipe and reads as data, then end of stream.
+            let raced = [ERROR_PIPE_CONNECTED, ERROR_NO_DATA]
+                .iter()
+                .any(|c| e.raw_os_error() == Some(*c as i32));
+            if !raced {
                 self.pending = Some(h);
                 return Err(e);
             }
