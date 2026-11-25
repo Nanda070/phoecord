@@ -48,6 +48,7 @@ pub mod state;
 pub mod text_replace;
 pub mod typing_indicator;
 pub mod unindent;
+pub mod unsuppress_embeds;
 pub mod user_voice_show;
 pub mod valid_reply;
 pub mod valid_user;
@@ -103,6 +104,16 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "relationship_notifier",
         "ru",
         include_str!("../i18n/ru/relationship_notifier.ftl"),
+    ),
+    (
+        "unsuppress_embeds",
+        "en",
+        include_str!("../i18n/en/unsuppress_embeds.ftl"),
+    ),
+    (
+        "unsuppress_embeds",
+        "ru",
+        include_str!("../i18n/ru/unsuppress_embeds.ftl"),
     ),
     (
         "vc_narrator",
@@ -210,6 +221,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let quest_master = quest_master::QuestMaster::new();
     let quest_master_command = quest_master.command();
     // Stage 1.2.12 commands (off by default).
+    let unsuppress_embeds = unsuppress_embeds::UnsuppressEmbeds::new();
+    let unsuppress_embeds_command = unsuppress_embeds.command();
     let friend_invites = friend_invites::FriendInvites::new();
     let friend_invites_commands = friend_invites.commands();
     let mut plugins: Vec<Box<dyn Plugin>> = vec![
@@ -258,6 +271,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(silent_delete),
         Box::new(quest_master),
         Box::new(friend_invites),
+        Box::new(unsuppress_embeds),
     ];
     // `/phoecord plugins` lists everything above and the commands plugin itself. Register more
     // `/phoecord` subcommands here with `Commands::with`.
@@ -297,6 +311,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     for c in follow_user_commands {
         commands = commands.with(c);
     }
+    commands = commands.with(unsuppress_embeds_command);
     for c in friend_invites_commands {
         commands = commands.with(c);
     }

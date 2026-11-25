@@ -115,6 +115,7 @@ plugin-desc-silent_typing = Индикатор набора текста ник�
 plugin-desc-clear_urls = Убирает параметры отслеживания из ссылок, которые вы отправляете
 plugin-desc-unindent = Убирает общий отступ в блоках кода, которые вы отправляете
 plugin-desc-friend_invites = Создаёт, показывает и отзывает ссылки-приглашения в друзья командами
+plugin-desc-unsuppress_embeds = Снова показывает встраивания сообщения или скрывает их
 plugin-desc-commands = Слэш-команда /phoecord: plugins, toggle
 plugin-desc-i_love_spam = Не скрывает сообщения «вероятных спамеров»
 plugin-desc-no_blocked_messages = Полностью скрывает сообщения заблокированных и игнорируемых пользователей
