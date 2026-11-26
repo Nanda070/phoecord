@@ -90,11 +90,7 @@ const en = {
     contact: "Contact",
     contactLead: "Questions about PhoeCord, plugins or the project — write to Nanda.",
     security: "A vulnerability or a leak? Report it privately, as SECURITY.md says.",
-    projects: "Other Cheterin Group projects",
-    projectsLead: "A little more from the same workshop.",
     open: "Open",
-    openGitHub: "Open on GitHub",
-    openSite: "Open site",
   },
 };
 
@@ -183,11 +179,7 @@ const ru: typeof en = {
     contact: "Связь",
     contactLead: "По вопросам PhoeCord, плагинов и проекта — пишите Nanda.",
     security: "Нашли уязвимость или утечку? Сообщите приватно, как описано в SECURITY.md.",
-    projects: "Другие проекты Cheterin Group",
-    projectsLead: "Ещё немного из той же мастерской.",
     open: "Открыть",
-    openGitHub: "Открыть на GitHub",
-    openSite: "Открыть сайт",
   },
 };
 

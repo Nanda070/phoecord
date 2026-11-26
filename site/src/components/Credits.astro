@@ -7,7 +7,6 @@ import {
   GROUP_LINKS,
   HELPED,
   OTHERS,
-  PROJECTS,
   TEAM,
   THANKS,
 } from "../lib/credits";
@@ -15,7 +14,6 @@ import {
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const s = t(lang).creditsPage;
-const isGitHub = (href: string) => href.startsWith("https://github.com/");
 ---
 <div class="wrap credits">
   <header class="cr-hero">
@@ -40,7 +38,12 @@ const isGitHub = (href: string) => href.startsWith("https://github.com/");
             <p class="cr-area">{m.area[lang]}</p>
           </div>
           <div class="cr-handles">
-            {m.handle && <span><Icon name={m.name === "Nanda" || m.name === "Mark" ? "discord" : "github"} size={16} /> {m.handle}</span>}
+            {m.handle && (() => {
+              const gh = m.links.find((l) => l.label === "GitHub" && l.href.endsWith("/" + m.handle));
+              return gh
+                ? <a href={gh.href} rel="noopener"><Icon name="github" size={16} /> {m.handle}</a>
+                : <span><Icon name="discord" size={16} /> {m.handle}</span>;
+            })()}
             {m.links.filter((l) => !(l.label === "GitHub" && m.handle && l.href.endsWith("/" + m.handle))).map((l) => (
               <a href={l.href} rel="noopener"><Icon name={l.label === "Telegram" ? "telegram" : "github"} size={16} /> {l.label}</a>
             ))}
@@ -88,26 +91,4 @@ const isGitHub = (href: string) => href.startsWith("https://github.com/");
     <p class="cr-note"><a href={`${REPO}/blob/main/SECURITY.md`} rel="noopener">{s.security}</a></p>
   </section>
 
-  <section class="cr-section">
-    <p class="cr-eyebrow">{s.group}</p>
-    <h2>{s.projects}</h2>
-    <p class="cr-sub">{s.projectsLead}</p>
-    {PROJECTS.map((g) => (
-      <div class="cr-group">
-        <p class="cr-group-title">{g.title[lang]}</p>
-        <ul class="cr-list">
-          {g.projects.map((p) => (
-            <li>
-              <span class="cr-ico"><Icon name={isGitHub(p.href) ? "github" : "globe"} size={18} /></span>
-              <div>
-                <p class="cr-item">{p.name}</p>
-                <p class="cr-text">{p.text[lang]}</p>
-                <a class="cr-open" href={p.href} rel="noopener">{isGitHub(p.href) ? s.openGitHub : s.openSite}</a>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    ))}
-  </section>
 </div>
