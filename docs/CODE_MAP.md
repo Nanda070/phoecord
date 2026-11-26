@@ -33,6 +33,8 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `signatures/` | AOB signature tables per client build (`README.md` documents the format; no Discord signatures yet) |
 | `tests/fixtures/` | Decoded, scrubbed Gateway events for tests (task 2.1.10); `README.md` documents recording and scrubbing (`scripts/scrub_fixture.py`); `phoenix/` has `HELLO`, `READY` (partial, as Phoenix receives it) and `MESSAGE_CREATE` (2.1.4), `electron/` is empty |
 | `research/` | Out-of-workspace research projects: `gpui-reference` (GPUI app built like a shipping client) and `aob-probe` (checks AOB anchors against a binary); excluded from the workspace |
+| `.github/workflows/pages.yml` | Website: builds `site/` (`npm ci`, `npm test`, `npm run build`) on pushes to `main` touching `site/`, `docs/PLUGINS.md` or `catalog/plugins.json`, daily (to pick up a new release) and by hand, and deploys it to GitHub Pages at phoecord.dev; pull requests only build and test |
+| `site/` | The website at https://phoecord.dev (Astro, static; its own `package.json`, Node only here). `src/lib/plugins.ts` parses the tables of `docs/PLUGINS.md` at build time (so a renamed column or section heading there changes the site; `npm test` checks the parser), `src/lib/release.ts` reads the latest GitHub release for the download buttons (falls back to `releases/latest`), `src/i18n.ts` holds the English and Russian copy, pages under `src/pages/` (`/` English, `/ru/` Russian), `public/CNAME` = `phoecord.dev`. DNS for the domain is at name.com |
 | `.github/CODEOWNERS`, `.github/workflows/assign.yml` | Every PR is assigned to Nanda070 and requests Nanda070's review |
 | `scripts/` | §4 |
 | `docs/` | §5 |
@@ -357,6 +359,7 @@ See [`README.md`](README.md) in this folder. Project-level documents live here t
 | `docs/phase-1/` | Phase 1 plan, task table, agent rules, spec, implementation plan and ledger (closed 26.11.2026, kept as history) |
 | `docs/plugins/` | Developer docs for third-party WASM plugin authors (2.4.4): `README.md` (index), `quick-start.md` (Rust and TypeScript), `events.md` (events, verdicts, `events` filters, `PHOECORD_TIMER`, `PHOECORD_LOCAL_DELETE`), `rights.md` (rights, limits, what the user sees), `publishing.md` (package layout, `plugin.toml` fields, versioning and the v1 freeze, catalog, licensing), `localization.md` (`i18n/<lang>.ftl`, `Host::t`) |
 | `docs/phase-2/` | Phase 2 plan (Phoenix Canary → v1.0): `README.md` (task table), `AGENTS.md`, `ai/spec.md`, `ai/plan.md`, `ai/ledger.md` |
+| `docs/superpowers/` | Design docs (`specs/`) and implementation plans (`plans/`) written with AI agents, e.g. the website's |
 | `docs/re/` | Reverse-engineering notes on the Phoenix client: `gpui-lifecycle.md` (GPUI init chain, main window, injection points) |
 | `docs/research/` | Research documents: `phoenix-desktop.md` (sunbird study), `gpui.md` (GPUI map), `phoenix-recon.md` (findings for 2.1.2, 2.1.5, 2.1.6; method and findings for 2.1.3, 2.1.4, 2.3.7; 2.1.9 completes it) |
 

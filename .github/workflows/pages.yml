@@ -1,0 +1,70 @@
+name: Website
+
+# Builds the Astro site in site/ and deploys it to GitHub Pages at https://phoecord.dev.
+# The plugin list comes from docs/PLUGINS.md and catalog/plugins.json, the download buttons from
+# the latest release, so the site rebuilds when either changes and once a day for new releases.
+# Pull requests touching the site only build and test it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "docs/PLUGINS.md"
+      - "catalog/plugins.json"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "docs/PLUGINS.md"
+      - "catalog/plugins.json"
+      - ".github/workflows/pages.yml"
+  # Daily, so the download buttons pick up a newly published release. (A `release` trigger
+  # would run on the tag, which the github-pages environment does not allow to deploy.)
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-pages-artifact@v5
+        if: github.event_name != 'pull_request'
+        with:
+          path: site/dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
