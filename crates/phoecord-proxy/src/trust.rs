@@ -178,6 +178,13 @@ pub fn install(ca: &Path) -> Result<()> {
         run(crate::process::command("certutil")
             .args(["-user", "-addstore", "Root"])
             .arg(ca))?;
+        // certutil exits 0 even when the confirmation was declined or could not be shown (no
+        // desktop to show it on): only the store itself says whether the CA is in.
+        if !is_trusted(ca)? {
+            bail!(
+                "Windows did not add the CA to Current User > Trusted Root: the confirmation was                  declined or could not be shown. Run `phoecord trust` again from a normal window                  and answer Yes"
+            );
+        }
         println!("trusted in your Windows certificate store (Current User > Trusted Root)");
     }
     #[cfg(target_os = "macos")]

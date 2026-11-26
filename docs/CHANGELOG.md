@@ -4,6 +4,10 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Fixed
+
+- `phoecord trust` on Windows no longer says "trusted" when the CA was not added: `certutil` exits 0 even when its confirmation is declined or cannot be shown, so the store is now checked afterwards and the command fails with what to do.
+
 ### Added
 
 - 2.2.8: `phoecord launch --channel phoenix` can load another mod's DLL next to PhoeCord's loader: `--also-inject <DLL>` (repeatable) or `[phoenix] also_inject = [...]` in `config.toml`, for example Sunbird's `phoenix.dll`, so both run in one Phoenix through PhoeCord's proxy. A missing file stops the launch. The loader now identifies the build by `.text` of `Discord.exe` on disk rather than in memory, so a mod that patched code first does not make a known build look unknown. And the proxy a Phoenix launch started now stops when that Phoenix exits, however it ends (closed, crashed, killed in Task Manager).
