@@ -813,7 +813,7 @@ impl WasmPlugin {
             .and_then(bindings::PluginPre::new)
             .map_err(|e| {
                 e.context(
-                    "the plugin was not built against Plugin API v1 (wit/phoecord.wit); rebuild                      it with the current phoecord-plugin-sdk",
+                    "the plugin was not built against Plugin API v1 (wit/phoecord.wit); rebuild it with the current phoecord-plugin-sdk",
                 )
             })?;
         let engine = runtime.engine.clone();

@@ -386,15 +386,21 @@ impl Chain {
         })
     }
 
-    /// A UI event from a loader hook through the chain (read-only: plugins cannot change it).
+    /// A UI event from a loader hook through the chain (read-only: every verdict counts as `Pass`,
+    /// so no plugin can stop it from reaching the next). [`UiEvent::MenuAction`] is never broadcast:
+    /// it goes only to the plugin that declared the entry, through [`Chain::ui_to`].
     pub fn ui(&self, host: &mut dyn ChainHost, event: UiEvent<'_>) -> Outcome {
+        if matches!(event, UiEvent::MenuAction { .. }) {
+            return Outcome::Untouched;
+        }
         self.run(host, &EventKind::Ui { name: event.name() }, |p, h| {
-            p.on_event(h, Event::Ui(event))
+            p.on_event(h, Event::Ui(event));
+            Verdict::Pass
         })
     }
 
     /// A UI event for one plugin only, such as [`UiEvent::MenuAction`] for the plugin that
-    /// declared the entry; see [`Chain::run_to`].
+    /// declared the entry; see [`Chain::run_to`]. Read-only: the verdict counts as `Pass`.
     pub fn ui_to(
         &self,
         host: &mut dyn ChainHost,
@@ -405,7 +411,10 @@ impl Chain {
             plugin_id,
             host,
             &EventKind::Ui { name: event.name() },
-            |p, h| p.on_event(h, Event::Ui(event)),
+            |p, h| {
+                p.on_event(h, Event::Ui(event));
+                Verdict::Pass
+            },
         )
     }
 }
@@ -590,12 +599,39 @@ mod tests {
         };
         assert_eq!(chain.ui_to(&mut h, "b", click), Some(Outcome::Untouched));
         assert_eq!(h.logs, vec!["b copy_raw 2".to_string()]);
+        // A menu click is never broadcast: only the declaring plugin gets it, through `ui_to`.
         assert_eq!(chain.ui(&mut h, click), Outcome::Untouched);
-        assert_eq!(
-            h.logs[1..],
-            ["a copy_raw 2".to_string(), "b copy_raw 2".to_string()]
-        );
+        assert_eq!(h.logs.len(), 1);
         assert_eq!(chain.ui_to(&mut h, "nobody", click), None);
+    }
+
+    #[test]
+    fn ui_events_are_read_only() {
+        let mut h = NullHost::default();
+        let chain = Chain::new(vec![
+            fixed("drop", Verdict::Drop),
+            fixed(
+                "reply",
+                Verdict::Reply {
+                    status: 204,
+                    body: None,
+                },
+            ),
+            fixed("changed", Verdict::Changed),
+        ]);
+        chain.set_enabled(["drop", "reply", "changed"].map(String::from));
+        let click = UiEvent::MenuAction {
+            entry: "copy_raw",
+            channel_id: 1,
+            message_id: 2,
+        };
+        for id in ["drop", "reply", "changed"] {
+            assert_eq!(
+                chain.ui_to(&mut h, id, click),
+                Some(Outcome::Untouched),
+                "{id}"
+            );
+        }
     }
 
     /// Counts its events and wants only the timer dispatch.

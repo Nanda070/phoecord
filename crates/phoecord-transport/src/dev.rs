@@ -92,6 +92,7 @@ pub fn describe(kind: &EventKind) -> (&'static str, String) {
         EventKind::RestResponse { method, route } => ("rest_response", format!("{method} {route}")),
         EventKind::Dispatch { name } => ("dispatch", (*name).to_string()),
         EventKind::Send { op } => ("send", format!("op {op}")),
+        EventKind::Ui { name } => ("ui", (*name).to_string()),
         other => ("other", format!("{other:?}")),
     }
 }
