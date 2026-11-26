@@ -154,8 +154,12 @@ mod imp {
         let app_name = wide(exe.as_os_str());
         let cwd = exe.parent().map(|p| wide(p.as_os_str()));
 
+        // SAFETY: `STARTUPINFOW` is a plain C struct of integers and raw pointers; all-zero is
+        // its documented empty value (only `cb` must be set, done next).
         let mut si: STARTUPINFOW = unsafe { mem::zeroed() };
         si.cb = mem::size_of::<STARTUPINFOW>() as u32;
+        // SAFETY: `PROCESS_INFORMATION` is plain handles and ids; zero is valid until the call
+        // fills it in.
         let mut pi: PROCESS_INFORMATION = unsafe { mem::zeroed() };
         let flags = if env.is_some() {
             CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT

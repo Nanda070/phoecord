@@ -76,6 +76,10 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - Release notes start with "Which file do I download?" and the macOS note has the `xattr -dr com.apple.quarantine` fallback.
 - `phoecord` with no command no longer silently starts the proxy: it prints what PhoeCord is and the main commands (English and Russian) and exits. Autostart (launchd, systemd, Run key), shortcuts and the installer window already pass `run` or `launch`, so entries written by 0.5.0 keep working without a rewrite.
 
+### Security
+
+- 2.4.6 audit: `ca.key` and `dev-token` are set owner-only on every write on Unix, not only when created; `Host::rest` refuses dot segments written with `%2e` in any mix. Findings and what stays open: `SECURITY.md`, "Audit".
+
 ## [0.5.0] - 2026-11-25
 
 ### Added

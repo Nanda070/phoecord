@@ -683,10 +683,12 @@ pub fn clean_route(route: &str) -> Result<String, String> {
         return bad("not a plain path");
     }
     let path = route.split('?').next().unwrap_or("");
-    if path
-        .split('/')
-        .any(|s| s == ".." || s == "." || s.eq_ignore_ascii_case("%2e%2e"))
-    {
+    // A dot segment in any spelling: `.`, `..`, or with `%2e` / `%2E` for any of its dots.
+    let dot_segment = |s: &str| {
+        let plain = s.to_ascii_lowercase().replace("%2e", ".");
+        plain == "." || plain == ".."
+    };
+    if path.split('/').any(dot_segment) {
         return bad("`..` is not allowed in the path");
     }
     let mut r = route;
@@ -838,6 +840,10 @@ mod tests {
             "//evil.example/x",
             "users/@me",
             "/a/../b",
+            "/a/%2e%2e/b",
+            "/a/.%2E/b",
+            "/a/%2E./b",
+            "/a/%2e/b",
             "/a\\b",
             "/a b",
             "/a#b",

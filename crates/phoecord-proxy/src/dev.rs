@@ -80,6 +80,10 @@ fn write_private(path: &Path, data: &[u8]) -> std::io::Result<()> {
             .truncate(true)
             .mode(0o600)
             .open(path)?;
+        // `mode` applies only when the file is created; an older file keeps its bits otherwise.
+        f.set_permissions(
+            <std::fs::Permissions as std::os::unix::fs::PermissionsExt>::from_mode(0o600),
+        )?;
         f.write_all(data)
     }
     #[cfg(not(unix))]
