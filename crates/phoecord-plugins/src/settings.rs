@@ -9,6 +9,7 @@ use phoecord_core::{SettingKind, SettingSpec, Val};
 
 /// The plugins [`specs`] describes.
 pub const KNOWN: &[&str] = &[
+    "view_raw",
     "anonymise_file_names",
     "anti_rickroll",
     "auto_dnd_while_playing",
@@ -981,6 +982,20 @@ pub fn specs(id: &str) -> Vec<SettingSpec> {
                 SettingKind::Number,
                 Val::Int(2),
                 "setting-wait-seconds",
+            ),
+        ],
+        "view_raw" => vec![
+            SettingSpec::new(
+                "sortKeys",
+                SettingKind::Bool,
+                Val::Bool(true),
+                "setting-sort-keys",
+            ),
+            SettingSpec::new(
+                "stripSensitiveData",
+                SettingKind::Bool,
+                Val::Bool(true),
+                "setting-strip-sensitive-data",
             ),
         ],
         _ => Vec::new(),

@@ -682,6 +682,13 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(music_rich_presence),
         Box::new(custom_idle),
         Box::new(ignore_activities),
+        // Their `/phoecord` commands answer with what the plugin computed in the chain
+        // (`kept_answer`), so they must run there too.
+        Box::new(petpet),
+        Box::new(server_info),
+        Box::new(view_raw),
+        Box::new(spotify_share_commands),
+        Box::new(custom_commands),
     ];
     // The settings tab's description of each plugin's settings (2.4.2, item e).
     let mut plugins: Vec<Box<dyn Plugin>> = plugins.into_iter().map(with_settings).collect();
@@ -842,5 +849,39 @@ mod tests {
                 "{known} is not a built-in plugin"
             );
         }
+    }
+
+    /// A plugin whose `/phoecord` command is a `kept_answer` computes the answer in the chain;
+    /// left out of `builtin()`, its command only ever says "did not run".
+    #[test]
+    fn plugins_behind_kept_answers_run_in_the_chain() {
+        let ids: Vec<String> = super::builtin()
+            .iter()
+            .map(|p| p.manifest().id.clone())
+            .collect();
+        let src = std::fs::read_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/src")).unwrap();
+        let mut checked = 0;
+        for entry in src.flatten() {
+            let path = entry.path();
+            let text = if path.is_dir() {
+                std::fs::read_to_string(path.join("mod.rs")).unwrap_or_default()
+            } else {
+                std::fs::read_to_string(&path).unwrap_or_default()
+            };
+            if !text.contains("kept_answer(")
+                || path.ends_with("commands.rs")
+                || path.ends_with("lib.rs")
+            {
+                continue;
+            }
+            let id = text
+                .lines()
+                .find_map(|l| l.trim().strip_prefix("const PLUGIN_ID: &str = \""))
+                .and_then(|r| r.strip_suffix("\";"))
+                .unwrap_or_else(|| panic!("{} has no PLUGIN_ID", path.display()));
+            assert!(ids.iter().any(|i| i == id), "{id} is not in builtin()");
+            checked += 1;
+        }
+        assert!(checked >= 5, "only {checked} plugins checked");
     }
 }

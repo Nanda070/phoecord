@@ -11,3 +11,7 @@ view_raw-bad-channel = Это не id канала. Укажите только 
 view_raw-need-guild = Роли: запустите команду в канале этого сервера.
 view_raw-not-found = Не найдено.
 view_raw-failed = Discord отказал: { $error }
+
+# Settings tab labels (2.4.2)
+setting-sort-keys = Сортировать ключи
+setting-strip-sensitive-data = Убирать почту, телефон и подобное

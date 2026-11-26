@@ -132,7 +132,7 @@ The transport boundary (task 1.1.12): everything between "an event arrived" and 
 | File | What | Easy to break |
 |:---|:---|:---|
 | `src/lib.rs` | `builtin()`: every built-in plugin in default order; uniqueness test for ids; `with_settings` puts `settings::specs` into each manifest (test: every spec sound, labels in en and ru); `I18N` (the plugins' `.ftl` bundles) and `register_strings` | Order is run order; a new `i18n/<lang>/<id>.ftl` must be listed in `I18N` (`check_i18n.py` checks) |
-| `src/settings.rs` | `specs(id)`: the settings tab's `SettingSpec`s per built-in plugin (2.4.2 e), `KNOWN` | A spec's `default` must equal the plugin's own fallback; a plugin only reachable as a command (`view_raw`) has none, its settings are not in a manifest the tab sees |
+| `src/settings.rs` | `specs(id)`: the settings tab's `SettingSpec`s per built-in plugin (2.4.2 e), `KNOWN` | A spec's `default` must equal the plugin's own fallback |
 | `i18n/{en,ru}/<plugin id>.ftl` | The plugin's own strings behind `Host::t`: `commands` (the `/phoecord` answers), `relationship_notifier`, `better_sessions`, `vc_narrator` | Every `en` key needs a `ru` twin with the same variables; keys of other plugins' subcommand answers go to `commands.ftl` |
 | `src/no_track.rs` | NoTrack: answers analytics and crash-report routes locally with 204 | `wants` must stay as narrow as `on_event` |
 | `src/clear_urls.rs` | ClearURLs: strips tracking query parameters from links in sent and edited messages; `extra_rules` setting | Only `content` of JSON bodies; messages with attachments (multipart) are not cleaned yet |
