@@ -15,3 +15,5 @@ view_raw-failed = Discord refused: { $error }
 # Settings tab labels (2.4.2)
 setting-sort-keys = Sort keys
 setting-strip-sensitive-data = Remove email, phone and similar
+# Message context menu (2.4.2 d)
+menu-view-raw = View Raw

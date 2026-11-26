@@ -14,3 +14,6 @@ setting-delete-original = Delete after replacing
 setting-suppress-notifications = Send silently
 setting-delete-delay = Delay before deleting, ms
 setting-purge-interval = Delay between messages, ms
+# Message context menu (2.4.2 d)
+menu-silent-delete = Silent Delete
+menu-silent-delete-history = Silent Delete History

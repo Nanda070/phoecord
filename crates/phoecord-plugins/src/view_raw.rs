@@ -23,7 +23,10 @@ use crate::commands::{
     Kept, Subcommand, invocation, is_interaction, kept_answer, message_ref, snowflake_arg,
 };
 use phoecord_core::plugin::HostResponse;
-use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, MenuEntry, Plugin, UiEvent, Val, Verdict};
+
+/// The message context menu entry (Phoenix, task 2.4.2 d): the clicked message's raw JSON.
+const MENU_VIEW: &str = "view_raw";
 
 const PLUGIN_ID: &str = "view_raw";
 const SUB: &str = "viewraw";
@@ -56,6 +59,7 @@ impl ViewRaw {
                 );
                 m.authors = vec!["Cheterin Group".into()];
                 m.vencord = Some("ViewRaw".into());
+                m.menu = vec![MenuEntry::new(MENU_VIEW, "menu-view-raw")];
                 m
             },
             kept: Kept::default(),
@@ -297,10 +301,36 @@ impl Plugin for ViewRaw {
     }
 
     fn wants(&self, event: &EventKind) -> bool {
-        matches!(event, EventKind::RestRequest { method, route } if is_interaction(method, route))
+        match event {
+            EventKind::RestRequest { method, route } => is_interaction(method, route),
+            EventKind::Ui { name } => *name == "menu_action",
+            _ => false,
+        }
     }
 
     fn on_event(&self, host: &mut dyn Host, event: Event<'_>) -> Verdict {
+        if let Event::Ui(UiEvent::MenuAction {
+            entry,
+            channel_id,
+            message_id,
+        }) = event
+        {
+            if entry == MENU_VIEW {
+                let inv = crate::commands::Invocation {
+                    sub: SUB.into(),
+                    options: vec![
+                        ("kind".into(), "message".into()),
+                        ("id".into(), message_id.to_string()),
+                        ("channel".into(), channel_id.to_string()),
+                    ],
+                    channel_id: Some(channel_id),
+                    guild_id: host.channel_guild(channel_id),
+                };
+                let text = self.run(host, &inv);
+                host.emit_dispatch(crate::commands::local_message(channel_id, &text));
+            }
+            return Verdict::Pass;
+        }
         if let Event::RestRequest {
             method,
             route,
@@ -337,6 +367,43 @@ mod tests {
             },
         );
         p.command().run(h, &Args { options: vec![] })
+    }
+
+    fn click(p: &dyn Plugin, h: &mut Rec, entry: &str) {
+        assert!(p.wants(&EventKind::Ui {
+            name: "menu_action"
+        }));
+        p.on_event(
+            h,
+            Event::Ui(UiEvent::MenuAction {
+                entry,
+                channel_id: 9,
+                message_id: 5,
+            }),
+        );
+    }
+
+    fn local_text(h: &Rec) -> String {
+        let f = h.dispatched.last().expect("a local message");
+        assert_eq!(f.str_at(&["t"]), Some("MESSAGE_CREATE"));
+        assert_eq!(f.str_at(&["d", "channel_id"]), Some("9"));
+        assert_eq!(f.at(&["d", "flags"]), Some(&Val::Int(64)));
+        f.str_at(&["d", "content"]).unwrap().to_string()
+    }
+
+    #[test]
+    fn the_menu_entry_shows_the_clicked_message() {
+        let p = ViewRaw::new();
+        assert_eq!(p.manifest().menu[0].id, MENU_VIEW);
+        let mut h = Rec::default().answer(
+            "GET",
+            "/channels/9/messages?limit=1&around=5",
+            200,
+            r#"[{"id":"5","content":"hi"}]"#,
+        );
+        click(&p, &mut h, MENU_VIEW);
+        let text = local_text(&h);
+        assert!(text.contains("\"content\": \"hi\""), "{text}");
     }
 
     #[test]

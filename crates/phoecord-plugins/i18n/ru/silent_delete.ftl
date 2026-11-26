@@ -14,3 +14,6 @@ setting-delete-original = Удалять после замены
 setting-suppress-notifications = Отправлять без уведомления
 setting-delete-delay = Задержка перед удалением, мс
 setting-purge-interval = Задержка между сообщениями, мс
+# Message context menu (2.4.2 d)
+menu-silent-delete = Тихо удалить
+menu-silent-delete-history = Тихо заменить (оставить историю)

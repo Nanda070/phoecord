@@ -5,3 +5,6 @@ unsuppress_embeds-not-found = Сообщение в этом канале не �
 unsuppress_embeds-bad-message = Это не id сообщения и не ссылка на него.
 unsuppress_embeds-bad-channel = Это не id канала. Укажите только цифры, ссылку или запустите команду в нужном канале.
 unsuppress_embeds-failed = Discord отказал: { $error }
+
+# Message context menu (2.4.2 d)
+menu-toggle-embeds = Показать или скрыть встраивания

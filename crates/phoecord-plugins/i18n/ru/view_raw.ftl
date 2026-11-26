@@ -15,3 +15,5 @@ view_raw-failed = Discord отказал: { $error }
 # Settings tab labels (2.4.2)
 setting-sort-keys = Сортировать ключи
 setting-strip-sensitive-data = Убирать почту, телефон и подобное
+# Message context menu (2.4.2 d)
+menu-view-raw = Исходный JSON

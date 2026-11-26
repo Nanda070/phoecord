@@ -46,7 +46,14 @@
 
 use crate::commands::{APP_ID, Args, FnCmd, Subcommand};
 use crate::state::Shared;
-use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, TIMER_EVENT, Val, Verdict};
+use phoecord_core::{
+    Event, EventKind, Host, Manifest, MenuEntry, Plugin, TIMER_EVENT, UiEvent, Val, Verdict,
+};
+
+/// Message context menu entries (Phoenix, task 2.4.2 d): the script's "Silent Delete" and
+/// "Silent Delete History" (`/phoecord silentdelete history:true`).
+const MENU_DELETE: &str = "silent_delete";
+const MENU_HISTORY: &str = "silent_delete_history";
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -644,6 +651,10 @@ impl SilentDelete {
                 );
                 m.authors = vec!["Cheterin Group".into()];
                 m.vencord = Some("SilentDelete".into());
+                m.menu = vec![
+                    MenuEntry::new(MENU_DELETE, "menu-silent-delete"),
+                    MenuEntry::new(MENU_HISTORY, "menu-silent-delete-history"),
+                ];
                 m
             },
             state: Shared::new(State::default()),
@@ -709,6 +720,7 @@ impl Plugin for SilentDelete {
         match event {
             EventKind::RestRequest { method, route } => is_interaction(method, route),
             EventKind::Dispatch { name } => *name == TIMER_EVENT,
+            EventKind::Ui { name } => *name == "menu_action",
             _ => false,
         }
     }
@@ -729,6 +741,22 @@ impl Plugin for SilentDelete {
                     if let Some(reply) = handle(host, &mut st, &sub, &options, here) {
                         st.reply = Some(reply);
                     }
+                }
+                Verdict::Pass
+            }
+            Event::Ui(UiEvent::MenuAction {
+                entry,
+                channel_id,
+                message_id,
+            }) if entry == MENU_DELETE || entry == MENU_HISTORY => {
+                let options = vec![
+                    ("message".to_string(), message_id.to_string()),
+                    ("channel".to_string(), channel_id.to_string()),
+                    ("history".to_string(), (entry == MENU_HISTORY).to_string()),
+                ];
+                let reply = handle(host, &mut self.state.lock(), "silentdelete", &options, None);
+                if let Some(text) = reply {
+                    host.emit_dispatch(crate::commands::local_message(channel_id, &text));
                 }
                 Verdict::Pass
             }
@@ -759,6 +787,7 @@ impl Plugin for SilentDelete {
 mod tests {
     use super::*;
     use crate::testutil::{Rec, j};
+    use phoecord_core::UiEvent;
 
     fn host() -> Rec {
         Rec {
@@ -1051,5 +1080,49 @@ mod tests {
             },
         );
         assert!(h.rest_calls.is_empty());
+    }
+
+    fn click_menu(p: &dyn Plugin, h: &mut Rec, entry: &str) {
+        assert!(p.wants(&EventKind::Ui {
+            name: "menu_action"
+        }));
+        p.on_event(
+            h,
+            Event::Ui(UiEvent::MenuAction {
+                entry,
+                channel_id: 9,
+                message_id: 5,
+            }),
+        );
+    }
+
+    fn local_text(h: &Rec) -> String {
+        let f = h.dispatched.last().expect("a local message");
+        assert_eq!(f.str_at(&["t"]), Some("MESSAGE_CREATE"));
+        assert_eq!(f.str_at(&["d", "channel_id"]), Some("9"));
+        assert_eq!(f.at(&["d", "flags"]), Some(&Val::Int(64)));
+        f.str_at(&["d", "content"]).unwrap().to_string()
+    }
+
+    #[test]
+    fn menu_entries_start_a_silent_delete() {
+        let p = SilentDelete::new();
+        let ids: Vec<&str> = p.manifest().menu.iter().map(|m| m.id.as_str()).collect();
+        assert_eq!(ids, [MENU_DELETE, MENU_HISTORY]);
+        let mut h = Rec::default();
+        click_menu(&p, &mut h, MENU_DELETE);
+        assert_eq!(h.scheduled.len(), 1, "{:?}", h.scheduled);
+        assert!(h.scheduled[0].1.starts_with("job:"));
+        assert!(!local_text(&h).is_empty());
+        let job = p
+            .state
+            .lock()
+            .jobs
+            .values()
+            .next()
+            .map(|j| j.delete_setting);
+        assert!(job.is_some());
+        click_menu(&p, &mut h, MENU_HISTORY);
+        assert_eq!(h.scheduled.len(), 2);
     }
 }

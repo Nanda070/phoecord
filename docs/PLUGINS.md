@@ -181,7 +181,7 @@ The 30 🎨 plugins of v1.0: BetterFolders, ShowMeYourName, RoleColorEverywhere,
 | TypingTweaks | Avatars and role colours in typing | 🎨 UI | v1.0 | 2 |
 | Unindent | Trim indentation in code blocks | 🌐 Network | v1.0 | done: shared indentation removed from fenced code blocks of sent and edited messages (not yet inside `payload_json` of uploads) |
 | UnlockedAvatarZoom | More zoom when cropping avatars | 🎨 UI | 1.x | 2 |
-| UnsuppressEmbeds | Unsuppress embeds | 🌐 + 🎨 | v1.0 | done: data — `/phoecord unsuppress` / 2 (message menu item) |
+| UnsuppressEmbeds | Unsuppress embeds | 🌐 + 🎨 | v1.0 | done: data — `/phoecord unsuppress`; message menu entry declared (`toggle_embeds`, shown once 2.3.5 hooks the menu) / 2 (the menu itself) |
 | UserMessagesPronouns | Pronouns in chat | 🎨 UI | v1.0 | 2 |
 | UserVoiceShow | Show who is in voice | 🌐 + 🎨 | v1.0 | done: data — `/phoecord voice` / 2 (badge, profile section) |
 | USRBG | Community banners without Nitro | 🌐 Network | — | 1.2.14, blocked: waits for the CDN picture hook, task 2.3.8 (the client loads the picture from the Discord CDN by hash) *(2)* |
@@ -191,7 +191,7 @@ The 30 🎨 plugins of v1.0: BetterFolders, ShowMeYourName, RoleColorEverywhere,
 | VencordToolbox | Quick actions button | ♻️ Replaced | — | PhoeCord toolbox in the client (2.3) |
 | VesktopPatches | Vesktop patches | ⛔ N/A | — | Vesktop only |
 | ViewIcons | Click avatars and banners to view them | 🎨 UI | v1.0 | 2 |
-| ViewRaw | View raw message, channel or server JSON | 🌐 + 🎨 | v1.0 | done: data — `/phoecord viewraw` / 2 (menus, modal, copy buttons) |
+| ViewRaw | View raw message, channel or server JSON | 🌐 + 🎨 | v1.0 | done: data — `/phoecord viewraw`; message menu entry declared (`view_raw`, answer as a local message) / 2 (other menus, modal, copy buttons) |
 | VoiceChatDoubleClick | Join voice on double-click | 🎨 UI | 1.x | 2 |
 | VoiceDownload | Download voice messages | 🎨 UI | v1.0 | 2 |
 | VoiceMessages | Send voice messages like on mobile | 🌐 + 🎨 | v1.0 | done: data — `/phoecord voicemessage` (an .ogg file) / 2 (recording) |
@@ -220,7 +220,7 @@ From Nanda's Vencord `userplugins` folder. They behave 1:1 like the owner's orig
 
 | Plugin | What it does | Layer | v1.0 | Where |
 |:---|:---|:---|:---|:---|
-| SilentDelete | Replace a message with other text, then delete it, so loggers keep the replacement | 🌐 Network | v1.0 | done: data — `/phoecord silentdelete <message> [channel] [history]` and `/phoecord silentpurge <count> [channel]`: the script's placeholder post, `deleteDelay`, delete; `silentDeleteOnEmptyEdit` has no network effect / 2 (popover button, menu item) |
+| SilentDelete | Replace a message with other text, then delete it, so loggers keep the replacement | 🌐 Network | v1.0 | done: data — `/phoecord silentdelete <message> [channel] [history]` and `/phoecord silentpurge <count> [channel]`: the script's placeholder post, `deleteDelay`, delete; `silentDeleteOnEmptyEdit` has no network effect / 2 (popover button, menu item); message menu entries `silent_delete` and `silent_delete_history` declared (2.4.2 d) |
 | FakeDeafen | Look deafened to others while still hearing | 🌐 Network | v1.0 | done: data — `/phoecord fakedeafen [on\|off]` rewrites outbound op 4 (`fakeMute`, `fakeDeafen`) and re-sends your voice state at once / 2 (button, keybind) |
 | FakeDeafenDetector | Flag members who speak while marked muted or deafened | 🌐 + 🎨 | — | partial: data — `/phoecord flagged`; tracks mute/deafen claims, detection waits for a voice `SPEAKING` feed the proxy does not see yet / 2 (flag next to the name) |
 | localDevBadges | Show staff and developer badges on your own profile, locally only | 🌐 Network | v1.0 | done: data — settings `discordStaff`, `earlyVerifiedBotDeveloper`, `activeDeveloper` add the badges to your own profile answer and set the flags on your own user (READY, USER_UPDATE, `/users/@me`, profile); nothing leaves the machine |

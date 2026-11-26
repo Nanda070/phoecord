@@ -14,7 +14,10 @@
 
 use crate::commands::{Kept, Subcommand, invocation, is_interaction, kept_answer, message_ref};
 use phoecord_core::plugin::HostResponse;
-use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, MenuEntry, Plugin, UiEvent, Val, Verdict};
+
+/// The message context menu entry (Phoenix, task 2.4.2 d): toggle this message's embeds.
+const MENU_TOGGLE: &str = "toggle_embeds";
 
 const PLUGIN_ID: &str = "unsuppress_embeds";
 const SUB: &str = "unsuppress";
@@ -38,6 +41,7 @@ impl UnsuppressEmbeds {
                 );
                 m.authors = vec!["Cheterin Group".into()];
                 m.vencord = Some("UnsuppressEmbeds".into());
+                m.menu = vec![MenuEntry::new(MENU_TOGGLE, "menu-toggle-embeds")];
                 m
             },
             kept: Kept::default(),
@@ -118,10 +122,26 @@ impl Plugin for UnsuppressEmbeds {
     }
 
     fn wants(&self, event: &EventKind) -> bool {
-        matches!(event, EventKind::RestRequest { method, route } if is_interaction(method, route))
+        match event {
+            EventKind::RestRequest { method, route } => is_interaction(method, route),
+            EventKind::Ui { name } => *name == "menu_action",
+            _ => false,
+        }
     }
 
     fn on_event(&self, host: &mut dyn Host, event: Event<'_>) -> Verdict {
+        if let Event::Ui(UiEvent::MenuAction {
+            entry,
+            channel_id,
+            message_id,
+        }) = event
+        {
+            if entry == MENU_TOGGLE {
+                let text = toggle(host, channel_id, message_id);
+                host.emit_dispatch(crate::commands::local_message(channel_id, &text));
+            }
+            return Verdict::Pass;
+        }
         if let Event::RestRequest {
             method,
             route,
@@ -169,6 +189,43 @@ mod tests {
             },
         );
         p.command().run(h, &Args { options: vec![] })
+    }
+
+    fn click(p: &dyn Plugin, h: &mut Rec, entry: &str) {
+        assert!(p.wants(&EventKind::Ui {
+            name: "menu_action"
+        }));
+        p.on_event(
+            h,
+            Event::Ui(UiEvent::MenuAction {
+                entry,
+                channel_id: 9,
+                message_id: 5,
+            }),
+        );
+    }
+
+    fn local_text(h: &Rec) -> String {
+        let f = h.dispatched.last().expect("a local message");
+        assert_eq!(f.str_at(&["t"]), Some("MESSAGE_CREATE"));
+        assert_eq!(f.str_at(&["d", "channel_id"]), Some("9"));
+        assert_eq!(f.at(&["d", "flags"]), Some(&Val::Int(64)));
+        f.str_at(&["d", "content"]).unwrap().to_string()
+    }
+
+    #[test]
+    fn the_menu_entry_toggles_the_clicked_message() {
+        let p = UnsuppressEmbeds::new();
+        assert_eq!(p.manifest().menu[0].id, MENU_TOGGLE);
+        let mut h = Rec::default()
+            .answer("GET", AROUND, 200, r#"[{"id":"5","flags":4}]"#)
+            .answer("PATCH", "/channels/9/messages/5", 200, "{}");
+        click(&p, &mut h, MENU_TOGGLE);
+        assert_eq!(h.rest_calls[1].0, "PATCH /channels/9/messages/5");
+        assert_eq!(local_text(&h), "Embeds are shown again.");
+        let before = h.rest_calls.len();
+        click(&p, &mut h, "other");
+        assert_eq!(h.rest_calls.len(), before);
     }
 
     #[test]

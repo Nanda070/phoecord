@@ -442,6 +442,48 @@ impl Commands {
     }
 }
 
+/// A `MESSAGE_CREATE` frame that shows `text` in `channel` as a PhoeCord message only the user
+/// sees, for answers that do not come from a command (a click on a message context menu entry,
+/// task 2.4.2 d). Hand it to `Host::emit_dispatch`.
+pub fn local_message(channel: u64, text: &str) -> Val {
+    static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis() as u64);
+    let n = COUNTER.fetch_add(1, Ordering::Relaxed) & 0xfff;
+    let id = (((ms.saturating_sub(DISCORD_EPOCH_MS)) << 22) | n).to_string();
+    frame(
+        "MESSAGE_CREATE",
+        obj(vec![
+            ("id", Val::Str(id)),
+            ("channel_id", Val::Str(channel.to_string())),
+            ("type", Val::Int(0)),
+            ("content", s(text)),
+            ("flags", Val::Int(EPHEMERAL)),
+            ("tts", Val::Bool(false)),
+            ("pinned", Val::Bool(false)),
+            ("mention_everyone", Val::Bool(false)),
+            ("mentions", Val::List(Vec::new())),
+            ("mention_roles", Val::List(Vec::new())),
+            ("attachments", Val::List(Vec::new())),
+            ("embeds", Val::List(Vec::new())),
+            ("components", Val::List(Vec::new())),
+            ("timestamp", Val::Str(timestamp())),
+            ("edited_timestamp", Val::Null),
+            (
+                "author",
+                obj(vec![
+                    ("id", s(APP_ID)),
+                    ("username", s("PhoeCord")),
+                    ("discriminator", s("0000")),
+                    ("avatar", Val::Null),
+                    ("bot", Val::Bool(true)),
+                ]),
+            ),
+        ]),
+    )
+}
+
 /// A string value in any shape: JSON string, ETF atom or binary.
 fn text(v: &Val) -> Option<String> {
     match v {
