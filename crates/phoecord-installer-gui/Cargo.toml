@@ -37,9 +37,10 @@ tempfile = "3"
 [lints]
 workspace = true
 
-# Native installers (`cargo packager --release`, see scripts/package/README.md): a setup .exe (NSIS)
-# and an .msi (WiX) on Windows, PhoeCord.app in a .dmg on macOS. Both binaries ship together: the
-# window finds `phoecord` next to itself.
+# Native installers (`cargo packager --release`, see scripts/package/README.md): the NSIS setup
+# .exe on Windows (the one Windows installer, ruling 2.4.5 Q1), PhoeCord.app in a .dmg on macOS,
+# a .deb on Linux; the .rpm comes from `cargo generate-rpm` ([package.metadata.generate-rpm]
+# below, ruling Q2). Both binaries ship together: the window finds `phoecord` next to itself.
 [package.metadata.packager]
 product-name = "PhoeCord"
 identifier = "dev.phoecord.installer"
@@ -52,14 +53,15 @@ license-file = "../../LICENSE"
 icons = ["assets/icon/icon.icns", "assets/icon/icon.ico", "assets/icon/icon-1024.png"]
 out-dir = "../../target/packages"
 binaries-dir = "../../target/release"
-before-packaging-command = "cargo build --release --locked -p phoecord-installer-gui -p phoecord-cli"
+# The loader is built everywhere so one command works on every OS; only the NSIS template ships it.
+before-packaging-command = "cargo build --release --locked -p phoecord-installer-gui -p phoecord-cli -p phoecord-loader"
 binaries = [
     { path = "phoecord-installer", main = true },
     { path = "phoecord", main = false },
 ]
-formats = ["nsis", "wix", "app", "dmg"]
-# The licences travel with the app (owner, PR #66 review): next to the exe on Windows (NSIS, WiX),
-# in Contents/Resources of the .app on macOS.
+formats = ["nsis", "app", "dmg", "deb"]
+# The licences travel with the app (owner, PR #66 review): next to the exe on Windows, in
+# Contents/Resources of the .app on macOS, in /usr/lib/phoecord-installer on Linux.
 resources = [
     { src = "../../LICENSE", target = "LICENSE" },
     { src = "../../NOTICE", target = "NOTICE" },
@@ -72,6 +74,10 @@ minimum-system-version = "13.0"
 [package.metadata.packager.nsis]
 # Per-user install (no administrator prompt), like Discord itself.
 installer-mode = "currentUser"
+# PhoeCord's copy of cargo-packager's template: ships the loader in `loader\`, stops the proxy
+# before files are replaced, runs `phoecord uninstall` when PhoeCord is removed (rulings Q3, Q6, Q7)
+# and understands the updater's `/LAUNCHPROXY`.
+template = "assets/installer/nsis/installer.nsi"
 installer-icon = "assets/icon/icon.ico"
 header-image = "assets/installer/nsis-header.bmp"
 sidebar-image = "assets/installer/nsis-sidebar.bmp"
@@ -81,13 +87,42 @@ languages = ["English", "Russian"]
 custom-language-file = { Russian = "assets/installer/nsis/Russian.nsh" }
 display-language-selector = true
 
-[package.metadata.packager.wix]
-languages = ["en-US", "ru-RU"]
-banner-path = "assets/installer/wix-banner.bmp"
-dialog-image-path = "assets/installer/wix-dialog.bmp"
-
 [package.metadata.packager.dmg]
 background = "assets/installer/dmg-background.png"
 window-size = { width = 640, height = 400 }
 app-position = { x = 180, y = 190 }
 application-folder-position = { x = 460, y = 190 }
+
+[package.metadata.packager.deb]
+# The package dpkg knows (the updater checks /var/lib/dpkg/info/phoecord.list).
+package-name = "phoecord"
+section = "net"
+# certutil trusts the CA in the NSS stores Discord reads; libGL and xkbcommon are loaded by the
+# window at run time, so dpkg cannot see them. cargo-packager writes only `Depends`.
+depends = ["libnss3-tools", "libgl1", "libxkbcommon0"]
+
+# `cargo generate-rpm -p crates/phoecord-installer-gui` after `cargo packager` (ruling Q2). The same
+# files as the .deb: both binaries in /usr/bin, a menu entry for the window, its icon, the licences.
+[package.metadata.generate-rpm]
+name = "phoecord"
+summary = "PhoeCord: Vencord-style plugins for Discord (installer window and proxy)"
+release = "1"
+assets = [
+    { source = "target/release/phoecord-installer", dest = "/usr/bin/phoecord-installer", mode = "755" },
+    { source = "target/release/phoecord", dest = "/usr/bin/phoecord", mode = "755" },
+    { source = "assets/linux/phoecord-installer.desktop", dest = "/usr/share/applications/phoecord-installer.desktop", mode = "644" },
+    { source = "assets/icon/icon-256.png", dest = "/usr/share/icons/hicolor/256x256/apps/phoecord-installer.png", mode = "644" },
+    { source = "../../LICENSE", dest = "/usr/share/licenses/phoecord/LICENSE", mode = "644", doc = true },
+    { source = "../../NOTICE", dest = "/usr/share/licenses/phoecord/NOTICE", mode = "644", doc = true },
+    { source = "../../LICENSES/*", dest = "/usr/share/licenses/phoecord/LICENSES/", mode = "644", doc = true },
+]
+
+# Shared libraries the window loads at run time (named by soname, so Fedora and openSUSE both
+# resolve them); the ones the binaries link are found by auto-req.
+[package.metadata.generate-rpm.requires]
+"libGL.so.1()(64bit)" = "*"
+"libxkbcommon.so.0()(64bit)" = "*"
+
+[package.metadata.generate-rpm.recommends]
+# certutil (Fedora: nss-tools, openSUSE: mozilla-nss-tools) trusts the CA in the NSS stores.
+"/usr/bin/certutil" = "*"

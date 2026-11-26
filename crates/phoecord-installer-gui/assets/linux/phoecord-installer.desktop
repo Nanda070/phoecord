@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=PhoeCord
+Comment=Install, repair and remove PhoeCord and its plugins
+Comment[ru]=Установка, починка и удаление PhoeCord и его плагинов
+Exec=phoecord-installer
+Icon=phoecord-installer
+Terminal=false
+Categories=Utility;
+StartupWMClass=dev.phoecord.installer

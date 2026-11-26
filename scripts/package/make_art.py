@@ -93,19 +93,6 @@ def main() -> int:
         head = canvas(150, 57, (124, 28), 34, tmp)
         bmp(head, "nsis-header.bmp")
 
-        # WiX: top banner (493x58) and the welcome dialog (493x312, art on the left 164 px).
-        # WiX writes the page title in black over the banner's left part, so it stays light.
-        banner = Image.new("RGBA", (493, 58), (0xFB, 0xF6, 0xF6, 255))
-        banner = Image.alpha_composite(banner, glow((493, 58), (462, 29), 30, 40))
-        banner.alpha_composite(render(36, tmp), (444, 11))
-        bmp(banner, "wix-banner.bmp")
-        dialog = Image.new("RGBA", (493, 312), (*BG, 255))
-        dialog.alpha_composite(canvas(164, 312, (82, 120), 72, tmp), (0, 0))
-        text(dialog, (82, 186), "PhoeCord", 20, TEXT, anchor="ma")
-        # WiX draws its own text on the right part: keep it plain and light enough to read.
-        ImageDraw.Draw(dialog).rectangle((164, 0, 493, 312), fill=(250, 247, 247, 255))
-        bmp(dialog, "wix-dialog.bmp")
-
         # DMG window background (640x400): the app on the left, Applications on the right. Finder
         # draws the icon labels in black, so this one is light.
         paper, ink, soft = (0xFB, 0xF6, 0xF6), (0x2A, 0x14, 0x19), (0x8A, 0x6E, 0x74)
