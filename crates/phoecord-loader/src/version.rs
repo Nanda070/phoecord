@@ -73,6 +73,41 @@ pub fn detect_mapped(image: &[u8]) -> Result<ClientVersion, VersionError> {
     from_pe(&Pe::parse_mapped(image)?)
 }
 
+/// SHA-256 of `.text` as stored in the exe file at `exe`, with the span taken from the headers of
+/// `image` (the same exe as mapped in this process). Equal to [`detect`]'s `text_hash` for that
+/// file. The loader identifies the build with it, not with the mapped bytes: another DLL loaded
+/// into the client before the loader's worker runs (a mod such as Sunbird) may already have
+/// patched code in memory, which would change the hash of an unchanged build. Streams the file,
+/// so the whole exe (hundreds of MB) is never in memory at once.
+pub fn file_text_hash(image: &[u8], exe: &std::path::Path) -> std::io::Result<String> {
+    use std::io::{Read, Seek, SeekFrom};
+    let bad =
+        |e: &dyn fmt::Display| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string());
+    let pe = Pe::parse_mapped(image).map_err(|e| bad(&e))?;
+    let sect = pe
+        .section(".text")
+        .ok_or_else(|| bad(&VersionError::NoTextSection))?;
+    let mut left = u64::from(sect.raw_size.min(sect.virtual_size));
+    let mut f = std::fs::File::open(exe)?;
+    f.seek(SeekFrom::Start(u64::from(sect.raw_offset)))?;
+    let mut hasher = Sha256::new();
+    let mut buf = vec![0u8; 1 << 20];
+    while left > 0 {
+        let want = buf.len().min(usize::try_from(left).unwrap_or(usize::MAX));
+        let n = f.read(&mut buf[..want])?;
+        if n == 0 {
+            return Err(std::io::ErrorKind::UnexpectedEof.into());
+        }
+        hasher.update(&buf[..n]);
+        left -= n as u64;
+    }
+    Ok(hasher
+        .finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect())
+}
+
 /// Electron's child processes (renderer, GPU, utility, crashpad) carry `--type=` on their command
 /// line; the main client process does not. Only the main process needs the loader's work.
 pub fn is_child_process(command_line: &str) -> bool {
@@ -129,6 +164,26 @@ mod tests {
         assert_eq!(v.text_hash, hash_hex(&[0x90, 0x90, 0xC3]));
         assert_eq!(v.text_rva, 0x200);
         assert_eq!(v.text_len, 3);
+    }
+
+    #[test]
+    fn the_file_hash_ignores_code_patched_in_memory() {
+        let code: Vec<u8> = (0..5000u32).map(|i| (i % 251) as u8).collect();
+        let exe = build_pe(&code, &[], Some((0, 1, 0, 2208)));
+        let t = tempfile::tempdir().unwrap();
+        let path = t.path().join("Discord.exe");
+        std::fs::write(&path, &exe).unwrap();
+        // build_pe lays sections out with RVA == file offset, so the bytes double as the image.
+        let mut image = exe.clone();
+        let from_file = detect(&exe).unwrap().text_hash;
+        assert_eq!(file_text_hash(&image, &path).unwrap(), from_file);
+        // Another DLL patches a function in memory: the mapped hash moves, the file hash does not.
+        image[0x200 + 100] ^= 0xFF;
+        assert_ne!(detect_mapped(&image).unwrap().text_hash, from_file);
+        assert_eq!(file_text_hash(&image, &path).unwrap(), from_file);
+        // A file shorter than its headers say is an error, not a wrong hash.
+        std::fs::write(&path, &exe[..0x300]).unwrap();
+        assert!(file_text_hash(&image, &path).is_err());
     }
 
     #[test]

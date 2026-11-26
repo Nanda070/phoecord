@@ -50,6 +50,7 @@ dll = ["dep:retour", "dep:phoecord-core", "dep:phoecord-transport"]
 [dev-dependencies]
 phoecord-plugin-runtime.workspace = true
 phoecord-plugins.workspace = true
+tempfile = "3"
 
 [lints]
 workspace = true

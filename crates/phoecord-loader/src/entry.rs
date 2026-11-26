@@ -88,8 +88,32 @@ fn is_child() -> bool {
     version::is_child_process(&cmd)
 }
 
+/// Detects the build from the exe mapped in this process. `.text`'s hash is then taken from the
+/// exe file on disk ([`version::file_text_hash`]) when it can be read, because another DLL loaded
+/// before this worker runs (a mod such as Sunbird) may have patched code in memory already.
+fn detect(log: &Logger, exe: &std::path::Path) -> Result<version::ClientVersion, String> {
+    let (mut v, image) = detect_in_memory()?;
+    match version::file_text_hash(image, exe) {
+        Ok(h) if h == v.text_hash => {}
+        Ok(h) => {
+            log.log(&format!(
+                "in-memory .text differs from {} (sha256 {}): another DLL changed code before the \
+                 loader; the build is identified by the file",
+                exe.display(),
+                v.text_hash
+            ));
+            v.text_hash = h;
+        }
+        Err(e) => log.log(&format!(
+            "cannot hash .text of {}: {e}; using the in-memory hash",
+            exe.display()
+        )),
+    }
+    Ok(v)
+}
+
 /// Detects the build from the exe already mapped in this process: no file read.
-fn detect_in_memory() -> Result<version::ClientVersion, String> {
+fn detect_in_memory() -> Result<(version::ClientVersion, &'static [u8]), String> {
     // SAFETY: a null module name returns the host exe's base, mapped for the life of the process.
     // The first page holds the PE headers (the loader maps whole pages); `SizeOfImage` bytes from
     // the base are the mapped image, and we read only the headers, `.text` and the version
@@ -103,7 +127,8 @@ fn detect_in_memory() -> Result<version::ClientVersion, String> {
             .map_err(|e| e.to_string())?;
         std::slice::from_raw_parts(base, size)
     };
-    version::detect_mapped(image).map_err(|e| e.to_string())
+    let v = version::detect_mapped(image).map_err(|e| e.to_string())?;
+    Ok((v, image))
 }
 
 unsafe extern "system" fn worker(_: *mut c_void) -> u32 {
@@ -180,7 +205,7 @@ fn analyze(log: &Logger) -> Option<Report> {
     }
 
     let started = Instant::now();
-    let v = match detect_in_memory() {
+    let v = match detect(log, &exe) {
         Ok(v) => v,
         Err(e) => {
             log.log(&format!("cannot identify client build: {e}"));
