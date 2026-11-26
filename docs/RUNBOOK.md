@@ -87,13 +87,32 @@ Releases are unsigned, so Windows SmartScreen shows "Windows protected your PC" 
 - A build or installer job failed: nothing was published (publishing waits for every job). Fix on `main`, delete the tag and push it again.
 - `publish the release` failed after the release was created: delete the half-made release on GitHub, then re-run the failed job.
 
+## 3f. Installing and updating PhoeCord
+
+Which file to install: `PhoeCord_<version>_x64-setup.exe` (Windows), `PhoeCord_<version>_aarch64.dmg` / `_x64.dmg` (Mac), `PhoeCord_<version>_amd64.deb` (`sudo apt install ./<file>`, Debian/Ubuntu/Mint) or `PhoeCord_<version>_x86_64.rpm` (`sudo dnf install ./<file>`, Fedora/openSUSE). Other Linux distributions use the `phoecord-*-linux-x86_64.tar.gz` archive, which has the CLI only.
+
+An installed copy updates itself (2.4.5): it checks GitHub once a day, downloads and verifies the new installer, and installs it at the next start of the window or of `phoecord run`. The window's Settings shows the version and the last update error; `phoecord upgrade` checks now and says what it found. `updates/state.json` in the data folder holds the state (`last_check`, `pending`, `applied`, `error`); deleting the `updates` folder makes the next start check again from scratch.
+
+| Symptom | What to do |
+|:---|:---|
+| "the update was refused: … does not match its line in SHA256SUMS" | The download is not what the release lists: a broken download, a proxy or antivirus rewriting it, or a release that was changed. Nothing was installed. Run `phoecord upgrade` again; if it still fails, report it privately (§5) with the release and the file name |
+| "the release has no …" / "the release has no SHA256SUMS" / "… is not listed in SHA256SUMS" | The release is missing that file (a failed or half-finished release run, §3e). Nothing was installed; the next daily check tries again |
+| "the update check failed: …" | GitHub could not be reached (offline, blocked, rate limit). Nothing to do; it tries again the next day. Behind a VPN or zapret, note that the update check does not use `upstream` |
+| Linux: "Open the PhoeCord window to install it" in the proxy log | `phoecord run` cannot ask for the administrator password. Open the PhoeCord window: it runs `pkexec dpkg -i` / `pkexec rpm -U` and asks for it. If you cancel, the window opens anyway and asks again next time |
+| Windows: the setup says a file cannot be written | A `phoecord.exe` is still running from the install folder. The setup runs `phoecord stop` and then ends `phoecord.exe` processes; if one survives (another user's, or an elevated one), quit Discord and PhoeCord and run the setup again |
+| macOS: the update did not go in, "moving … aside" or "putting the new … in place" | PhoeCord could not write next to `PhoeCord.app` (an account without rights to `/Applications`). Install the new `.dmg` by hand, or move the app to a folder you can write |
+| Updates should not happen | Turn off "Install updates automatically" in Settings, or set `[update] auto = false` in `config.toml`. A downloaded update then waits; `phoecord upgrade` still checks when asked |
+| Updating by hand | Install the new file over the old one: run the new setup (it keeps your settings), drag the new app into Applications, or install the new `.deb` / `.rpm`. Settings, the CA and plugins are in the data folder and stay |
+
 ## 4. Removing everything
 
 ```bash
 phoecord uninstall         # undo autostart, CA trust, loader DLL copies and the files setup created
 ```
 
-Your `config.toml` stays; delete it and the binary by hand if you want nothing left. If `uninstall` reports a failed step, run it again: the step stays in `install.log` until it succeeds.
+Your `config.toml` stays; delete it and the binary by hand if you want nothing left.
+
+Removing the program itself: on Windows, removing PhoeCord in Settings, Installed apps runs `phoecord uninstall` first, so the steps above happen on their own. macOS and Linux have no such hook: press **Uninstall** in the PhoeCord window (or run `phoecord uninstall`) first, then move `PhoeCord.app` to the Bin or run `sudo apt remove phoecord` / `sudo dnf remove phoecord`. If the program is already gone, the CA stays trusted and the autostart entry points at a missing file: remove the CA with your OS's certificate tool (its name is "PhoeCord local CA (this computer only)"), and delete `~/Library/LaunchAgents/dev.phoecord.proxy.plist` (macOS) or `~/.config/systemd/user/phoecord.service` (Linux). If `uninstall` reports a failed step, run it again: the step stays in `install.log` until it succeeds.
 
 ## 5. Suspected security problem
 

@@ -24,6 +24,18 @@ Status: prototype merged (stages 1.5.1–1.5.5), not yet placed by the installer
 
 **The IPC pipe is a local attack surface.** `phoecord run` / `launch` open the named pipe `\\.\pipe\phoecord-<user SID>`. Who can connect: only the Windows user who runs the proxy (a protected ACL with a single entry for that user's SID; no `Everyone`, no `SYSTEM`, no `Administrators`) and only from this computer (`PIPE_REJECT_REMOTE_CLIENTS`). What a connected process can do: tell the proxy about the client build (logged), read and write scalar keys of the `[loader]` table in `config.toml` (nothing else in the file), and send UI events (logged, ignored). It cannot read the token, plugin settings or traffic. Every other process of the same user can do this too, as it could edit `config.toml` directly. Lines over 64 KiB, bad JSON and unknown messages drop the connection; at most 8 connections are served. Known limits: another user who creates the same pipe name first can make the loader report to them (build and hash only; the loader never trusts what a pipe answers beyond its own settings); the proxy then reports that it could not create the pipe.
 
+## Automatic updates
+
+An installed PhoeCord updates itself from this repository's GitHub Releases (task 2.4.5):
+
+| | |
+|:---|:---|
+| **What it contacts** | Once a day: `api.github.com` (the release list) and, when a newer release is out, GitHub's download servers for one installer and `SHA256SUMS`. Nothing about you or your Discord account is sent; GitHub sees your IP address, as with any download |
+| **What it accepts** | Only a published release (no drafts, no prereleases, no `-` tags) newer than the running one, only the installer for your kind of install, and only when its SHA-256 matches its line in that release's `SHA256SUMS`. Anything missing or different is refused and nothing is installed |
+| **When it installs** | At the next start of the PhoeCord window or of its background proxy, never in the middle of a session. The file is hashed again just before it runs |
+| **What it does not protect against** | The installers are unsigned and the checksums come from the same release, so a compromised GitHub account or release would pass. This is audited in 2.4.6 |
+| **How to turn it off** | Settings in the PhoeCord window, or `[update] auto = false` in `config.toml`. `phoecord upgrade` still checks when you ask |
+
 ## Your Discord session
 
 To let plugins call Discord's API the way the client does (`Host::rest`), the proxy keeps the `Authorization` header of your own client's latest API request **in memory only**: never written to disk or logs, never handed to a plugin (plugins get only the answer), dropped after 30 minutes without client traffic or when Discord answers 401. Calls go only to the Discord API host your client uses. Outside calls (`Host::fetch`) never carry it.
