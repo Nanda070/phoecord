@@ -15,6 +15,7 @@ If you are porting a Vencord plugin into PhoeCord itself as a native, built-in p
 | [Rights](rights.md) | Know what each right in `plugin.toml` grants, which `Host` methods are behind it, the limits (time, memory, rate, fetch hosts) and what the user sees at install time |
 | [Publishing](publishing.md) | Lay out a package, fill in `plugin.toml`, version it, understand what the v1 freeze guarantees, and get it into the catalog or into users' hands |
 | [Localization](localization.md) | Ship `i18n/<lang>.ftl`, call `Host::t`, label menu entries |
+| [Themes](themes.md) | Write a `theme.toml`, the built-in themes, `phoecord theme import` for a Vencord CSS theme |
 
 ## The model in one minute
 

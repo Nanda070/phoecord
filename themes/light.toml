@@ -1,0 +1,20 @@
+# Built-in light theme (task 2.3.2).
+#
+# Discord's published light surface colours. Field names are PhoeCord's placeholders until Phoenix's palette is known (2.3.1); see
+# `themes/default.toml` and `docs/plugins/themes.md`.
+
+name = "Discord Light"
+
+[colors]
+background = "#ffffff"
+"background.secondary" = "#f2f3f5"
+"background.tertiary" = "#e3e5e8"
+"background.floating" = "#ffffff"
+text = "#313338"
+"text.muted" = "#5c5e66"
+"text.link" = "#006ce7"
+brand = "#5865f2"
+online = "#23a55a"
+idle = "#f0b232"
+dnd = "#f23f43"
+offline = "#80848e"

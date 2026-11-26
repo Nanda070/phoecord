@@ -627,12 +627,24 @@ cli-check-ambiguous = неоднозначна (совпадений: { $count }
 cli-check-bad-rip = неверное смещение rip
 cli-check-summary = Найдено { $found } из { $total }
 cli-check-failed = проверка сигнатур не пройдена
+cli-check-locators = Типизированные локаторы целей хуков:
 
 # phoecord signatures (задача 2.2.10)
 cmd-signatures = Обновить файлы сигнатур, которые читает загрузчик (быстрое исправление, Windows)
 cmd-signatures-install = Проверить файлы сигнатур (*.toml) и положить их туда, откуда их читает загрузчик
 cli-arg-signatures-install-source = Файл сигнатур или папка с файлами *.toml
 cmd-signatures-list = Показать файлы сигнатур, которые прочитает загрузчик
+cmd-theme = Темы PhoeCord
+cmd-theme-import = Перевести CSS-тему Vencord в theme.toml (переносятся только переменные цветов)
+cli-arg-theme-import-css = Тема Vencord (.css или .theme.css)
+cli-arg-theme-import-out = Записать theme.toml сюда (по умолчанию: вывести на экран)
+cli-arg-theme-import-name = Название темы (по умолчанию: имя файла)
+cli-theme-err-read = не удаётся прочитать { $path }
+cli-theme-err-write = не удаётся записать { $path }
+cli-theme-bad = Пропущено, PhoeCord не читает такой цвет: { $what }
+cli-theme-unsupported = Нет поля палитры для: { $list }
+cli-theme-none = В файле нет цветов, которые PhoeCord может использовать
+cli-theme-written = Записан { $path } (цветов: { $count })
 cli-signatures-unsupported = файлы сигнатур использует только загрузчик под Windows
 cli-signatures-added = Добавлен { $path } (сборки: { $builds })
 cli-signatures-replaced = Заменён { $path } (сборки: { $builds })

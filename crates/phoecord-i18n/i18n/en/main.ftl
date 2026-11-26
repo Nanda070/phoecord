@@ -622,12 +622,24 @@ cli-check-ambiguous = ambiguous ({ $count } matches)
 cli-check-bad-rip = bad rip offset
 cli-check-summary = Found { $found } of { $total }
 cli-check-failed = the signature check failed
+cli-check-locators = Typed locators of the hook targets:
 
 # phoecord signatures (task 2.2.10)
 cmd-signatures = Update the signature files the loader reads (hot-fix, Windows)
 cmd-signatures-install = Check signature files (*.toml) and put them where the loader reads them
 cli-arg-signatures-install-source = A signature file, or a folder with *.toml files
 cmd-signatures-list = Show the signature files the loader would read
+cmd-theme = Work with PhoeCord themes
+cmd-theme-import = Turn a Vencord CSS theme into a theme.toml (only its colour variables carry over)
+cli-arg-theme-import-css = The Vencord theme (.css or .theme.css)
+cli-arg-theme-import-out = Write the theme.toml here (default: print it)
+cli-arg-theme-import-name = Name of the theme (default: the file name)
+cli-theme-err-read = cannot read { $path }
+cli-theme-err-write = cannot write { $path }
+cli-theme-bad = Skipped, not a colour PhoeCord reads: { $what }
+cli-theme-unsupported = No palette field for: { $list }
+cli-theme-none = The file has no colour PhoeCord can use
+cli-theme-written = Wrote { $path } ({ $count } colours)
 cli-signatures-unsupported = signature files are used by the Windows loader only
 cli-signatures-added = Added { $path } (builds: { $builds })
 cli-signatures-replaced = Replaced { $path } (builds: { $builds })

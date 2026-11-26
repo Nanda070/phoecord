@@ -1,11 +1,14 @@
 //! `phoecord check <exe> [--signatures <dir>]` (task 2.2.6): which signatures of a client build
-//! resolve in an exe on disk. Read-only; fails (exit code 1) unless every one of them does.
+//! resolve in an exe on disk, and which typed locators of the hook targets find theirs (2.2.6
+//! part 2). Read-only; fails (exit code 1) unless every signature resolves and, for a Phoenix exe
+//! (`DiscordPhoenix` in its path), every locator finds its target.
 
 use crate::tf;
 use anyhow::{Context, Result};
 use phoecord_i18n::Localizer;
 use phoecord_loader::check::{Report, check};
 use phoecord_loader::signatures::ResolveError;
+use phoecord_loader::version::ClientKind;
 use std::path::Path;
 
 pub fn run(exe: &Path, signatures: &Path, l10n: &Localizer) -> Result<()> {
@@ -29,7 +32,8 @@ pub fn run(exe: &Path, signatures: &Path, l10n: &Localizer) -> Result<()> {
     for line in lines(&report, l10n) {
         println!("{line}");
     }
-    if !report.passed() {
+    let phoenix = ClientKind::of(&exe.to_string_lossy(), None) == ClientKind::Phoenix;
+    if !report.passed() || (phoenix && !report.locators_passed()) {
         anyhow::bail!(l10n.t("cli-check-failed"));
     }
     Ok(())
@@ -58,6 +62,7 @@ fn lines(report: &Report, l10n: &Localizer) -> Vec<String> {
     }
     let Some(table) = &report.table else {
         out.push(l10n.t("cli-check-no-table"));
+        out.extend(locator_lines(report, l10n));
         return out;
     };
     out.push(tf(l10n, "cli-check-table", &[("key", table)]));
@@ -85,6 +90,50 @@ fn lines(report: &Report, l10n: &Localizer) -> Vec<String> {
         &[
             ("found", &report.found().to_string()),
             ("total", &report.entries.len().to_string()),
+        ],
+    ));
+    out.extend(locator_lines(report, l10n));
+    out
+}
+
+/// The typed locators: one row each with what they found (`role 0x…`) or why they missed.
+fn locator_lines(report: &Report, l10n: &Localizer) -> Vec<String> {
+    if report.locators.is_empty() {
+        return Vec::new();
+    }
+    let mut out = vec![l10n.t("cli-check-locators")];
+    let name = report
+        .locators
+        .iter()
+        .map(|l| l.name.len())
+        .max()
+        .unwrap_or(0);
+    for l in &report.locators {
+        let detail = match &l.result {
+            Ok(found) => {
+                let rvas: Vec<String> = found
+                    .rvas
+                    .iter()
+                    .map(|(role, rva)| format!("{role} {rva:#010x}"))
+                    .collect();
+                format!(
+                    "{}  {} ({})",
+                    l10n.t("cli-check-found"),
+                    rvas.join(", "),
+                    found.how
+                )
+            }
+            Err(why) => format!("{}: {why}", l10n.t("cli-check-missed")),
+        };
+        out.push(format!("  {:<name$}  {detail}", l.name));
+    }
+    let found = report.locators.iter().filter(|l| l.result.is_ok()).count();
+    out.push(tf(
+        l10n,
+        "cli-check-summary",
+        &[
+            ("found", &found.to_string()),
+            ("total", &report.locators.len().to_string()),
         ],
     ));
     out
@@ -115,6 +164,7 @@ mod tests {
             table: table.map(str::to_string),
             entries,
             skipped: Vec::new(),
+            locators: Vec::new(),
         }
     }
 
@@ -143,5 +193,40 @@ mod tests {
         let out = lines(&report(None, Vec::new()), &l10n);
         assert_eq!(out.last(), Some(&l10n.t("cli-check-no-table")));
         assert_eq!(out.len(), 2);
+    }
+
+    #[test]
+    fn locators_get_their_own_rows() {
+        use phoecord_loader::check::{Located, LocatorEntry};
+        use phoecord_loader::locators::LocatorError;
+        let mut r = report(None, Vec::new());
+        r.locators = vec![
+            LocatorEntry {
+                name: "http_send",
+                result: Ok(Located {
+                    rvas: vec![("send", 0x2000)],
+                    how: "masked AOB".into(),
+                }),
+            },
+            LocatorEntry {
+                name: "allocator",
+                result: Err(LocatorError::Missing {
+                    what: "__rust_alloc".into(),
+                }),
+            },
+        ];
+        let l10n = Localizer::new("en");
+        let text = lines(&r, &l10n).join(
+            "
+",
+        );
+        for part in [
+            l10n.t("cli-check-locators"),
+            "send 0x00002000 (masked AOB)".into(),
+            "__rust_alloc: not found".into(),
+            "Found 1 of 2".into(),
+        ] {
+            assert!(text.contains(&part), "{part} not in {text}");
+        }
     }
 }

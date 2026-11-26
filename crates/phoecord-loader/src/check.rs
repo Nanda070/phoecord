@@ -1,14 +1,18 @@
 //! Offline signature check (task 2.2.6): run the signature table of a client exe against the exe
 //! on disk, the way the loader would inside the process. Pure: `phoecord check` prints the result.
 //!
-//! Only the AOB signatures of `signatures/*.toml` are checked. The typed locators for the hook
-//! targets (2.2.5, part 2) do not exist yet; when they do, they belong in the same report.
+//! The AOB signatures of `signatures/*.toml` are checked, and so are the typed locators of the
+//! hook targets (2.2.5 part 2, [`crate::locators`]): [`Report::locators`], one row each, with the
+//! RVAs they found and how (2.2.6 part 2). The locators are built for Phoenix; on an Electron
+//! exe they are expected to miss, so [`Report::passed`] stays about the signatures and the caller
+//! adds [`Report::locators_passed`] for a Phoenix exe.
 //!
 //! [`transport_plan`] is the same check as the in-process transport sees it: the hook locators of
 //! [`crate::found`] run on the exe on disk and give a [`Plan`]. `phoecord launch --channel
 //! phoenix` picks the launch's transport from it (2.2.8).
 
 use crate::found::{HookPlan, Scan};
+use crate::locators::{self, Image, LocatorError};
 use crate::pe::Pe;
 use crate::plan::Plan;
 use crate::signatures::{ResolveError, SignatureError, SignatureSet, resolve_all};
@@ -41,6 +45,61 @@ pub struct Entry {
     pub result: Result<u32, ResolveError>,
 }
 
+/// What a locator found: its RVAs by role (`send`, `alloc`, ...) and how.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Located {
+    pub rvas: Vec<(&'static str, u32)>,
+    pub how: String,
+}
+
+/// One typed locator run on the exe on disk.
+#[derive(Debug, PartialEq, Eq)]
+pub struct LocatorEntry {
+    pub name: &'static str,
+    pub result: Result<Located, LocatorError>,
+}
+
+/// Every typed locator of [`crate::locators`] over the exe's `.text`, `.rdata` and `.pdata`. An
+/// exe the locators cannot read at all gives one failed row per locator.
+pub fn locate_all(exe: &[u8]) -> Vec<LocatorEntry> {
+    let pe = Pe::parse(exe).ok();
+    let image = pe.as_ref().and_then(Image::from_pe);
+    let run = |name: &'static str, f: &dyn Fn(&Image<'_>) -> Result<Located, LocatorError>| {
+        LocatorEntry {
+            name,
+            result: match &image {
+                Some(img) => f(img),
+                None => Err(LocatorError::Missing {
+                    what: format!("{name}: no .text section to search"),
+                }),
+            },
+        }
+    };
+    vec![
+        run("http_send", &|img| {
+            locators::http_transport::find(img).map(|f| Located {
+                rvas: vec![("send", f.value.send_rva)],
+                how: f.how,
+            })
+        }),
+        run("allocator", &|img| {
+            locators::allocator::find(img).map(|f| Located {
+                rvas: vec![
+                    ("alloc", f.value.alloc_rva),
+                    ("dealloc", f.value.dealloc_rva),
+                ],
+                how: f.how,
+            })
+        }),
+        run("gateway_registry", &|img| {
+            locators::gateway::find(img).map(|f| Located {
+                rvas: vec![("registry", f.value.rva)],
+                how: f.how,
+            })
+        }),
+    ]
+}
+
 #[derive(Debug)]
 pub struct Report {
     pub version: ClientVersion,
@@ -50,6 +109,8 @@ pub struct Report {
     pub entries: Vec<Entry>,
     /// Signature files that were skipped because they do not load.
     pub skipped: Vec<(String, SignatureError)>,
+    /// The typed locators, in a fixed order.
+    pub locators: Vec<LocatorEntry>,
 }
 
 impl Report {
@@ -64,6 +125,11 @@ impl Report {
             && !self.entries.is_empty()
             && self.found() == self.entries.len()
             && self.skipped.is_empty()
+    }
+
+    /// Every typed locator found its target.
+    pub fn locators_passed(&self) -> bool {
+        self.locators.iter().all(|l| l.result.is_ok())
     }
 }
 
@@ -94,6 +160,7 @@ pub fn check(exe: &[u8], signatures_dir: &Path) -> Result<Report, CheckError> {
         table,
         entries,
         skipped,
+        locators: locate_all(exe),
     })
 }
 
@@ -288,5 +355,15 @@ mod tests {
             transport_plan(b"nope", &dir.0),
             Err(CheckError::Exe(_))
         ));
+    }
+
+    #[test]
+    fn typed_locators_are_reported_and_miss_on_foreign_code() {
+        let dir = Dir::new("loc", &[]);
+        let r = check(&exe(), &dir.0).unwrap();
+        let names: Vec<&str> = r.locators.iter().map(|l| l.name).collect();
+        assert_eq!(names, ["http_send", "allocator", "gateway_registry"]);
+        assert!(!r.locators_passed(), "made-up code has none of the targets");
+        assert!(locate_all(b"not a pe").iter().all(|l| l.result.is_err()));
     }
 }
