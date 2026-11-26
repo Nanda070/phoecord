@@ -4,6 +4,10 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-26
+
+A test release for the signed update path (2.4.6, A1): the first release signed with the owner's minisign key. An installed copy built from `main` after PR #136 updates to it automatically.
+
 ### Fixed
 
 - `phoecord trust` on Windows no longer says "trusted" when the CA was not added: `certutil` exits 0 even when its confirmation is declined or cannot be shown, so the store is now checked afterwards and the command fails with what to do.
