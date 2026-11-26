@@ -155,7 +155,7 @@ The 30 🎨 plugins of v1.0: BetterFolders, ShowMeYourName, RoleColorEverywhere,
 | RoleColorEverywhere | Top role colour everywhere | 🎨 UI | v1.0 | 2 |
 | SecretRingToneEnabler | Always the secret ringtone | 🎨 UI | 1.x | 2 |
 | SendTimestamps | Send timestamps with shortcuts | 🌐 Network | v1.0 | done (the picker button is Phase 2) |
-| ServerInfo | Server info view | 🌐 + 🎨 | v1.0 | done: data — `/phoecord serverinfo` / 2 (menu item, modal, friends and blocked tabs) |
+| ServerInfo | Server info view | 🌐 + 🎨 | v1.0 | done: data — `/phoecord serverinfo`, with your friends, blocked and ignored users in that server (one gateway op 8) / 2 (menu item, modal) |
 | ServerListIndicators | Online friends or server count in the list | 🎨 UI | 1.x | 2 |
 | ShikiCodeblocks | VS Code-style code blocks | 🎨 UI | v1.0 | 2 |
 | ShowAllMessageButtons | Always show all message buttons | 🎨 UI | v1.0 | 2 |
