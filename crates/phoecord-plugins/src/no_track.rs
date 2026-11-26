@@ -1,7 +1,6 @@
 //! Blocks Discord's analytics and crash reporting (Vencord: NoTrack).
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Verdict};
 
 pub struct NoTrack {
     manifest: Manifest,
@@ -10,16 +9,16 @@ pub struct NoTrack {
 impl NoTrack {
     pub fn new() -> NoTrack {
         NoTrack {
-            manifest: Manifest {
-                id: "no_track".into(),
-                name: "NoTrack".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Block Discord's analytics and crash reports".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("NoTrack".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "no_track",
+                    "NoTrack",
+                    env!("CARGO_PKG_VERSION"),
+                    "Block Discord's analytics and crash reports",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("NoTrack".into());
+                m
             },
         }
     }

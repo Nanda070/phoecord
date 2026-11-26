@@ -9,8 +9,7 @@
 //! Used together with `fake_profile_themes`, nobody else's theme shows, fake ones included, which
 //! is what Vencord does when both are on. No settings.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 pub struct NoProfileThemes {
     manifest: Manifest,
@@ -19,16 +18,16 @@ pub struct NoProfileThemes {
 impl NoProfileThemes {
     pub fn new() -> NoProfileThemes {
         NoProfileThemes {
-            manifest: Manifest {
-                id: "no_profile_themes".into(),
-                name: "NoProfileThemes".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Removes Nitro profile themes from everyone but you".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("NoProfileThemes".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "no_profile_themes",
+                    "NoProfileThemes",
+                    env!("CARGO_PKG_VERSION"),
+                    "Removes Nitro profile themes from everyone but you",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("NoProfileThemes".into());
+                m
             },
         }
     }

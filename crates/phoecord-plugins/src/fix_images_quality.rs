@@ -15,8 +15,7 @@
 //! Unverified against a live client.
 
 use crate::state::dispatch_data_mut;
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PROXY: &str = "https://media.discordapp.net/attachments/";
 const CDN: &str = "https://cdn.discordapp.com/attachments/";
@@ -28,16 +27,16 @@ pub struct FixImagesQuality {
 impl FixImagesQuality {
     pub fn new() -> FixImagesQuality {
         FixImagesQuality {
-            manifest: Manifest {
-                id: "fix_images_quality".into(),
-                name: "FixImagesQuality".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Load attached images at their original quality".into(),
-                authors: vec!["Nuckyz".into(), "Ven".into()],
-                vencord: Some("FixImagesQuality".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "fix_images_quality",
+                    "FixImagesQuality",
+                    env!("CARGO_PKG_VERSION"),
+                    "Load attached images at their original quality",
+                );
+                m.authors = vec!["Nuckyz".into(), "Ven".into()];
+                m.vencord = Some("FixImagesQuality".into());
+                m
             },
         }
     }

@@ -32,8 +32,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::{Shared, VoiceChange, VoiceStates, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashMap;
 
 const PLUGIN_ID: &str = "follow_user";
@@ -234,16 +233,16 @@ pub struct FollowUser {
 impl FollowUser {
     pub fn new() -> FollowUser {
         FollowUser {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "FollowUser".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Follow a user from voice channel to voice channel".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("FollowUser".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "FollowUser",
+                    env!("CARGO_PKG_VERSION"),
+                    "Follow a user from voice channel to voice channel",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("FollowUser".into());
+                m
             },
             state: Shared::default(),
         }

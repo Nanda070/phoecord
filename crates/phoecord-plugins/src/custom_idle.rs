@@ -23,8 +23,8 @@
 use crate::commands::{Kept, Subcommand, invocation, is_interaction, kept_answer};
 use crate::presence::{self, PRESENCE};
 use crate::state::{Shared, dispatch_data};
-use phoecord_core::plugin::{API_VERSION, TIMER_EVENT};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::TIMER_EVENT;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "custom_idle";
 const TAG: &str = "idle";
@@ -54,16 +54,16 @@ pub struct CustomIdle {
 impl CustomIdle {
     pub fn new() -> CustomIdle {
         CustomIdle {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "CustomIdle".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Change or switch off the time before you show as idle".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("CustomIdle".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "CustomIdle",
+                    env!("CARGO_PKG_VERSION"),
+                    "Change or switch off the time before you show as idle",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("CustomIdle".into());
+                m
             },
             kept: Kept::default(),
             state: Shared::default(),

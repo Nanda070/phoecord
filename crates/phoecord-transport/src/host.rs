@@ -4,7 +4,7 @@
 use crate::account::Account;
 use crate::config::Config;
 use crate::timers::Timers;
-use phoecord_core::{FilePart, Host, HostResponse, Val};
+use phoecord_core::{ChainHost, FilePart, Host, HostResponse, Val};
 use phoecord_i18n::PluginStrings;
 use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
@@ -372,7 +372,7 @@ impl<'a> ProxyHost<'a> {
     }
 }
 
-impl Host for ProxyHost<'_> {
+impl ChainHost for ProxyHost<'_> {
     fn begin_plugin(&mut self, id: &str) {
         self.plugin.clear();
         self.plugin.push_str(id);
@@ -382,7 +382,9 @@ impl Host for ProxyHost<'_> {
     fn set_fetch_hosts(&mut self, hosts: &[String]) {
         self.fetch_hosts = hosts.to_vec();
     }
+}
 
+impl Host for ProxyHost<'_> {
     fn setting(&self, key: &str) -> Option<Val> {
         let v = self.config.plugins.get(&self.plugin)?.get(key)?;
         Some(Val::from_json(serde_json::to_value(v).ok()?))

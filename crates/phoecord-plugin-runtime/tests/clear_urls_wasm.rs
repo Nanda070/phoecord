@@ -90,6 +90,8 @@ impl Host for SettingsHost {
     }
 }
 
+impl phoecord_core::ChainHost for SettingsHost {}
+
 fn message(content: &str) -> Val {
     let mut body = Val::map();
     body.set("content", Val::Str(content.into()));

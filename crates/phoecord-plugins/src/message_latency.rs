@@ -22,8 +22,7 @@
 
 use crate::commands::{FnCmd, Subcommand};
 use crate::state::{Ring, Shared, Users};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "message_latency";
 const DISCORD_EPOCH_MS: i64 = 1_420_070_400_000;
@@ -193,16 +192,16 @@ pub struct MessageLatency {
 impl MessageLatency {
     pub fn new() -> MessageLatency {
         MessageLatency {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "MessageLatency".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Logs messages that took a while to send".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("MessageLatency".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "MessageLatency",
+                    env!("CARGO_PKG_VERSION"),
+                    "Logs messages that took a while to send",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("MessageLatency".into());
+                m
             },
             state: Shared::default(),
         }

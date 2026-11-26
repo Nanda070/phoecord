@@ -25,8 +25,7 @@
 //! icons in the devices settings page (Phase 2 UI hooks).
 
 use crate::commands::{FnCmd, Subcommand};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -46,16 +45,16 @@ pub struct BetterSessions {
 impl BetterSessions {
     pub fn new() -> BetterSessions {
         BetterSessions {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "BetterSessions".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Exact timestamps for sessions and alerts about new ones".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("BetterSessions".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "BetterSessions",
+                    env!("CARGO_PKG_VERSION"),
+                    "Exact timestamps for sessions and alerts about new ones",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("BetterSessions".into());
+                m
             },
             last_check: Arc::new(AtomicU64::new(0)),
         }

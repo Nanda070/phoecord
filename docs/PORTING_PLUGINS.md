@@ -43,9 +43,10 @@ Ask: *"Could a program between the client and Discord do this by changing the tr
 
 | Vencord | PhoeCord | Notes |
 |:---|:---|:---|
-| `definePlugin({ name, description, authors })` | `Manifest { id, name, description, authors, vencord, layers, api }` | `id` is `snake_case` of the name; set `vencord: Some("OriginalName")` |
+| `definePlugin({ name, description, authors })` | `Manifest::new(id, name, version, description)`, then set `authors`, `vencord`, `fetch`, `menu` | `id` is `snake_case` of the name; set `m.vencord = Some("OriginalName".into())` |
 | `definePluginSettings({ … })` | `[plugins.<id>]` in `config.toml`, read with `host.setting("key")` | defaults go in the manifest; native plugins read a missing key as its default |
 | `patches: [{ find, replacement }]` | nothing in Phase 1; a UI hook in Phase 2 *(2)* | if the patch only changes data, find the request or event that carries that data instead |
+| message context menu entries (`addContextMenuPatch`) | `Manifest.menu` (`MenuEntry::new(id, ftl_key)`; `[[menu]]` in a WASM package's `plugin.toml`), clicks arrive as `Event::Ui(UiEvent::MenuAction { entry, channel_id, message_id })` | Phoenix only, once the context menu hook (2.3.5) lands |
 | `FluxDispatcher` events (`MESSAGE_CREATE`, …) | `Event::Dispatch { name, payload, extra }` | same event names as the Gateway; `payload` is the whole frame `{op, t, s, d}`, read the data with `state::dispatch_data(payload)` (or `_mut` to rewrite) |
 | `MessageEvents.addPreSendListener` | `Event::RestRequest` on `POST /channels/{id}/messages` | edit `body["content"]`, return `Verdict::Changed` |
 | `MessageEvents.addPreEditListener` | `Event::RestRequest` on `PATCH /channels/{id}/messages/{mid}` | |
@@ -142,8 +143,7 @@ Tests never touch the network and never need a Discord token.
 ```rust
 //! SilentTyping: your typing indicator is never sent (Vencord: SilentTyping).
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Verdict};
 
 pub struct SilentTyping {
     manifest: Manifest,
@@ -152,15 +152,16 @@ pub struct SilentTyping {
 impl SilentTyping {
     pub fn new() -> Self {
         SilentTyping {
-            manifest: Manifest {
-                id: "silent_typing".into(),
-                name: "SilentTyping".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Your typing indicator is never sent".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("SilentTyping".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
+            manifest: {
+                let mut m = Manifest::new(
+                    "silent_typing",
+                    "SilentTyping",
+                    env!("CARGO_PKG_VERSION"),
+                    "Your typing indicator is never sent",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("SilentTyping".into());
+                m
             },
         }
     }

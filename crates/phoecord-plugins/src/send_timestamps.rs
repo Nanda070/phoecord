@@ -17,8 +17,7 @@
 //! single-threaded, which the proxy is not, so there it answers "indeterminate". Then the plugin
 //! uses `utc_offset_minutes` if set, otherwise UTC, and logs that once.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Verdict};
 use std::sync::atomic::{AtomicBool, Ordering};
 use time::{Date, Duration, OffsetDateTime, Time, UtcOffset};
 
@@ -30,16 +29,16 @@ pub struct SendTimestamps {
 impl SendTimestamps {
     pub fn new() -> SendTimestamps {
         SendTimestamps {
-            manifest: Manifest {
-                id: "send_timestamps".into(),
-                name: "SendTimestamps".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Turn `12:34` in your messages into a Discord timestamp".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("SendTimestamps".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "send_timestamps",
+                    "SendTimestamps",
+                    env!("CARGO_PKG_VERSION"),
+                    "Turn `12:34` in your messages into a Discord timestamp",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("SendTimestamps".into());
+                m
             },
             warned: AtomicBool::new(false),
         }

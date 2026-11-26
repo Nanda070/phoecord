@@ -20,8 +20,8 @@
 //! `{ "<name>": { "name": …, "message": … } }`. Not ported: answering the reply you were writing.
 
 use crate::commands::{Invocation, Kept, Subcommand, invocation, is_interaction, kept_answer};
-use phoecord_core::plugin::{API_VERSION, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::HostResponse;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "custom_commands";
 const KV_TAGS: &str = "tagsList";
@@ -36,16 +36,16 @@ pub struct CustomCommands {
 impl CustomCommands {
     pub fn new() -> CustomCommands {
         CustomCommands {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "CustomCommands".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Your own text snippets with arguments, sent with a command".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("CustomCommands".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "CustomCommands",
+                    env!("CARGO_PKG_VERSION"),
+                    "Your own text snippets with arguments, sent with a command",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("CustomCommands".into());
+                m
             },
             kept: Kept::default(),
         }

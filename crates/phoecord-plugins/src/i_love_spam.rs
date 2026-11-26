@@ -7,8 +7,7 @@
 //! receives: message authors, mentioned users, replied-to authors, guild members and message
 //! history.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 /// `UserFlags.LIKELY_SPAMMER`, the bit Vencord's patch clears.
 const LIKELY_SPAMMER: i64 = 1 << 20;
@@ -20,16 +19,16 @@ pub struct ILoveSpam {
 impl ILoveSpam {
     pub fn new() -> ILoveSpam {
         ILoveSpam {
-            manifest: Manifest {
-                id: "i_love_spam".into(),
-                name: "iLoveSpam".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Do not hide messages from 'likely spammers'".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("iLoveSpam".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "i_love_spam",
+                    "iLoveSpam",
+                    env!("CARGO_PKG_VERSION"),
+                    "Do not hide messages from 'likely spammers'",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("iLoveSpam".into());
+                m
             },
         }
     }

@@ -31,8 +31,7 @@
 
 use crate::commands::{FnCmd, Subcommand};
 use crate::state::{Shared, Users, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -301,16 +300,16 @@ pub struct ShowHiddenThings {
 impl ShowHiddenThings {
     pub fn new() -> ShowHiddenThings {
         ShowHiddenThings {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "ShowHiddenThings".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Show hidden and moderator-only things".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("ShowHiddenThings".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "ShowHiddenThings",
+                    env!("CARGO_PKG_VERSION"),
+                    "Show hidden and moderator-only things",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("ShowHiddenThings".into());
+                m
             },
             state: Shared::default(),
         }

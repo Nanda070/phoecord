@@ -1,0 +1,246 @@
+// Frozen copy of wit/phoecord.wit as of Plugin API v1 (task 2.4.3). Never edit this file: a
+// change here would hide a breaking change to wit/phoecord.wit from the runtime tests.
+//
+// PhoeCord Plugin API v1 as a WebAssembly component-model contract.
+// License: MIT (plugin authors build against this file).
+//
+// Mirrors `crates/phoecord-core/src/plugin.rs` (`Manifest`, `Event`, `EventKind`, `Verdict`, `Host`).
+//
+// FROZEN at v1 (task 2.4.3). wasmtime refuses a component whose WIT `variant`, `enum` or `record`
+// has a different set of cases or fields than the host's, so a plugin built against this file stops
+// loading the moment one of them changes. What may still be added without breaking built plugins:
+// - a new function at the end of `interface host` (a guest that does not import it still links);
+// - a new UI event: a new `name` under `event.ui` / `event-kind.ui` (see `ui-event`);
+// - a new dispatch name (like `PHOECORD_TIMER`).
+// Everything else (a new case, field or parameter, a rename) is a new major version.
+// `wit/frozen/phoecord-1.0.0.wit` is the frozen copy; the runtime tests build a guest against it
+// and check that `interface types` and the world here still match it.
+
+package phoecord:plugin@1.0.0;
+
+interface types {
+    /// A value tree, the counterpart of `phoecord_core::Val`.
+    ///
+    /// WIT cannot express a recursive type, so a tree is an arena: `nodes[0]` is the root and a
+    /// container refers to its children by index into `nodes`. A child index is always larger than
+    /// its parent's, so there are no cycles and a decoder can walk the arena back to front.
+    record tree {
+        nodes: list<node>,
+    }
+
+    /// One node of a [`tree`]. `u32` fields are indices into `tree.nodes`.
+    variant node {
+        null,
+        %bool(bool),
+        int(s64),
+        /// `Val::Big` (an `i128`): high 64 bits (signed), then low 64 bits.
+        big(tuple<s64, u64>),
+        float(f64),
+        %string(string),
+        /// An Erlang atom (gateway ETF only).
+        atom(string),
+        bin(list<u8>),
+        charlist(list<u8>),
+        %list(list<u32>),
+        %tuple(list<u32>),
+        /// Key and value index pairs, in order.
+        %map(list<tuple<u32, u32>>),
+    }
+
+    enum layer {
+        network,
+        theme,
+        ui,
+    }
+
+    record manifest {
+        id: string,
+        name: string,
+        version: string,
+        description: string,
+        authors: list<string>,
+        /// The Vencord plugin this one mirrors, if any.
+        vencord: option<string>,
+        layers: list<layer>,
+        /// The Plugin API version the plugin was built against.
+        api: u32,
+    }
+
+    /// An event without its data, for `wants`.
+    variant event-kind {
+        rest-request(rest-kind),
+        rest-response(rest-kind),
+        dispatch(string),
+        send(s64),
+        /// A UI event, by name (`menu_action`).
+        ui(string),
+    }
+
+    record rest-kind {
+        method: string,
+        /// No `/api/vN` prefix.
+        route: string,
+    }
+
+    /// One thing a plugin may react to. Payloads are copies; changes come back in `outcome`.
+    variant event {
+        /// A REST call on its way to Discord.
+        rest-request(rest-request),
+        /// A REST answer from Discord (read-only).
+        rest-response(rest-response),
+        /// A server to client gateway dispatch (`op 0`).
+        dispatch(dispatch),
+        /// A client to server gateway payload.
+        send(send),
+        /// Something the user did in the Phoenix UI (read-only).
+        ui(ui-event),
+    }
+
+    record rest-request {
+        method: string,
+        route: string,
+        body: option<tree>,
+    }
+
+    record rest-response {
+        method: string,
+        route: string,
+        status: u16,
+        body: tree,
+    }
+
+    record dispatch {
+        name: string,
+        payload: tree,
+    }
+
+    record send {
+        op: s64,
+        payload: tree,
+    }
+
+    /// A UI event from a Phoenix loader hook. New events are new names, never new WIT cases:
+    /// - `menu_action`: one of the plugin's `[[menu]]` entries was clicked in a message's context
+    ///   menu; payload `{"entry": <menu id>, "channel_id": "<id>", "message_id": "<id>"}`. Sent to
+    ///   the plugin that declared the entry only.
+    record ui-event {
+        name: string,
+        payload: tree,
+    }
+
+    record reply {
+        status: u16,
+        body: option<tree>,
+    }
+
+    variant verdict {
+        /// Not interested or nothing changed.
+        pass,
+        /// The payload in `outcome.payload` replaces the event's payload.
+        changed,
+        /// Swallow the event. Stops the plugin chain.
+        drop,
+        /// Answer a REST request locally. Stops the chain.
+        reply(reply),
+    }
+
+    /// What `on-event` returns.
+    record outcome {
+        verdict: verdict,
+        /// The changed payload (the request body, or the dispatch or send payload). Read only when
+        /// `verdict` is `changed`.
+        payload: option<tree>,
+        /// Gateway payloads to emit after this dispatch. Read only for `dispatch` events.
+        extra: list<tree>,
+    }
+
+    record host-response {
+        status: u16,
+        /// The JSON body, if there was one and it parsed.
+        body: option<tree>,
+        /// The body as text when it was not JSON.
+        text: option<string>,
+        /// Response headers that matter to plugins (lower-case names).
+        headers: list<tuple<string, string>>,
+        /// The raw body when it was not JSON, e.g. a fetched image.
+        bytes: option<list<u8>>,
+    }
+
+    /// One file for `rest-files`.
+    record file-part {
+        filename: string,
+        content-type: string,
+        data: list<u8>,
+    }
+}
+
+/// Services the host gives a plugin: the only door to the outside world.
+///
+/// A call the plugin has no right to (the `rights` list of its `plugin.toml`) returns `err`.
+interface host {
+    use types.{tree, host-response, file-part};
+
+    /// This plugin's settings, e.g. `setting("emoji_size")`. Always allowed.
+    setting: func(key: string) -> option<tree>;
+    /// Right `kv`.
+    kv-get: func(key: string) -> result<option<tree>, string>;
+    /// Right `kv`.
+    kv-set: func(key: string, value: tree) -> result<_, string>;
+    /// The signed-in user's id, once the gateway READY has been seen. Always allowed.
+    self-id: func() -> option<u64>;
+    /// Right `notify`.
+    notify: func(title: string, body: string) -> result<_, string>;
+    /// Always allowed.
+    log: func(message: string);
+    /// Queue a client to server gateway payload. Right `emit-send`.
+    emit-send: func(op: s64, payload: tree) -> result<_, string>;
+    /// Custom emoji ids of a guild the user is in. Right `guilds`.
+    guild-emojis: func(guild-id: u64) -> result<list<u64>, string>;
+    /// The guild a channel belongs to. Right `guilds`.
+    channel-guild: func(channel-id: u64) -> result<option<u64>, string>;
+    /// HTTPS to an external service. Right `fetch`.
+    fetch: func(method: string, url: string, body: option<tree>) -> result<host-response, string>;
+    /// A Discord API call on the user's behalf. Right `rest`.
+    rest: func(method: string, route: string, body: option<tree>) -> result<host-response, string>;
+    /// A Discord API call with files (`multipart/form-data`: `payload_json` + `files[n]`), e.g. a
+    /// generated image sent as a message. Right `rest`.
+    rest-files: func(method: string, route: string, payload: option<tree>, files: list<file-part>) -> result<host-response, string>;
+    /// Queue a whole server to client gateway frame that only this client sees, such as a local
+    /// answer to a slash command. Right `emit_dispatch`.
+    emit-dispatch: func(payload: tree) -> result<_, string>;
+    /// Whether a plugin is switched on in the config; `none` for an unknown id. Right `plugins`.
+    plugin-enabled: func(id: string) -> result<option<bool>, string>;
+    /// Switch another plugin on or off in the config file. Right `plugins`.
+    set-plugin-enabled: func(id: string, on: bool) -> result<_, string>;
+    /// Append one line to `data/plugins/<id>/<file>`; `file` is a bare file name. Right `data`.
+    append-data: func(file: string, line: string) -> result<_, string>;
+    /// A string of the plugin's own `i18n/<lang>.ftl` in the user's language, with `args` filled
+    /// into its `{ $name }` placeholders. Falls back to English, then to `key`. Always allowed.
+    t: func(key: string, args: list<tuple<string, string>>) -> string;
+    /// Ask for a `PHOECORD_TIMER` dispatch (`{"op":0,"t":"PHOECORD_TIMER","d":{"tag":<tag>}}`) in
+    /// about `after-ms` milliseconds, delivered to this plugin only while it is enabled and its
+    /// `events` and `wants` let `PHOECORD_TIMER` through. Under 50 ms is raised to 50 ms, over 24 h
+    /// is an error, at most 64 timers may be pending. Always allowed.
+    schedule: func(after-ms: u64, tag: string) -> result<_, string>;
+    /// Cancel this plugin's pending timers with this tag. Always allowed.
+    cancel-schedule: func(tag: string);
+    /// `fetch` with extra request headers (name, value). The host refuses `Host`,
+    /// `Authorization`, `Cookie`, `Proxy-*` and hop-by-hop headers. Right `fetch`.
+    fetch-with: func(method: string, url: string, headers: list<tuple<string, string>>, body: option<tree>) -> result<host-response, string>;
+    /// The raw query string (no leading `?`) of the REST call being handled, during a
+    /// `rest-request` or `rest-response` event; `none` otherwise or when the call has none.
+    /// Routes never carry the query. It can hold what the user typed: do not log it.
+    /// Always allowed.
+    request-query: func() -> option<string>;
+}
+
+world plugin {
+    use types.{manifest as manifest-info, event-kind as kind, event as plugin-event, outcome as plugin-outcome};
+
+    import host;
+
+    export manifest: func() -> manifest-info;
+    /// Cheap pre-filter, asked once per event the manifest's `events` already lets through.
+    export wants: func(kind: kind) -> bool;
+    export on-event: func(event: plugin-event) -> plugin-outcome;
+}

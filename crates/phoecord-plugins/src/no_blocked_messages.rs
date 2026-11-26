@@ -20,8 +20,7 @@
 //!
 //! Vencord's `ignoreMessages` has no separate switch here: dropping the live message is always on.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashSet;
 use std::sync::Mutex;
 
@@ -42,16 +41,16 @@ pub struct NoBlockedMessages {
 impl NoBlockedMessages {
     pub fn new() -> NoBlockedMessages {
         NoBlockedMessages {
-            manifest: Manifest {
-                id: "no_blocked_messages".into(),
-                name: "NoBlockedMessages".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Hide all blocked/ignored messages from chat completely".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("NoBlockedMessages".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "no_blocked_messages",
+                    "NoBlockedMessages",
+                    env!("CARGO_PKG_VERSION"),
+                    "Hide all blocked/ignored messages from chat completely",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("NoBlockedMessages".into());
+                m
             },
             state: Mutex::new(State::default()),
         }
@@ -251,10 +250,12 @@ mod tests {
         }
     }
 
+    impl phoecord_core::ChainHost for Cfg {}
+
     const READY: &str = r#"{"op":0,"t":"READY","d":{"relationships":[
         {"id":"10","type":2},{"id":"11","type":1},{"id":"12","type":1,"user_ignored":true}]}}"#;
 
-    fn dispatch(chain: &Chain, host: &mut dyn Host, frame: &str) -> Outcome {
+    fn dispatch(chain: &Chain, host: &mut dyn phoecord_core::ChainHost, frame: &str) -> Outcome {
         let mut v = j(frame);
         let name = v.str_at(&["t"]).unwrap().to_string();
         chain.dispatch(host, &name, &mut v, &mut Vec::new())

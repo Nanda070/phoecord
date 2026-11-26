@@ -1,8 +1,7 @@
 //! `Host::rest` and `Host::fetch` against fake servers on loopback. No network, no token.
 
 use hyper::header::{HeaderMap, HeaderValue};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{ChainHost, Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use phoecord_plugin_runtime::Chain;
 use phoecord_proxy::config::Config;
 use phoecord_proxy::host::{ProxyHost, Shared};
@@ -563,16 +562,10 @@ async fn a_plugin_in_the_chain_can_call_rest_and_fetch() {
     sign_in(&s, "tok");
     let out = Arc::new(Mutex::new(Vec::new()));
     let chain = Chain::new(vec![Box::new(Probe {
-        m: Manifest {
-            id: "probe".into(),
-            name: "Probe".into(),
-            version: "0".into(),
-            description: String::new(),
-            authors: vec![],
-            vencord: None,
-            layers: vec![Layer::Network],
-            api: API_VERSION,
-            fetch: vec!["api.example.com".into()],
+        m: {
+            let mut m = Manifest::new("probe", "Probe", "0", String::new());
+            m.fetch = vec!["api.example.com".into()];
+            m
         },
         out: out.clone(),
     })]);

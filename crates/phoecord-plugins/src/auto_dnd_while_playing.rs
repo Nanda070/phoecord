@@ -21,8 +21,7 @@
 //! (default) or `invisible`.
 
 use crate::presence::{self, PLAYING};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "auto_dnd_while_playing";
 const STATUSES: &[&str] = &["online", "idle", "dnd", "invisible"];
@@ -34,16 +33,16 @@ pub struct AutoDndWhilePlaying {
 impl AutoDndWhilePlaying {
     pub fn new() -> AutoDndWhilePlaying {
         AutoDndWhilePlaying {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "AutoDNDWhilePlaying".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Show Do Not Disturb (or another status) while you play a game".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("AutoDNDWhilePlaying".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "AutoDNDWhilePlaying",
+                    env!("CARGO_PKG_VERSION"),
+                    "Show Do Not Disturb (or another status) while you play a game",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("AutoDNDWhilePlaying".into());
+                m
             },
         }
     }

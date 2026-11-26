@@ -14,10 +14,16 @@
 //! #   rest_request / rest_response: glob over "METHOD route", e.g. "rest_request:POST /channels/*/messages"
 //! #   dispatch: glob over the event name, e.g. "dispatch:MESSAGE_*"
 //! #   send: glob over the op number, e.g. "send:3"
+//! #   ui: glob over the UI event name (`UiEvent::name`), e.g. "ui:menu_action"
 //! events = ["dispatch:MESSAGE_CREATE"]
 //! rights = ["notify"]          # which `Host` methods it may call (see `wasm::Right`)
 //! fetch = ["api.example.com"]  # outside hosts `Host::fetch` may call (needs the `fetch` right);
 //!                               # "*.example.com" matches exactly one more label
+//!
+//! # Message context menu entries on Phoenix: clicking one sends `ui:menu_action` with its `id`.
+//! [[menu]]
+//! id = "copy_raw"              # snake_case, unique in the plugin
+//! label = "menu-copy-raw"      # a key of the plugin's own i18n/<lang>.ftl
 //! ```
 //!
 //! Rights (`rights = [...]`): a call without its right is an error for the guest and one log line
@@ -46,7 +52,7 @@
 
 use crate::wasm::{Setup, WasmPlugin, WasmRuntime};
 use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};
+use phoecord_core::{Event, EventKind, Host, Layer, Manifest, MenuEntry, Plugin, Verdict};
 use phoecord_i18n::PluginStrings;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -79,6 +85,16 @@ struct RawManifest {
     /// Outside hosts `Host::fetch` may call, e.g. `["translate.googleapis.com"]`.
     #[serde(default)]
     fetch: Vec<String>,
+    /// `[[menu]]` tables: message context menu entries.
+    #[serde(default)]
+    menu: Vec<RawMenuEntry>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawMenuEntry {
+    id: String,
+    label: String,
 }
 
 fn default_layers() -> Vec<String> {
@@ -125,17 +141,32 @@ impl PackageManifest {
             .iter()
             .map(|h| valid_fetch_host(h))
             .collect::<Result<Vec<_>, _>>()?;
+        let mut menu: Vec<MenuEntry> = Vec::new();
+        for entry in raw.menu {
+            if !valid_id(&entry.id) {
+                return Err(format!(
+                    "menu id {:?} must be snake_case (a-z, 0-9, _), starting with a letter",
+                    entry.id
+                ));
+            }
+            if entry.label.trim().is_empty() {
+                return Err(format!("menu entry {:?} has an empty label", entry.id));
+            }
+            if menu.iter().any(|m| m.id == entry.id) {
+                return Err(format!("menu id {:?} is listed twice", entry.id));
+            }
+            menu.push(MenuEntry::new(entry.id, entry.label));
+        }
         Ok(PackageManifest {
-            manifest: Manifest {
-                id: raw.id,
-                name: raw.name,
-                version: raw.version,
-                description: raw.description,
-                authors: raw.authors,
-                vencord: raw.vencord,
-                layers,
-                api: raw.api,
-                fetch,
+            manifest: {
+                let mut m = Manifest::new(raw.id, raw.name, raw.version, raw.description);
+                m.authors = raw.authors;
+                m.vencord = raw.vencord;
+                m.layers = layers;
+                m.api = raw.api;
+                m.fetch = fetch;
+                m.menu = menu;
+                m
             },
             events,
             rights: raw.rights,
@@ -184,6 +215,7 @@ enum Kind {
     RestResponse,
     Dispatch,
     Send,
+    Ui,
 }
 
 #[derive(Clone, Debug)]
@@ -208,6 +240,7 @@ impl EventFilter {
                 Kind::RestResponse,
                 Kind::Dispatch,
                 Kind::Send,
+                Kind::Ui,
             ]
             .into_iter()
             .map(|kind| Pattern { kind, glob: None })
@@ -228,6 +261,7 @@ impl EventFilter {
                     "rest_response" => Kind::RestResponse,
                     "dispatch" => Kind::Dispatch,
                     "send" => Kind::Send,
+                    "ui" => Kind::Ui,
                     other => return Err(format!("unknown event kind {other:?} in {spec:?}")),
                 };
                 Ok(Pattern { kind, glob })
@@ -247,6 +281,9 @@ impl EventFilter {
                 }
                 EventKind::Dispatch { name } => (Kind::Dispatch, (*name).to_string()),
                 EventKind::Send { op } => (Kind::Send, op.to_string()),
+                EventKind::Ui { name } => (Kind::Ui, (*name).to_string()),
+                // A kind `plugin.toml` cannot name yet is never let through.
+                _ => return false,
             };
             p.kind == kind && p.glob.as_deref().is_none_or(|g| glob_match(g, &subject))
         })
@@ -758,6 +795,41 @@ mod tests {
     }
 
     #[test]
+    fn menu_entries_come_from_plugin_toml() {
+        let base = "id = \"p\"\nname = \"p\"\nversion = \"0.1.0\"\napi = 1\n";
+        let toml = format!(
+            "{base}[[menu]]\nid = \"copy_raw\"\nlabel = \"menu-copy-raw\"\n\
+             [[menu]]\nid = \"quote\"\nlabel = \"menu-quote\"\n"
+        );
+        let p = PackageManifest::parse(&toml).unwrap();
+        assert_eq!(
+            p.manifest.menu,
+            vec![
+                MenuEntry::new("copy_raw", "menu-copy-raw"),
+                MenuEntry::new("quote", "menu-quote")
+            ]
+        );
+        assert!(
+            PackageManifest::parse(base)
+                .unwrap()
+                .manifest
+                .menu
+                .is_empty()
+        );
+        for bad in [
+            "[[menu]]\nid = \"Copy\"\nlabel = \"x\"\n",
+            "[[menu]]\nid = \"a\"\nlabel = \" \"\n",
+            "[[menu]]\nid = \"a\"\nlabel = \"x\"\n[[menu]]\nid = \"a\"\nlabel = \"y\"\n",
+            "[[menu]]\nid = \"a\"\nlabel = \"x\"\nicon = \"y\"\n",
+        ] {
+            assert!(
+                PackageManifest::parse(&format!("{base}{bad}")).is_err(),
+                "{bad}"
+            );
+        }
+    }
+
+    #[test]
     fn manifest_validation() {
         let ok = r#"
             id = "clear_urls"
@@ -791,6 +863,13 @@ mod tests {
         assert!(PackageManifest::parse(&bad_event).is_err());
         let unknown_key = format!("{ok}\nsurprise = 1");
         assert!(PackageManifest::parse(&unknown_key).is_err());
+        let ui_only = ok.replace(r#"["dispatch:MESSAGE_*", "send"]"#, r#"["ui:menu_action"]"#);
+        let ui_only = PackageManifest::parse(&ui_only).unwrap();
+        assert!(ui_only.events.matches(&EventKind::Ui {
+            name: "menu_action"
+        }));
+        assert!(!ui_only.events.matches(&EventKind::Ui { name: "other" }));
+        assert!(!ui_only.events.wants_gateway());
         let rest_only = ok.replace(r#"["dispatch:MESSAGE_*", "send"]"#, r#"["rest_request"]"#);
         assert!(
             !PackageManifest::parse(&rest_only)

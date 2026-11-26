@@ -26,8 +26,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::Shared;
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "fake_deafen";
 /// Gateway op 4: voice state update.
@@ -57,16 +56,16 @@ pub struct FakeDeafen {
 impl FakeDeafen {
     pub fn new() -> FakeDeafen {
         FakeDeafen {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "FakeDeafen".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Fake deafen yourself".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("FakeDeafen".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "FakeDeafen",
+                    env!("CARGO_PKG_VERSION"),
+                    "Fake deafen yourself",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("FakeDeafen".into());
+                m
             },
             state: Shared::default(),
         }

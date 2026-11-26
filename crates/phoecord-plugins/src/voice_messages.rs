@@ -18,8 +18,8 @@
 //! Vencord's bin count and normalization. That is an approximation of the shape, not the RMS.
 
 use crate::commands::{Kept, Subcommand, invocation, is_interaction, kept_answer};
-use phoecord_core::plugin::{API_VERSION, FilePart, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::{FilePart, HostResponse};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "voice_messages";
 const SUB: &str = "voicemessage";
@@ -37,17 +37,17 @@ pub struct VoiceMessages {
 impl VoiceMessages {
     pub fn new() -> VoiceMessages {
         VoiceMessages {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "VoiceMessages".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Send an .ogg file as a voice message with /phoecord voicemessage"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("VoiceMessages".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: vec![CDN.into(), MEDIA.into()],
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "VoiceMessages",
+                    env!("CARGO_PKG_VERSION"),
+                    "Send an .ogg file as a voice message with /phoecord voicemessage",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("VoiceMessages".into());
+                m.fetch = vec![CDN.into(), MEDIA.into()];
+                m
             },
             kept: Kept::default(),
         }
@@ -425,12 +425,10 @@ mod tests {
         }
         fn fetch(&mut self, _: &str, url: &str, _: Option<&Val>) -> Result<HostResponse, String> {
             let bytes = self.files.get(url).cloned();
-            Ok(HostResponse {
-                status: if bytes.is_some() { 200 } else { 404 },
-                body: None,
-                text: None,
-                headers: Vec::new(),
-                bytes,
+            Ok({
+                let mut r = HostResponse::new(if bytes.is_some() { 200 } else { 404 });
+                r.bytes = bytes;
+                r
             })
         }
         fn rest_files(
@@ -442,15 +440,15 @@ mod tests {
         ) -> Result<HostResponse, String> {
             self.uploads
                 .push((route.into(), payload.cloned(), files.to_vec()));
-            Ok(HostResponse {
-                status: 200,
-                body: Some(Val::map()),
-                text: None,
-                headers: Vec::new(),
-                bytes: None,
+            Ok({
+                let mut r = HostResponse::new(200);
+                r.body = Some(Val::map());
+                r
             })
         }
     }
+
+    impl phoecord_core::ChainHost for Files {}
 
     fn run(p: &VoiceMessages, h: &mut Files, url: &str) -> String {
         let mut body = j(&format!(

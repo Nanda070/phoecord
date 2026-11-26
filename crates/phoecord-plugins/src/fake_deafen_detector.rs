@@ -28,8 +28,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::{Shared, Users, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{BTreeMap, HashMap};
 
 const PLUGIN_ID: &str = "fake_deafen_detector";
@@ -236,16 +235,16 @@ pub struct FakeDeafenDetector {
 impl FakeDeafenDetector {
     pub fn new() -> FakeDeafenDetector {
         FakeDeafenDetector {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "FakeDeafenDetector".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Flag members caught speaking while shown as muted or deafened".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("FakeDeafenDetector".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "FakeDeafenDetector",
+                    env!("CARGO_PKG_VERSION"),
+                    "Flag members caught speaking while shown as muted or deafened",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("FakeDeafenDetector".into());
+                m
             },
             state: Shared::default(),
         }

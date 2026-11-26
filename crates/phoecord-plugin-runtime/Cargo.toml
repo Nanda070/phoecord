@@ -17,6 +17,10 @@ notify = { version = "8", default-features = false, features = ["macos_fsevent"]
 toml = "0.9"
 wasmtime = { version = "38", default-features = false, features = ["component-model", "cranelift", "runtime", "std", "wat"] }
 
+[dev-dependencies]
+# Only for the test that the SDK's API_VERSION matches phoecord-core's.
+phoecord-plugin-sdk = { path = "../phoecord-plugin-sdk" }
+
 [lints]
 workspace = true
 

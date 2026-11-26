@@ -22,8 +22,8 @@
 use crate::commands::{
     Kept, Subcommand, invocation, is_interaction, kept_answer, message_ref, snowflake_arg,
 };
-use phoecord_core::plugin::{API_VERSION, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::HostResponse;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "view_raw";
 const SUB: &str = "viewraw";
@@ -47,16 +47,16 @@ pub struct ViewRaw {
 impl ViewRaw {
     pub fn new() -> ViewRaw {
         ViewRaw {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "ViewRaw".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "View the raw JSON of a message, channel, server, role or user".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("ViewRaw".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "ViewRaw",
+                    env!("CARGO_PKG_VERSION"),
+                    "View the raw JSON of a message, channel, server, role or user",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("ViewRaw".into());
+                m
             },
             kept: Kept::default(),
         }

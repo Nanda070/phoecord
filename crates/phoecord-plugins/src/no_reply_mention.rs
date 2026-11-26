@@ -20,8 +20,7 @@
 //! Not ported: `inverseShiftReply`. Holding Shift is a keyboard state of the client; the request
 //! does not say whether it was held.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Mutex;
 
@@ -70,16 +69,16 @@ pub struct NoReplyMention {
 impl NoReplyMention {
     pub fn new() -> NoReplyMention {
         NoReplyMention {
-            manifest: Manifest {
-                id: "no_reply_mention".into(),
-                name: "NoReplyMention".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Disables reply pings by default".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("NoReplyMention".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "no_reply_mention",
+                    "NoReplyMention",
+                    env!("CARGO_PKG_VERSION"),
+                    "Disables reply pings by default",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("NoReplyMention".into());
+                m
             },
             seen: Mutex::new(Seen::default()),
         }
@@ -265,6 +264,8 @@ mod tests {
             None
         }
     }
+
+    impl phoecord_core::ChainHost for Cfg {}
 
     fn reply(chain: &Chain, host: &mut Cfg, body: &mut Val) -> Outcome {
         chain.rest_request(host, "POST", "/channels/9/messages", Some(body))

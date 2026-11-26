@@ -5,8 +5,7 @@
 //! stays as it is, and inside the block the common leading spaces or tabs are removed. Text
 //! outside code blocks, inline code and single-line blocks are never touched.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Verdict};
 
 pub struct Unindent {
     manifest: Manifest,
@@ -15,16 +14,16 @@ pub struct Unindent {
 impl Unindent {
     pub fn new() -> Unindent {
         Unindent {
-            manifest: Manifest {
-                id: "unindent".into(),
-                name: "Unindent".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Strip shared indentation from code blocks you send".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("Unindent".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "unindent",
+                    "Unindent",
+                    env!("CARGO_PKG_VERSION"),
+                    "Strip shared indentation from code blocks you send",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("Unindent".into());
+                m
             },
         }
     }

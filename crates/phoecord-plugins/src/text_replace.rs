@@ -18,9 +18,8 @@
 //! Vencord applies the rules on send only; this plugin also applies them to message edits, as the
 //! task asked. Messages in Vencord's rule-sharing channel are left alone, as in Vencord.
 
-use phoecord_core::plugin::API_VERSION;
 use phoecord_core::route::message_route_channel;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use regex::{Captures, Regex, RegexBuilder};
 use std::collections::HashSet;
 use std::sync::Mutex;
@@ -37,16 +36,16 @@ pub struct TextReplace {
 impl TextReplace {
     pub fn new() -> TextReplace {
         TextReplace {
-            manifest: Manifest {
-                id: "text_replace".into(),
-                name: "TextReplace".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Replace text in the messages you send".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("TextReplace".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "text_replace",
+                    "TextReplace",
+                    env!("CARGO_PKG_VERSION"),
+                    "Replace text in the messages you send",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("TextReplace".into());
+                m
             },
             reported: Mutex::new(HashSet::new()),
         }

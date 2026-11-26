@@ -7,7 +7,7 @@
 #[path = "../tests/common/mod.rs"]
 mod common;
 
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use phoecord_plugin_runtime::wasm::WasmPlugin;
 use phoecord_plugin_runtime::{Chain, NullHost};
 use std::hint::black_box;
@@ -122,17 +122,9 @@ fn main() {
     let rt = common::runtime();
     let wasm = WasmPlugin::from_bytes(&rt, common::guest_wasm()).unwrap();
     let wasm = Chain::new(vec![Box::new(wasm) as Box<dyn Plugin>]);
-    let native = Chain::new(vec![Box::new(Nop(Manifest {
-        id: "nop".into(),
-        name: "nop".into(),
-        version: "0".into(),
-        description: String::new(),
-        authors: vec![],
-        vencord: None,
-        layers: vec![Layer::Network],
-        api: 1,
-        fetch: Vec::new(),
-    })) as Box<dyn Plugin>]);
+    let native = Chain::new(vec![
+        Box::new(Nop(Manifest::new("nop", "nop", "0", String::new()))) as Box<dyn Plugin>,
+    ]);
     println!("MESSAGE_CREATE, one plugin, 5000 events after 500 warm-up:");
     measure("native no-op plugin", &native, "MESSAGE_CREATE");
     measure("wasm guest, no-op (NOOP)", &wasm, "NOOP");

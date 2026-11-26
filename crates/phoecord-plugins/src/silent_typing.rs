@@ -1,7 +1,6 @@
 //! SilentTyping: your typing indicator is never sent (Vencord: SilentTyping).
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Verdict};
 
 pub struct SilentTyping {
     manifest: Manifest,
@@ -10,16 +9,16 @@ pub struct SilentTyping {
 impl SilentTyping {
     pub fn new() -> SilentTyping {
         SilentTyping {
-            manifest: Manifest {
-                id: "silent_typing".into(),
-                name: "SilentTyping".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Your typing indicator is never sent".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("SilentTyping".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "silent_typing",
+                    "SilentTyping",
+                    env!("CARGO_PKG_VERSION"),
+                    "Your typing indicator is never sent",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("SilentTyping".into());
+                m
             },
         }
     }

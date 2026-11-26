@@ -20,8 +20,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::{Guilds, Shared, VoiceStates, dispatch_data, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{HashMap, HashSet};
 
 const PLUGIN_ID: &str = "member_count";
@@ -155,16 +154,16 @@ pub struct MemberCount {
 impl MemberCount {
     pub fn new() -> MemberCount {
         MemberCount {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "MemberCount".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Online, total and voice member counts".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("MemberCount".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "MemberCount",
+                    env!("CARGO_PKG_VERSION"),
+                    "Online, total and voice member counts",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("MemberCount".into());
+                m
             },
             state: Shared::default(),
         }

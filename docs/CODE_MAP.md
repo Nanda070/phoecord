@@ -64,7 +64,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `src/val.rs` | `Val`: one value type for JSON and ETF; keeps atoms, big ints, binaries, so ETF round-trips unchanged | Changing a variant changes how every Gateway frame re-encodes |
 | `src/etf.rs` | Erlang External Term Format decode/encode (the desktop client's Gateway encoding) | Compressed terms (tag 80) need `flate2` |
 | `src/route.rs` | `route_of` (`/api/v9/x` → `/x`), `message_route_channel`, `split_query` and `query_pairs` (for `Host::request_query`) | Plugins match on the normalized route |
-| `src/plugin.rs` | Plugin API v1: `API_VERSION`, `Layer`, `Manifest`, `Event`, `EventKind`, `Verdict`, `Host`, `Plugin` | **The contract.** Changes need an `api` PR and the owner's review |
+| `src/plugin.rs` | Plugin API v1 (frozen, 2.4.3): `API_VERSION`, `TIMER_EVENT`, `LOCAL_DELETE_EVENT`, `Layer`, `Manifest`, `MenuEntry`, `Event`, `UiEvent`, `EventKind`, `Verdict`, `Host`, `ChainHost`, `HostResponse`, `FilePart`, `Plugin` | **The contract.** Changes need an `api` PR and the owner's review; only additive changes (ARCHITECTURE.md, "Plugin API v1") |
 
 ### `phoecord-transport`
 
@@ -103,18 +103,21 @@ The transport boundary (task 1.1.12): everything between "an event arrived" and 
 
 | File | What | Easy to break |
 |:---|:---|:---|
-| `src/lib.rs` | `Chain` (`set_observer` for the dev console, `run_to` for one plugin, `swap_dynamic`; built-in segment, then a dynamic segment swapped by `replace_dynamic`; first `Drop`/`Reply` stops), `Outcome`, `NullHost` for tests | The stop rule is part of the API semantics; the lock is never held while a plugin runs |
+| `src/lib.rs` | `Chain` (takes a `ChainHost`; `set_observer` for the dev console, `run_to` for one plugin, `ui` / `ui_to` for UI events, `swap_dynamic`; built-in segment, then a dynamic segment swapped by `replace_dynamic`; first `Drop`/`Reply` stops), `Outcome`, `NullHost` for tests | The stop rule is part of the API semantics; the lock is never held while a plugin runs |
 | `src/wasm.rs` | `WasmRuntime` (engine + epoch clock), `WasmLimits`, `WasmPlugin`, `Right`, `Setup`, `tree` ↔ `Val` | Guest trees are untrusted: keep the bounds, depth and single-use checks |
-| `src/package.rs` | `plugin.toml` format and rights table (documented at the top), `PackagePlugin` with reload, `load_dir`, `PackageSet::sync` (load new folders, unload removed ones, reload changed ones at once through `reload_if_changed`), `PackageSet::reload` (forced reload of one package, the old one stays if the new one fails); `i18n/<lang>.ftl` of a package go to `PluginStrings` on load and reload (`PackageSet::with_strings`) | A broken new version must leave the old one running; the `.ftl` files are part of the reload stamp |
+| `src/package.rs` | `plugin.toml` format (`ui:<name>` event filters, `[[menu]]` entries) and rights table (documented at the top), `PackagePlugin` with reload, `load_dir`, `PackageSet::sync` (load new folders, unload removed ones, reload changed ones at once through `reload_if_changed`), `PackageSet::reload` (forced reload of one package, the old one stays if the new one fails); `i18n/<lang>.ftl` of a package go to `PluginStrings` on load and reload (`PackageSet::with_strings`) | A broken new version must leave the old one running; the `.ftl` files are part of the reload stamp |
 | `src/watch.rs` | `DebouncedWatcher` (`notify`, trailing-edge debounce, `is_healthy`), `is_package_file`; used by the proxy for `plugins/` and by `phoecord dev watch` for sources | A burst is cut after 2 s; callbacks run on a background thread |
 | `tests/watch.rs`, `tests/watch_latency.rs` | Change/add/remove/debounce and a notified `PackageSet::sync`; the latency measurement (`--ignored`, release) | The latency test builds the clear_urls example |
 | `tests/guest/` | A separate workspace: the test guest, built for `wasm32-wasip2` by the tests (CI installs the target) | Slow-event tests use a zero soft limit so they do not depend on machine speed |
+| `tests/compat-guest/` | A separate workspace: a guest built against `wit/frozen/`, standing in for plugins already built against v1 | Never point it at `wit/phoecord.wit` |
+| `tests/frozen_wit.rs` | The v1 freeze: `interface types` and the world equal `wit/frozen/`, host functions only grow, the compat guest loads and gets every event, the SDK's `API_VERSION` equals core's | A failure means a WIT change would break built plugins |
 | `tests/strings.rs` | `Host::t` for packages: a string from the package's own `.ftl`, English fallback, hot reload of an edited `.ftl`, unload | Uses the guest's `STRINGS` dispatch |
 | `tests/clear_urls_wasm.rs` | Builds `examples/plugins/clear_urls`, loads it as a package (also into a running chain) and checks it behaves like the native plugin | Needs the `wasm32-wasip2` target |
 | `tests/hello_plugin_wasm.rs` | Builds `examples/hello-plugin`, loads it and checks that it logs each `MESSAGE_CREATE` without the text | Needs the `wasm32-wasip2` target |
 | `tests/hello_plugin_ts_wasm.rs` | Builds `examples/hello-plugin-ts` with npm, loads it and checks the same logs as the Rust example | `#[ignore]`: needs Node.js; the `typescript-template` CI job runs it in release |
 | `benches/overhead.rs` | Per-event cost of a WASM plugin vs a native one on a MESSAGE_CREATE payload (`cargo bench`) | Input for benchmark task 1.1.10 |
-| `wit/phoecord.wit` (repo root) | The `plugin` world and `host` interface; mirrors `phoecord-core::plugin` | Change together with `plugin.rs` |
+| `wit/phoecord.wit` (repo root) | The `plugin` world and `host` interface; mirrors `phoecord-core::plugin` | Change together with `plugin.rs`; frozen at v1: only new host functions, UI event names and dispatch names |
+| `wit/frozen/phoecord-1.0.0.wit` (repo root) | The frozen v1 contract that `tests/compat-guest/` builds against | Never edit |
 
 ### `phoecord-plugin-sdk`
 

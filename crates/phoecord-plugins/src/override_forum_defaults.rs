@@ -17,8 +17,7 @@
 //! `/phoecord toggle override_forum_defaults`.
 
 use crate::state::{dispatch_data_mut, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const FORUM: i64 = 15;
 const MEDIA: i64 = 16;
@@ -31,16 +30,16 @@ pub struct OverrideForumDefaults {
 impl OverrideForumDefaults {
     pub fn new() -> OverrideForumDefaults {
         OverrideForumDefaults {
-            manifest: Manifest {
-                id: "override_forum_defaults".into(),
-                name: "OverrideForumDefaults".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Your own default forum layout and sort order".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("OverrideForumDefaults".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "override_forum_defaults",
+                    "OverrideForumDefaults",
+                    env!("CARGO_PKG_VERSION"),
+                    "Your own default forum layout and sort order",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("OverrideForumDefaults".into());
+                m
             },
         }
     }

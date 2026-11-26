@@ -19,8 +19,7 @@
 //! (they only exist for the client's user popout, Phase 2).
 
 use crate::state::{Shared, Users, dispatch_data, dispatch_data_mut, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 
@@ -95,16 +94,16 @@ pub struct ValidUser {
 impl ValidUser {
     pub fn new() -> ValidUser {
         ValidUser {
-            manifest: Manifest {
-                id: "valid_user".into(),
-                name: "ValidUser".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Fix mentions of unknown users showing as @unknown-user".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("ValidUser".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "valid_user",
+                    "ValidUser",
+                    env!("CARGO_PKG_VERSION"),
+                    "Fix mentions of unknown users showing as @unknown-user",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("ValidUser".into());
+                m
             },
             state: Shared::default(),
         }

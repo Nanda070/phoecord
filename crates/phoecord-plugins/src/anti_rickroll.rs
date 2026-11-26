@@ -39,8 +39,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::Shared;
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use regex::Regex;
 use std::sync::OnceLock;
 
@@ -1037,16 +1036,16 @@ pub struct AntiRickroll {
 impl AntiRickroll {
     pub fn new() -> AntiRickroll {
         AntiRickroll {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "AntiRickroll".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Find rickroll links in messages (local check)".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("AntiRickroll".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "AntiRickroll",
+                    env!("CARGO_PKG_VERSION"),
+                    "Find rickroll links in messages (local check)",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("AntiRickroll".into());
+                m
             },
             state: Shared::default(),
         }

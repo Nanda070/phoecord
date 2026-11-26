@@ -417,7 +417,7 @@ async fn session(listen: String, token: String, filter: Filter, l: &Localizer) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+    use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
     use phoecord_plugin_runtime::Chain;
     use phoecord_proxy::{Proxy, server};
 
@@ -533,17 +533,7 @@ mod tests {
         let mut cfg = Config::default();
         cfg.set_enabled("echo", true).unwrap();
         cfg.save(&paths.config).unwrap();
-        let manifest = Manifest {
-            id: "echo".into(),
-            name: "Echo".into(),
-            version: "1".into(),
-            description: String::new(),
-            authors: vec![],
-            vencord: None,
-            layers: vec![Layer::Network],
-            api: phoecord_core::plugin::API_VERSION,
-            fetch: vec![],
-        };
+        let manifest = Manifest::new("echo", "Echo", "1", String::new());
         let chain = Chain::new(vec![Box::new(Echo(manifest))]);
         let proxy = Proxy::new(
             Paths {

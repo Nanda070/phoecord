@@ -4,8 +4,7 @@
 //! `pub mod <id>;` and an entry in `builtin()` in `crates/phoecord-plugins/src/lib.rs`, then a row
 //! in `docs/PLUGINS.md`.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Verdict};
 
 pub struct MyPlugin {
     manifest: Manifest,
@@ -14,15 +13,16 @@ pub struct MyPlugin {
 impl MyPlugin {
     pub fn new() -> MyPlugin {
         MyPlugin {
-            manifest: Manifest {
-                id: "my_plugin".into(),
-                name: "MyPlugin".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "What it does, in one English sentence".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: None,
-                layers: vec![Layer::Network],
-                api: API_VERSION,
+            manifest: {
+                let mut m = Manifest::new(
+                    "my_plugin",
+                    "MyPlugin",
+                    env!("CARGO_PKG_VERSION"),
+                    "What it does, in one English sentence",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = None; // Some("VencordName".into()) for a port
+                m
             },
         }
     }

@@ -21,8 +21,7 @@
 //! Not ported: nothing of the script's logic is left out; it only adds the badge objects, which
 //! the client draws itself.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 /// One badge of the script: setting key, Discord's badge `id`, description, icon hash, link, flag.
 struct Badge {
@@ -69,17 +68,16 @@ pub struct LocalDevBadges {
 impl LocalDevBadges {
     pub fn new() -> LocalDevBadges {
         LocalDevBadges {
-            manifest: Manifest {
-                id: "local_dev_badges".into(),
-                name: "localDevBadges".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Show staff and developer badges on your own profile, locally only"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("LocalDevBadges".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "local_dev_badges",
+                    "localDevBadges",
+                    env!("CARGO_PKG_VERSION"),
+                    "Show staff and developer badges on your own profile, locally only",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("LocalDevBadges".into());
+                m
             },
         }
     }

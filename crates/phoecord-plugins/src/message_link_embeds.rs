@@ -27,8 +27,7 @@
 
 use crate::commands::{FnCmd, Subcommand};
 use crate::state::{Shared, dispatch_data_mut};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};
 
@@ -92,16 +91,16 @@ pub struct MessageLinkEmbeds {
 impl MessageLinkEmbeds {
     pub fn new() -> MessageLinkEmbeds {
         MessageLinkEmbeds {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "MessageLinkEmbeds".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Previews of linked Discord messages".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("MessageLinkEmbeds".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "MessageLinkEmbeds",
+                    env!("CARGO_PKG_VERSION"),
+                    "Previews of linked Discord messages",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("MessageLinkEmbeds".into());
+                m
             },
             state: Shared::default(),
         }

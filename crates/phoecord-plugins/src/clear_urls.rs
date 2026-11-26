@@ -5,8 +5,7 @@
 //! setting: `"ref"` (any site), `"ref_*"` (prefix) or `"amazon.com:tag"` (one site and its
 //! subdomains).
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 pub struct ClearUrls {
     manifest: Manifest,
@@ -15,16 +14,16 @@ pub struct ClearUrls {
 impl ClearUrls {
     pub fn new() -> ClearUrls {
         ClearUrls {
-            manifest: Manifest {
-                id: "clear_urls".into(),
-                name: "ClearURLs".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Strip tracking parameters from links you send".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("ClearURLs".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "clear_urls",
+                    "ClearURLs",
+                    env!("CARGO_PKG_VERSION"),
+                    "Strip tracking parameters from links you send",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("ClearURLs".into());
+                m
             },
         }
     }

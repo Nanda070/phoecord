@@ -36,8 +36,7 @@
 
 use crate::commands::{FnCmd, Subcommand};
 use crate::state::{Shared, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{BTreeMap, HashMap};
 
 const PLUGIN_ID: &str = "show_hidden_channels";
@@ -429,16 +428,16 @@ pub struct ShowHiddenChannels {
 impl ShowHiddenChannels {
     pub fn new() -> ShowHiddenChannels {
         ShowHiddenChannels {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "ShowHiddenChannels".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Show channels you cannot open".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("ShowHiddenChannels".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "ShowHiddenChannels",
+                    env!("CARGO_PKG_VERSION"),
+                    "Show channels you cannot open",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("ShowHiddenChannels".into());
+                m
             },
             state: Shared::default(),
         }

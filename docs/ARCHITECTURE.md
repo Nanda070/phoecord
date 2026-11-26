@@ -133,12 +133,18 @@ pub trait Plugin: Send + Sync {
     fn on_event(&self, host: &mut dyn Host, event: Event<'_>) -> Verdict;
 }
 
-pub enum Event<'a>   { RestRequest{..}, RestResponse{..}, Dispatch{..}, Send{..} }
+pub enum Event<'a>   { RestRequest{..}, RestResponse{..}, Dispatch{..}, Send{..}, Ui(UiEvent) }
+pub enum UiEvent<'a> { MenuAction { entry, channel_id, message_id } }
 pub enum Verdict     { Pass, Changed, Drop, Reply { status, body } }
 pub trait Host       { setting, kv_get, kv_set, self_id, notify, log, emit_send, emit_dispatch,
                        plugin_enabled, set_plugin_enabled, append_data, guild_emojis, channel_guild, rest, fetch,
                        t, schedule, cancel_schedule, fetch_with, request_query }
+pub trait ChainHost: Host { begin_plugin, set_fetch_hosts }   // host side, only the chain calls it
 ```
+
+`Event`, `EventKind`, `UiEvent`, `Verdict` and `Layer` are `#[non_exhaustive]`; `Manifest`, `MenuEntry` and `HostResponse` too, built with `Manifest::new(id, name, version, description)`, `MenuEntry::new(id, label)` and `HostResponse::new(status)` and then filled through their public fields. A host treats a verdict it does not know as `Pass`. Fallible `Host` methods return `Result<_, String>`; the text is for logs and people, not a contract to match on.
+
+UI events come from the Phoenix loader's UI hooks (Phase 2.3). `UiEvent::MenuAction` is a click on one of the plugin's `Manifest.menu` entries (`MenuEntry { id, label }`, `label` a key of the plugin's `.ftl`; `[[menu]]` in a package's `plugin.toml`) in a message's context menu, sent to that plugin only (`Chain::ui_to`). Every UI event has a stable `snake_case` name (`UiEvent::name`) and a `Val` form (`to_val` / `from_val`, ids as strings): that is what the loader's `ui.event` IPC message and WASM plugins carry, and what `plugin.toml` filters on (`events = ["ui:menu_action"]`). The client's optimistic delete (2.3.6) is not a UI event but a dispatch named `LOCAL_DELETE_EVENT` (`PHOECORD_LOCAL_DELETE`, `d` shaped like `MESSAGE_DELETE`), like `TIMER_EVENT`.
 
 `Host::rest(method, route, body)` calls Discord's API as the user's own client session: the proxy keeps the client's `Authorization` and client headers in memory only (never on disk, in logs or in a plugin's hands; dropped after 30 minutes without client traffic or on a 401), sends only to the client's own API host with a plain route, and applies 5 calls per 5 s per plugin (bursts allowed, 1/s on average), 5/s overall and Discord's own rate-limit buckets; a refusal says `retry in X s`. `Host::schedule(after_ms, tag)` asks for a `PHOECORD_TIMER` dispatch (`d.tag`) for the calling plugin only (`crates/phoecord-proxy/src/timers.rs`: 50 ms minimum, 24 h maximum, 64 pending per plugin, memory only); `cancel_schedule(tag)` drops them. Sends queued outside a gateway frame (REST events, timers) go to the newest live gateway connection at once (`live.rs`), and every plugin-queued send passes the Send chain once (sends queued while chaining are not chained again). A plugin that sends from a timer should want gateway events, otherwise the connection may be a raw passthrough and the send is dropped with a log line. `Host::fetch` calls an outside HTTPS host only if the plugin lists it (`fetch = [...]` in `plugin.toml`, `Manifest.fetch` for built-ins; an entry `*.example.com` matches exactly one more label); `Host::fetch_with` adds the plugin's own headers, refusing `Host`, `Authorization`, `Cookie`, `Proxy-*` and hop-by-hop names and any CR/LF; no Discord credentials, no cookies, no redirects, a 5 MB answer cap. `HostResponse` carries status, selected headers, JSON body or text, and the raw `bytes` when the answer is not JSON (images, GIF frames). `Host::rest_files(method, route, payload, files)` sends files to Discord's API as `multipart/form-data` (`payload_json` + `files[n]`, at most 10 files and 25 MB), with the same session, route rules and rate limits as `rest`. Both go through `upstream` when it is set.
 
@@ -146,7 +152,9 @@ pub trait Host       { setting, kv_get, kv_set, self_id, notify, log, emit_send,
 
 Chain rules (`phoecord-plugin-runtime::Chain`): plugins run in load order; the first `Drop` or `Reply` stops the chain; `Changed` from any plugin means re-encoding.
 
-Versioning: `API_VERSION` in the manifest. A new `Event` variant or `Host` method is minor (old plugins keep working). Changing an existing one is major; the host keeps an adapter for the previous major version for one cycle.
+Versioning: `API_VERSION` in the manifest; **v1 is frozen** (2.4.3). Minor (old plugins keep working, `API_VERSION` stays 1): a new `Host` method with a default, a new variant of the `#[non_exhaustive]` enums, a new field of `Manifest`, `MenuEntry` or `HostResponse`, a new dispatch name. Changing or removing anything is major; the host keeps an adapter for the previous major version for one cycle.
+
+The WIT boundary (`wit/phoecord.wit`) is stricter, because wasmtime type-checks a component's imports and exports when it loads: a WIT `variant`, `enum` or `record` with one case or field more or less than the host's makes every plugin built against the old one fail to load (seen in 2.4.3: a guest built before the `ui` case was refused with `expected variant of 5 cases, found 4 cases`). So at the WIT boundary only these are minor: a new function in `interface host`, a new UI event *name* under the generic `ui(ui-event { name, payload })` case, a new dispatch name. `wit/frozen/phoecord-1.0.0.wit` is the frozen copy; `crates/phoecord-plugin-runtime/tests/frozen_wit.rs` fails when `interface types` or the world drift from it or a host function changes, and loads a guest built against it (`tests/compat-guest/`). A WASM package built for PhoeCord 0.5 or earlier (before the `ui` case) must be rebuilt with the v1 SDK; the runtime says so when it refuses one.
 
 ### The `plugin.toml` manifest
 
@@ -165,7 +173,13 @@ default = []
 
 [i18n]                                                 # optional, see "Localization"
 name.ru = "ClearURLs"
+
+[[menu]]                                               # optional: message context menu entries (Phoenix)
+id = "copy_clean_link"                                 # comes back as `ui:menu_action`'s `entry`
+label = "menu-copy-clean-link"                         # a key of the plugin's i18n/<lang>.ftl
 ```
+
+A plugin with menu entries lists `"ui:menu_action"` in `events` to receive the clicks.
 
 ---
 

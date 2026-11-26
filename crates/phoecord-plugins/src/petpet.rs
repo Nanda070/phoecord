@@ -27,8 +27,8 @@ use crate::state::Shared;
 use image::codecs::gif::{GifEncoder, Repeat};
 use image::imageops::{self, FilterType};
 use image::{Delay, Frame, RgbaImage};
-use phoecord_core::plugin::{API_VERSION, FilePart, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::{FilePart, HostResponse};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "petpet";
 const SUB: &str = "petpet";
@@ -49,17 +49,17 @@ pub struct Petpet {
 impl Petpet {
     pub fn new() -> Petpet {
         Petpet {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "petpet".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Make a headpat GIF of an avatar or picture with /phoecord petpet"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("petpet".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: vec![FRAME_HOST.into(), CDN.into(), MEDIA.into()],
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "petpet",
+                    env!("CARGO_PKG_VERSION"),
+                    "Make a headpat GIF of an avatar or picture with /phoecord petpet",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("petpet".into());
+                m.fetch = vec![FRAME_HOST.into(), CDN.into(), MEDIA.into()];
+                m
             },
             kept: Kept::default(),
             frames: Shared::default(),
@@ -386,22 +386,18 @@ mod tests {
         fn fetch(&mut self, _: &str, url: &str, _: Option<&Val>) -> Result<HostResponse, String> {
             self.fetched.push(url.into());
             let bytes = self.files.get(url).cloned();
-            Ok(HostResponse {
-                status: if bytes.is_some() { 200 } else { 404 },
-                body: None,
-                text: None,
-                headers: Vec::new(),
-                bytes,
+            Ok({
+                let mut r = HostResponse::new(if bytes.is_some() { 200 } else { 404 });
+                r.bytes = bytes;
+                r
             })
         }
         fn rest(&mut self, _: &str, route: &str, _: Option<&Val>) -> Result<HostResponse, String> {
             let body = self.rest.get(route).cloned();
-            Ok(HostResponse {
-                status: if body.is_some() { 200 } else { 404 },
-                body,
-                text: None,
-                headers: Vec::new(),
-                bytes: None,
+            Ok({
+                let mut r = HostResponse::new(if body.is_some() { 200 } else { 404 });
+                r.body = body;
+                r
             })
         }
         fn rest_files(
@@ -412,15 +408,15 @@ mod tests {
             files: &[FilePart],
         ) -> Result<HostResponse, String> {
             self.uploads.push((route.into(), files.to_vec()));
-            Ok(HostResponse {
-                status: 200,
-                body: Some(Val::map()),
-                text: None,
-                headers: Vec::new(),
-                bytes: None,
+            Ok({
+                let mut r = HostResponse::new(200);
+                r.body = Some(Val::map());
+                r
             })
         }
     }
+
+    impl phoecord_core::ChainHost for Pics {}
 
     fn png(color: [u8; 4]) -> Vec<u8> {
         let img = RgbaImage::from_pixel(8, 8, Rgba(color));

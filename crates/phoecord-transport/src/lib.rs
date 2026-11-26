@@ -439,7 +439,7 @@ mod tests {
 
     #[test]
     fn plugins_have_no_network_unless_the_transport_supplies_one() {
-        use phoecord_core::Host;
+        use phoecord_core::{ChainHost, Host};
         let e = engine();
         let cfg = e.cfg();
         let mut h = ProxyHost::new(&e.shared, &cfg);

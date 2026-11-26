@@ -25,8 +25,8 @@ use crate::commands::{
     snowflake_arg,
 };
 use crate::music_rich_presence::encode_component;
-use phoecord_core::plugin::{API_VERSION, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::HostResponse;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "translate";
 const HOST: &str = "translate-pa.googleapis.com";
@@ -42,16 +42,17 @@ pub struct Translate {
 impl Translate {
     pub fn new() -> Translate {
         Translate {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "Translate".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Translate messages, and optionally everything you send".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("Translate".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: vec![HOST.into()],
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "Translate",
+                    env!("CARGO_PKG_VERSION"),
+                    "Translate messages, and optionally everything you send",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("Translate".into());
+                m.fetch = vec![HOST.into()];
+                m
             },
             kept: Kept::default(),
         }

@@ -4,7 +4,7 @@
 mod common;
 
 use common::{TempDir, write_package};
-use phoecord_core::{Host, Plugin, Val};
+use phoecord_core::{ChainHost, Host, Plugin, Val};
 use phoecord_i18n::PluginStrings;
 use phoecord_plugin_runtime::package::{PackagePlugin, PackageSet};
 use phoecord_plugin_runtime::{Chain, NullHost, Outcome};
@@ -55,11 +55,14 @@ impl Host for StringsHost {
     fn channel_guild(&self, _: u64) -> Option<u64> {
         None
     }
-    fn begin_plugin(&mut self, id: &str) {
-        self.plugin = id.to_string();
-    }
     fn t(&self, key: &str, args: &[(&str, &str)]) -> String {
         self.strings.t(&self.plugin, self.lang, key, args)
+    }
+}
+
+impl ChainHost for StringsHost {
+    fn begin_plugin(&mut self, id: &str) {
+        self.plugin = id.to_string();
     }
 }
 

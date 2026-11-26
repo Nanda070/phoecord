@@ -17,8 +17,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::{Guilds, Shared, Users, dispatch_data, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -134,16 +133,16 @@ pub struct TypingIndicator {
 impl TypingIndicator {
     pub fn new() -> TypingIndicator {
         TypingIndicator {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "TypingIndicator".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Who is typing, per channel (collects typing events)".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("TypingIndicator".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "TypingIndicator",
+                    env!("CARGO_PKG_VERSION"),
+                    "Who is typing, per channel (collects typing events)",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("TypingIndicator".into());
+                m
             },
             state: Shared::default(),
         }
@@ -202,7 +201,12 @@ mod tests {
     use crate::testutil::{Cfg, Rec, j};
     use phoecord_plugin_runtime::{Chain, Outcome};
 
-    fn feed(chain: &Chain, h: &mut dyn Host, name: &str, json: &str) -> Outcome {
+    fn feed(
+        chain: &Chain,
+        h: &mut dyn phoecord_core::ChainHost,
+        name: &str,
+        json: &str,
+    ) -> Outcome {
         let mut d = j(json);
         chain.dispatch(h, name, &mut d, &mut Vec::new())
     }

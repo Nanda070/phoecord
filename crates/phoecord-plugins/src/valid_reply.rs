@@ -22,8 +22,7 @@
 //! Not ported: the hover trigger and the client's reply store (Phase 2).
 
 use crate::state::{Shared, dispatch_data_mut};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};
 
@@ -86,16 +85,16 @@ pub struct ValidReply {
 impl ValidReply {
     pub fn new() -> ValidReply {
         ValidReply {
-            manifest: Manifest {
-                id: "valid_reply".into(),
-                name: "ValidReply".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Fix \"Message could not be loaded\" in replies".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("ValidReply".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "valid_reply",
+                    "ValidReply",
+                    env!("CARGO_PKG_VERSION"),
+                    "Fix \"Message could not be loaded\" in replies",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("ValidReply".into());
+                m
             },
             state: Shared::default(),
         }

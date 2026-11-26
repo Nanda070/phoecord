@@ -9,6 +9,7 @@ pub mod route;
 mod val;
 
 pub use plugin::{
-    Event, EventKind, FilePart, Host, HostResponse, Layer, Manifest, Plugin, TIMER_EVENT, Verdict,
+    ChainHost, Event, EventKind, FilePart, Host, HostResponse, LOCAL_DELETE_EVENT, Layer, Manifest,
+    MenuEntry, Plugin, TIMER_EVENT, UiEvent, Verdict,
 };
 pub use val::Val;

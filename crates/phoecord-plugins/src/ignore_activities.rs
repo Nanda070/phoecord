@@ -26,8 +26,7 @@
 use crate::commands::{Kept, Subcommand, invocation, is_interaction, kept_answer};
 use crate::presence::{self, activity_type, text};
 use crate::state::Shared;
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "ignore_activities";
 const KV_IGNORED: &str = "ignoredActivities";
@@ -42,17 +41,16 @@ pub struct IgnoreActivities {
 impl IgnoreActivities {
     pub fn new() -> IgnoreActivities {
         IgnoreActivities {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "IgnoreActivities".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Keep chosen games and activities out of your status for others"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("IgnoreActivities".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "IgnoreActivities",
+                    env!("CARGO_PKG_VERSION"),
+                    "Keep chosen games and activities out of your status for others",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("IgnoreActivities".into());
+                m
             },
             kept: Kept::default(),
             last: Shared::default(),

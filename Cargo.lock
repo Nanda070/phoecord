@@ -3400,6 +3400,7 @@ dependencies = [
  "notify",
  "phoecord-core",
  "phoecord-i18n",
+ "phoecord-plugin-sdk",
  "serde",
  "toml 0.9.12+spec-1.1.0",
  "wasmtime",

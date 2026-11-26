@@ -21,8 +21,7 @@
 //! Not ported: the avatars under each reaction, the `clickableAvatars` setting (Phase 2 UI hooks).
 
 use crate::commands::{FnCmd, Subcommand};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "who_reacted";
 /// Names shown for one emoji (Discord returns at most 100 per call).
@@ -37,16 +36,16 @@ pub struct WhoReacted {
 impl WhoReacted {
     pub fn new() -> WhoReacted {
         WhoReacted {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "WhoReacted".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Lists who reacted to a message".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("WhoReacted".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "WhoReacted",
+                    env!("CARGO_PKG_VERSION"),
+                    "Lists who reacted to a message",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("WhoReacted".into());
+                m
             },
         }
     }

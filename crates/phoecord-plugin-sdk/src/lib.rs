@@ -21,6 +21,12 @@
 //! [`host`]; what it may call is set by the `rights` of its `plugin.toml`.
 //!
 //! It deliberately does not depend on `phoecord-core`: guests must build without the host's deps.
+//!
+//! Plugin API v1 is frozen: a plugin built with this SDK keeps loading in later 1.x hosts. Later
+//! UI events arrive as new names in [`Event::Ui`] (a [`UiEvent`] with a `name` and a `payload`
+//! tree), never as new [`Event`] cases, so match `Event::Ui` by name and ignore names you do not
+//! know. Today there is one: `menu_action` (`{"entry", "channel_id", "message_id"}`, ids as
+//! strings), sent when the user clicks one of the plugin's `[[menu]]` entries of `plugin.toml`.
 
 /// The bindings generated from `wit/phoecord.wit`, for anything the re-exports below leave out.
 #[allow(clippy::too_many_arguments)]
@@ -36,11 +42,12 @@ pub mod bindings {
 pub use bindings::phoecord::plugin::host;
 pub use bindings::phoecord::plugin::types::{
     Dispatch, Event, EventKind, FilePart, HostResponse, Layer, Manifest, Node, Outcome, Reply,
-    RestKind, RestRequest, RestResponse, Send, Tree, Verdict,
+    RestKind, RestRequest, RestResponse, Send, Tree, UiEvent, Verdict,
 };
 pub use phoecord_plugin_sdk_macros::plugin;
 
-/// Plugin API version this SDK targets. Must equal `phoecord_core::plugin::API_VERSION`.
+/// Plugin API version this SDK targets. Equals `phoecord_core::plugin::API_VERSION` (checked by
+/// `crates/phoecord-plugin-runtime/tests/frozen_wit.rs`).
 pub const API_VERSION: u32 = 1;
 
 /// What a plugin implements. There is one instance per loaded component; it is made on first use

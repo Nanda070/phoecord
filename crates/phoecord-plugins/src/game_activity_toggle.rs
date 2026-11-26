@@ -4,8 +4,7 @@
 //!
 //! Ported from the v0 implementation; the Vencord chat bar button is Phase 2 UI.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 /// Gateway opcode of a presence update.
 const OP_PRESENCE: i64 = 3;
@@ -19,16 +18,16 @@ pub struct GameActivityToggle {
 impl GameActivityToggle {
     pub fn new() -> GameActivityToggle {
         GameActivityToggle {
-            manifest: Manifest {
-                id: "game_activity_toggle".into(),
-                name: "GameActivityToggle".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "While on, your status doesn't show the game you're playing".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("GameActivityToggle".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "game_activity_toggle",
+                    "GameActivityToggle",
+                    env!("CARGO_PKG_VERSION"),
+                    "While on, your status doesn't show the game you're playing",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("GameActivityToggle".into());
+                m
             },
         }
     }

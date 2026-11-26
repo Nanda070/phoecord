@@ -53,8 +53,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::{Guilds, Shared, Users, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, TIMER_EVENT, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, TIMER_EVENT, Val, Verdict};
 use regex::Regex;
 use std::collections::{HashMap, VecDeque};
 use std::sync::OnceLock;
@@ -1355,17 +1354,16 @@ pub struct Rmcord {
 impl Rmcord {
     pub fn new() -> Rmcord {
         Rmcord {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "rmcord".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Bulk delete your own Discord messages (search, filters, schedule)"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("rmcord".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "rmcord",
+                    env!("CARGO_PKG_VERSION"),
+                    "Bulk delete your own Discord messages (search, filters, schedule)",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("rmcord".into());
+                m
             },
             state: Shared::new(State::default()),
         }
@@ -1720,6 +1718,8 @@ mod tests {
                 )
             }
         }
+
+        impl phoecord_core::ChainHost for Limited {}
         let p = plugin();
         let mut l = Limited(host());
         run(&p, &mut l.0, &[("action", "start"), ("channels", "9")]);

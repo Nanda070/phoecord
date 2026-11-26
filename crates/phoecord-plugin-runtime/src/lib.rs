@@ -7,7 +7,7 @@ pub mod package;
 pub mod wasm;
 pub mod watch;
 
-use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{ChainHost, Event, EventKind, Host, Manifest, Plugin, UiEvent, Val, Verdict};
 use std::collections::HashSet;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, RwLock};
@@ -197,7 +197,7 @@ impl Chain {
     /// (re-borrowing the possibly already changed payload) and hands it to `Plugin::on_event`.
     pub fn run(
         &self,
-        host: &mut dyn Host,
+        host: &mut dyn ChainHost,
         kind: &EventKind,
         call: impl FnMut(&dyn Plugin, &mut dyn Host) -> Verdict,
     ) -> Outcome {
@@ -209,7 +209,7 @@ impl Chain {
     fn run_on(
         &self,
         plugins: &[Arc<dyn Plugin>],
-        host: &mut dyn Host,
+        host: &mut dyn ChainHost,
         kind: &EventKind,
         mut call: impl FnMut(&dyn Plugin, &mut dyn Host) -> Verdict,
     ) -> Outcome {
@@ -219,13 +219,15 @@ impl Chain {
             host.begin_plugin(&p.manifest().id);
             host.set_fetch_hosts(&p.manifest().fetch);
             let started = observer.as_ref().map(|_| Instant::now());
-            let result = catch_unwind(AssertUnwindSafe(|| call(p, host)));
+            let result = catch_unwind(AssertUnwindSafe(|| call(p, &mut *host)));
             if let (Some(obs), Some(started)) = (&observer, started) {
                 let verdict = match &result {
                     Ok(Verdict::Pass) => "pass".into(),
                     Ok(Verdict::Changed) => "changed".into(),
                     Ok(Verdict::Drop) => "drop".into(),
                     Ok(Verdict::Reply { status, .. }) => format!("reply {status}").into(),
+                    // A verdict this host does not know counts as `Pass`.
+                    Ok(_) => "pass".into(),
                     Err(_) => "panic".into(),
                 };
                 obs(&RunRecord {
@@ -261,6 +263,8 @@ impl Chain {
                         body,
                     };
                 }
+                // A verdict this host does not know counts as `Pass`.
+                _ => {}
             }
         }
         if changed {
@@ -273,7 +277,7 @@ impl Chain {
     /// A REST request through the chain.
     pub fn rest_request(
         &self,
-        host: &mut dyn Host,
+        host: &mut dyn ChainHost,
         method: &str,
         route: &str,
         mut body: Option<&mut Val>,
@@ -293,7 +297,7 @@ impl Chain {
     /// A REST answer through the chain (plugins may rewrite the body).
     pub fn rest_response(
         &self,
-        host: &mut dyn Host,
+        host: &mut dyn ChainHost,
         method: &str,
         route: &str,
         status: u16,
@@ -313,7 +317,7 @@ impl Chain {
     }
 
     /// A client → server gateway payload through the chain.
-    pub fn send(&self, host: &mut dyn Host, op: i64, payload: &mut Val) -> Outcome {
+    pub fn send(&self, host: &mut dyn ChainHost, op: i64, payload: &mut Val) -> Outcome {
         self.run(host, &EventKind::Send { op }, |p, h| {
             p.on_event(h, Event::Send { op, payload })
         })
@@ -322,7 +326,7 @@ impl Chain {
     /// A gateway dispatch through the chain. Payloads plugins add end up in `extra`.
     pub fn dispatch(
         &self,
-        host: &mut dyn Host,
+        host: &mut dyn ChainHost,
         name: &str,
         payload: &mut Val,
         extra: &mut Vec<Val>,
@@ -345,7 +349,7 @@ impl Chain {
     pub fn run_to(
         &self,
         plugin_id: &str,
-        host: &mut dyn Host,
+        host: &mut dyn ChainHost,
         kind: &EventKind,
         call: impl FnMut(&dyn Plugin, &mut dyn Host) -> Verdict,
     ) -> Option<Outcome> {
@@ -364,7 +368,7 @@ impl Chain {
     /// [`phoecord_core::TIMER_EVENT`]); see [`Chain::run_to`].
     pub fn dispatch_to(
         &self,
-        host: &mut dyn Host,
+        host: &mut dyn ChainHost,
         plugin_id: &str,
         name: &str,
         payload: &mut Val,
@@ -380,6 +384,29 @@ impl Chain {
                 },
             )
         })
+    }
+
+    /// A UI event from a loader hook through the chain (read-only: plugins cannot change it).
+    pub fn ui(&self, host: &mut dyn ChainHost, event: UiEvent<'_>) -> Outcome {
+        self.run(host, &EventKind::Ui { name: event.name() }, |p, h| {
+            p.on_event(h, Event::Ui(event))
+        })
+    }
+
+    /// A UI event for one plugin only, such as [`UiEvent::MenuAction`] for the plugin that
+    /// declared the entry; see [`Chain::run_to`].
+    pub fn ui_to(
+        &self,
+        host: &mut dyn ChainHost,
+        plugin_id: &str,
+        event: UiEvent<'_>,
+    ) -> Option<Outcome> {
+        self.run_to(
+            plugin_id,
+            host,
+            &EventKind::Ui { name: event.name() },
+            |p, h| p.on_event(h, Event::Ui(event)),
+        )
     }
 }
 
@@ -449,25 +476,16 @@ impl Host for NullHost {
     }
 }
 
+impl ChainHost for NullHost {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use phoecord_core::Layer;
 
     struct Fixed(Manifest, Verdict);
 
     fn manifest(id: &str) -> Manifest {
-        Manifest {
-            id: id.into(),
-            name: id.into(),
-            version: "0".into(),
-            description: String::new(),
-            authors: vec![],
-            vencord: None,
-            layers: vec![Layer::Network],
-            api: phoecord_core::plugin::API_VERSION,
-            fetch: Vec::new(),
-        }
+        Manifest::new(id, id, "0", String::new())
     }
 
     fn fixed(id: &str, v: Verdict) -> Box<dyn Plugin> {
@@ -528,6 +546,56 @@ mod tests {
             chain.rest_request(&mut h, "GET", "/x", None),
             Outcome::Changed
         );
+    }
+
+    /// Logs the menu actions it gets and wants only UI events.
+    struct Menu(Manifest);
+
+    impl Plugin for Menu {
+        fn manifest(&self) -> &Manifest {
+            &self.0
+        }
+        fn wants(&self, k: &EventKind) -> bool {
+            matches!(
+                k,
+                EventKind::Ui {
+                    name: "menu_action"
+                }
+            )
+        }
+        fn on_event(&self, h: &mut dyn Host, e: Event<'_>) -> Verdict {
+            if let Event::Ui(UiEvent::MenuAction {
+                entry, message_id, ..
+            }) = e
+            {
+                h.log(&format!("{} {entry} {message_id}", self.0.id));
+            }
+            Verdict::Pass
+        }
+    }
+
+    #[test]
+    fn ui_events_reach_only_the_plugins_that_want_them() {
+        let mut h = NullHost::default();
+        let chain = Chain::new(vec![
+            Box::new(Menu(manifest("a"))) as Box<dyn Plugin>,
+            Box::new(Menu(manifest("b"))),
+            fixed("all", Verdict::Pass),
+        ]);
+        chain.set_enabled(["a".to_string(), "b".to_string(), "all".to_string()]);
+        let click = UiEvent::MenuAction {
+            entry: "copy_raw",
+            channel_id: 1,
+            message_id: 2,
+        };
+        assert_eq!(chain.ui_to(&mut h, "b", click), Some(Outcome::Untouched));
+        assert_eq!(h.logs, vec!["b copy_raw 2".to_string()]);
+        assert_eq!(chain.ui(&mut h, click), Outcome::Untouched);
+        assert_eq!(
+            h.logs[1..],
+            ["a copy_raw 2".to_string(), "b copy_raw 2".to_string()]
+        );
+        assert_eq!(chain.ui_to(&mut h, "nobody", click), None);
     }
 
     /// Counts its events and wants only the timer dispatch.

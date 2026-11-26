@@ -26,8 +26,7 @@
 
 use crate::commands::{FnCmd, Subcommand};
 use crate::state::{Shared, dispatch_data, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashSet;
 
 const PLUGIN_ID: &str = "new_guild_settings";
@@ -50,17 +49,16 @@ pub struct NewGuildSettings {
 impl NewGuildSettings {
     pub fn new() -> NewGuildSettings {
         NewGuildSettings {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "NewGuildSettings".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Automatically mute new servers and change other settings on joining"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("NewGuildSettings".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "NewGuildSettings",
+                    env!("CARGO_PKG_VERSION"),
+                    "Automatically mute new servers and change other settings on joining",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("NewGuildSettings".into());
+                m
             },
             state: Shared::default(),
         }

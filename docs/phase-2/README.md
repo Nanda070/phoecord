@@ -112,7 +112,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 |:--|:--|:--|:--|
 | **2.4.1** 🔴 | Top 10 plugins on Phoenix (network + UI parts): MessageLogger, FakeNitro, NoTrack, ClearURLs, SilentTyping, ShowHiddenChannels, Translate, PlatformIndicators, PermissionsViewer, ViewIcons | — | ⏳ |
 | **2.4.2** 🔴 | Remaining v1.0 scope: every 🌐 and 🌐 + 🎨 plugin complete, the 30 most-used 🎨 plugins, all panels | — | ⏳ |
-| **2.4.3** 🔴 | Plugin API stabilization: `API_VERSION = 1` frozen, changes minor-only; additive UI events | Nanda | ⏳ |
+| **2.4.3** 🔴 | Plugin API stabilization: `API_VERSION = 1` frozen, changes minor-only; additive UI events | Nanda | 🚧 in review, PR #114: v1 frozen with the owner's rulings (Q1–Q8, 2026-11-26): `#[non_exhaustive]` types with `new` constructors, `ChainHost`, `Event::Ui(UiEvent::MenuAction)` + `Manifest.menu` / `[[menu]]`, `LOCAL_DELETE_EVENT`, WIT `ui(ui-event { name, payload })`; `wit/frozen/` and `tests/frozen_wit.rs` guard the WIT. WASM packages built for 0.5 must be rebuilt |
 | **2.4.4** 🔴 | Developer docs `docs/plugins/`: quick start (Rust + TS), events, rights, publishing, localization | — | ⏳ |
 | **2.4.5** 🔴 | Installer 1.0 for Windows; macOS and Linux with the network layer | buslan | ⏳ |
 | **2.4.6** 🔴 | Security audit of the CA, the proxy and the loader | Nanda | ⏳ |

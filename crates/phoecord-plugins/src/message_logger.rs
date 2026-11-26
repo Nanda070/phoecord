@@ -11,9 +11,8 @@
 //! Settings (`[plugins.message_logger]`): `cache_size` (5000), `ignore_self` (true), `ignore_bots`
 //! (false), `show_edits` (true), `write_log` (true).
 
-use phoecord_core::plugin::API_VERSION;
 use phoecord_core::route::message_route_channel;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Mutex;
 
@@ -101,16 +100,16 @@ pub struct MessageLogger {
 impl MessageLogger {
     pub fn new() -> MessageLogger {
         MessageLogger {
-            manifest: Manifest {
-                id: "message_logger".into(),
-                name: "MessageLogger".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Keep deleted messages visible and show edit history".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("MessageLogger".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "message_logger",
+                    "MessageLogger",
+                    env!("CARGO_PKG_VERSION"),
+                    "Keep deleted messages visible and show edit history",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("MessageLogger".into());
+                m
             },
             cache: Mutex::new(Lru::default()),
         }
@@ -504,6 +503,8 @@ mod tests {
             Ok(())
         }
     }
+
+    impl phoecord_core::ChainHost for TestHost {}
 
     fn host() -> TestHost {
         let mut h = TestHost {

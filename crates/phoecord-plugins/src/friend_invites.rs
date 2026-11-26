@@ -15,8 +15,8 @@
 //! sends with `POST /users/@me/invites` (Vencord does not show it; `{}` is assumed).
 
 use crate::commands::{Kept, Subcommand, invocation, is_interaction, kept_answer};
-use phoecord_core::plugin::{API_VERSION, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::HostResponse;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "friend_invites";
 const CREATE: &str = "create-friend-invite";
@@ -32,16 +32,16 @@ pub struct FriendInvites {
 impl FriendInvites {
     pub fn new() -> FriendInvites {
         FriendInvites {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "FriendInvites".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Create, list and revoke friend invite links with commands".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("FriendInvites".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "FriendInvites",
+                    env!("CARGO_PKG_VERSION"),
+                    "Create, list and revoke friend invite links with commands",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("FriendInvites".into());
+                m
             },
             kept: Kept::default(),
         }

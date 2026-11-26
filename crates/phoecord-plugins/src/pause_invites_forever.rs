@@ -21,8 +21,7 @@
 
 use crate::commands::{FnCmd, Subcommand};
 use crate::state::{Guilds, Shared, dispatch_data, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "pause_invites_forever";
 const FEATURE: &str = "INVITES_DISABLED";
@@ -35,16 +34,16 @@ pub struct PauseInvitesForever {
 impl PauseInvitesForever {
     pub fn new() -> PauseInvitesForever {
         PauseInvitesForever {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "PauseInvitesForever".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Pause invites to a server indefinitely".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("PauseInvitesForever".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "PauseInvitesForever",
+                    env!("CARGO_PKG_VERSION"),
+                    "Pause invites to a server indefinitely",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("PauseInvitesForever".into());
+                m
             },
             guilds: Shared::default(),
         }

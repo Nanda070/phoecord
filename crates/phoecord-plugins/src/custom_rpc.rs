@@ -22,8 +22,7 @@
 use crate::commands::{Kept, Subcommand, invocation, is_interaction, kept_answer};
 use crate::presence::{self, Owned, STREAMING};
 use crate::state::Shared;
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashMap;
 
 const PLUGIN_ID: &str = "custom_rpc";
@@ -48,16 +47,16 @@ pub struct CustomRpc {
 impl CustomRpc {
     pub fn new() -> CustomRpc {
         CustomRpc {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "CustomRPC".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Add a fully custom Rich Presence to your profile".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("CustomRPC".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "CustomRPC",
+                    env!("CARGO_PKG_VERSION"),
+                    "Add a fully custom Rich Presence to your profile",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("CustomRPC".into());
+                m
             },
             kept: Kept::default(),
             state: Shared::default(),

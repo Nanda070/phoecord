@@ -50,6 +50,8 @@ impl Host for Cfg {
     }
 }
 
+impl phoecord_core::ChainHost for Cfg {}
+
 /// What `Host::t` answers for `key` in `lang` (`""` = English): the first built-in plugin bundle
 /// that has the key, else the key. Keys are unique across the bundles that tests meet.
 pub fn tr(lang: &str, key: &str, args: &[(&str, &str)]) -> String {
@@ -122,30 +124,20 @@ impl Rec {
     }
     /// Script a `fetch_with` answer with a JSON body.
     pub fn answer_fetch(mut self, method: &str, url: &str, status: u16, body: &str) -> Rec {
-        self.fetch_answers.insert(
-            format!("{method} {url}"),
-            phoecord_core::plugin::HostResponse {
-                status,
-                body: Some(j(body)),
-                text: None,
-                headers: Vec::new(),
-                bytes: None,
-            },
-        );
+        self.fetch_answers.insert(format!("{method} {url}"), {
+            let mut r = phoecord_core::plugin::HostResponse::new(status);
+            r.body = Some(j(body));
+            r
+        });
         self
     }
     /// Script a `rest` answer with a JSON body.
     pub fn answer(mut self, method: &str, route: &str, status: u16, body: &str) -> Rec {
-        self.rest_answers.insert(
-            format!("{method} {route}"),
-            phoecord_core::plugin::HostResponse {
-                status,
-                body: Some(j(body)),
-                text: None,
-                headers: Vec::new(),
-                bytes: None,
-            },
-        );
+        self.rest_answers.insert(format!("{method} {route}"), {
+            let mut r = phoecord_core::plugin::HostResponse::new(status);
+            r.body = Some(j(body));
+            r
+        });
         self
     }
 }
@@ -200,13 +192,7 @@ impl Host for Rec {
             .rest_answers
             .get(&key)
             .cloned()
-            .unwrap_or(phoecord_core::plugin::HostResponse {
-                status: 404,
-                body: None,
-                text: None,
-                headers: Vec::new(),
-                bytes: None,
-            }))
+            .unwrap_or(phoecord_core::plugin::HostResponse::new(404)))
     }
     fn emit_dispatch(&mut self, payload: Val) {
         self.dispatched.push(payload);
@@ -231,15 +217,11 @@ impl Host for Rec {
             .fetch_answers
             .get(&key)
             .cloned()
-            .unwrap_or(phoecord_core::plugin::HostResponse {
-                status: 404,
-                body: None,
-                text: None,
-                headers: Vec::new(),
-                bytes: None,
-            }))
+            .unwrap_or(phoecord_core::plugin::HostResponse::new(404)))
     }
 }
+
+impl phoecord_core::ChainHost for Rec {}
 
 #[cfg(test)]
 mod tests {

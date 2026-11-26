@@ -16,8 +16,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::{Shared, Users, dispatch_data, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{HashMap, VecDeque};
 
 const PLUGIN_ID: &str = "platform_indicators";
@@ -157,16 +156,16 @@ pub struct PlatformIndicators {
 impl PlatformIndicators {
     pub fn new() -> PlatformIndicators {
         PlatformIndicators {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "PlatformIndicators".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Desktop, mobile and web indicators (collects client status)".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("PlatformIndicators".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "PlatformIndicators",
+                    env!("CARGO_PKG_VERSION"),
+                    "Desktop, mobile and web indicators (collects client status)",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("PlatformIndicators".into());
+                m
             },
             state: Shared::default(),
         }

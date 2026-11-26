@@ -24,8 +24,7 @@
 //! `replaceElements = 0` to try.
 
 use crate::state::{Shared, dispatch_data_mut};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};
 
@@ -73,17 +72,17 @@ pub struct Dearrow {
 impl Dearrow {
     pub fn new() -> Dearrow {
         Dearrow {
-            manifest: Manifest {
-                id: "dearrow".into(),
-                name: "Dearrow".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Less sensational YouTube embed titles and thumbnails (DeArrow)"
-                    .into(),
-                authors: vec!["Ven".into()],
-                vencord: Some("Dearrow".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: vec![API_HOST.into()],
+            manifest: {
+                let mut m = Manifest::new(
+                    "dearrow",
+                    "Dearrow",
+                    env!("CARGO_PKG_VERSION"),
+                    "Less sensational YouTube embed titles and thumbnails (DeArrow)",
+                );
+                m.authors = vec!["Ven".into()];
+                m.vencord = Some("Dearrow".into());
+                m.fetch = vec![API_HOST.into()];
+                m
             },
             cache: Shared::default(),
         }
@@ -377,15 +376,15 @@ mod tests {
         fn fetch(&mut self, _: &str, url: &str, _: Option<&Val>) -> Result<HostResponse, String> {
             self.urls.push(url.into());
             let (status, body) = self.answer.map_err(str::to_string)?;
-            Ok(HostResponse {
-                status,
-                body: (!body.is_empty()).then(|| j(body)),
-                text: None,
-                bytes: None,
-                headers: Vec::new(),
+            Ok({
+                let mut r = HostResponse::new(status);
+                r.body = (!body.is_empty()).then(|| j(body));
+                r
             })
         }
     }
+
+    impl phoecord_core::ChainHost for Net {}
 
     const BRANDING: &str = r#"{"titles":[{"title":">iPhone is a >phone > ok","votes":0}],
         "thumbnails":[{"timestamp":12.5,"votes":1,"original":false}]}"#;

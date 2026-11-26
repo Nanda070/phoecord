@@ -29,8 +29,8 @@
 
 use crate::presence::{self, LISTENING, Owned};
 use crate::state::{Shared, dispatch_data};
-use phoecord_core::plugin::{API_VERSION, HostResponse, TIMER_EVENT};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::{HostResponse, TIMER_EVENT};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -77,21 +77,21 @@ pub struct MusicRichPresence {
 impl MusicRichPresence {
     pub fn new() -> MusicRichPresence {
         MusicRichPresence {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "MusicRichPresence".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Rich Presence for what you scrobble to Last.fm or ListenBrainz"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("MusicRichPresence".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: vec![
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "MusicRichPresence",
+                    env!("CARGO_PKG_VERSION"),
+                    "Rich Presence for what you scrobble to Last.fm or ListenBrainz",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("MusicRichPresence".into());
+                m.fetch = vec![
                     LASTFM_HOST.into(),
                     LISTENBRAINZ_HOST.into(),
                     MUSICBRAINZ_HOST.into(),
-                ],
+                ];
+                m
             },
             state: Shared::default(),
         }

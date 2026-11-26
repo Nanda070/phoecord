@@ -12,9 +12,8 @@
 //! The plugin learns your tier from `READY`, so after switching it on press Ctrl+R once; until
 //! then it does nothing.
 
-use phoecord_core::plugin::API_VERSION;
 use phoecord_core::route::message_route_channel;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::sync::Mutex;
 
 /// What the client is told its tier is while the pickers are unlocked (Nitro).
@@ -36,16 +35,16 @@ pub struct FakeNitro {
 impl FakeNitro {
     pub fn new() -> FakeNitro {
         FakeNitro {
-            manifest: Manifest {
-                id: "fake_nitro".into(),
-                name: "FakeNitro".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Send any emoji without Nitro (as linked images)".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("FakeNitro".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "fake_nitro",
+                    "FakeNitro",
+                    env!("CARGO_PKG_VERSION"),
+                    "Send any emoji without Nitro (as linked images)",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("FakeNitro".into());
+                m
             },
             state: Mutex::new(State::default()),
         }
@@ -280,6 +279,8 @@ mod tests {
             (channel_id == 11).then_some(10)
         }
     }
+
+    impl phoecord_core::ChainHost for TestHost {}
 
     fn ready(premium: i64) -> Val {
         json(&format!(

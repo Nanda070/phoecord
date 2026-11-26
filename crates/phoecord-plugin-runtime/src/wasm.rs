@@ -127,33 +127,29 @@ pub(crate) fn tree_to_val(tree: &wit::Tree) -> Result<Val, String> {
 // ---------------------------------------------------------------------------------------------
 
 fn manifest_from_wit(m: wit::Manifest) -> Manifest {
-    Manifest {
-        id: m.id,
-        name: m.name,
-        version: m.version,
-        description: m.description,
-        authors: m.authors,
-        vencord: m.vencord,
-        layers: m
-            .layers
-            .into_iter()
-            .map(|l| match l {
-                wit::Layer::Network => Layer::Network,
-                wit::Layer::Theme => Layer::Theme,
-                wit::Layer::Ui => Layer::Ui,
-            })
-            .collect(),
-        api: m.api,
-        fetch: Vec::new(),
-    }
+    let mut mf = Manifest::new(m.id, m.name, m.version, m.description);
+    mf.authors = m.authors;
+    mf.vencord = m.vencord;
+    mf.layers = m
+        .layers
+        .into_iter()
+        .map(|l| match l {
+            wit::Layer::Network => Layer::Network,
+            wit::Layer::Theme => Layer::Theme,
+            wit::Layer::Ui => Layer::Ui,
+        })
+        .collect();
+    mf.api = m.api;
+    mf
 }
 
-fn kind_to_wit(kind: &EventKind) -> wit::EventKind {
+/// `None` for an event kind the WIT contract has no case for: a guest never sees it.
+fn kind_to_wit(kind: &EventKind) -> Option<wit::EventKind> {
     let rest = |method: &str, route: &str| wit::RestKind {
         method: method.into(),
         route: route.into(),
     };
-    match kind {
+    Some(match kind {
         EventKind::RestRequest { method, route } => {
             wit::EventKind::RestRequest(rest(method, route))
         }
@@ -162,11 +158,14 @@ fn kind_to_wit(kind: &EventKind) -> wit::EventKind {
         }
         EventKind::Dispatch { name } => wit::EventKind::Dispatch((*name).into()),
         EventKind::Send { op } => wit::EventKind::Send(*op),
-    }
+        EventKind::Ui { name } => wit::EventKind::Ui((*name).into()),
+        _ => return None,
+    })
 }
 
-fn event_to_wit(event: &Event<'_>) -> wit::Event {
-    match event {
+/// `None` for an event the WIT contract has no case for.
+fn event_to_wit(event: &Event<'_>) -> Option<wit::Event> {
+    Some(match event {
         Event::RestRequest {
             method,
             route,
@@ -195,7 +194,12 @@ fn event_to_wit(event: &Event<'_>) -> wit::Event {
             op: *op,
             payload: val_to_tree(payload),
         }),
-    }
+        Event::Ui(ui) => wit::Event::Ui(wit::UiEvent {
+            name: ui.name().into(),
+            payload: val_to_tree(&ui.to_val()),
+        }),
+        _ => return None,
+    })
 }
 
 /// What a guest's [`wit::Outcome`] means, with its trees already decoded.
@@ -802,7 +806,16 @@ impl WasmPlugin {
         linker.allow_shadowing(true);
         linker.define_unknown_imports_as_traps(&component)?;
         wit_host::add_to_linker::<State, HasSelf<State>>(&mut linker, |s| s)?;
-        let pre = bindings::PluginPre::new(linker.instantiate_pre(&component)?)?;
+        // A component built against another WIT (a package for PhoeCord 0.5 or earlier, before
+        // the v1 freeze added the `ui` event) fails these type checks.
+        let pre = linker
+            .instantiate_pre(&component)
+            .and_then(bindings::PluginPre::new)
+            .map_err(|e| {
+                e.context(
+                    "the plugin was not built against Plugin API v1 (wit/phoecord.wit); rebuild                      it with the current phoecord-plugin-sdk",
+                )
+            })?;
         let engine = runtime.engine.clone();
         let limits = runtime.limits;
         let rights = setup.rights.clone();
@@ -990,18 +1003,16 @@ impl Plugin for WasmPlugin {
         if self.is_disabled() {
             return Verdict::Pass;
         }
-        let kind = match &event {
-            Event::RestRequest { method, route, .. } => EventKind::RestRequest { method, route },
-            Event::RestResponse { method, route, .. } => EventKind::RestResponse { method, route },
-            Event::Dispatch { name, .. } => EventKind::Dispatch { name },
-            Event::Send { op, .. } => EventKind::Send { op: *op },
-        };
+        let kind = event.kind();
         if !self.events.matches(&kind) {
             return Verdict::Pass;
         }
+        let (Some(kind), Some(wit_event)) = (kind_to_wit(&kind), event_to_wit(&event)) else {
+            return Verdict::Pass;
+        };
         let job = Job {
-            kind: kind_to_wit(&kind),
-            event: event_to_wit(&event),
+            kind,
+            event: wit_event,
         };
         let decoded = match self.run_job(host, job).and_then(decode_outcome) {
             Ok(d) => d,

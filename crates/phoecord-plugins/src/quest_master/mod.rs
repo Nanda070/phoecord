@@ -89,8 +89,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::Shared;
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, TIMER_EVENT, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, TIMER_EVENT, Val, Verdict};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 
 mod bypass;
@@ -2289,20 +2288,19 @@ impl Default for QuestMaster {
 impl QuestMaster {
     pub fn new() -> QuestMaster {
         QuestMaster {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "QuestMaster".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Auto-complete Discord Quests (video, game, stream, activity, \
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "QuestMaster",
+                    env!("CARGO_PKG_VERSION"),
+                    "Auto-complete Discord Quests (video, game, stream, activity, \
                               achievements). Fakes quest progress: Discord may void rewards or \
-                              act against the account"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("QuestMaster".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                // The ACHIEVEMENT bypass talks to `<app id>.discordsays.com`.
-                fetch: vec!["*.discordsays.com".into()],
+                              act against the account",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("QuestMaster".into());
+                m.fetch = vec!["*.discordsays.com".into()];
+                m
             },
             state: Shared::default(),
         }
@@ -2501,6 +2499,7 @@ impl Plugin for QuestMaster {
             EventKind::Send { op } => {
                 *op == spoof::PRESENCE_UPDATE || *op == spoof::VOICE_STATE_UPDATE
             }
+            _ => false,
         }
     }
 

@@ -27,8 +27,7 @@
 //! attachments. Unverified against a live client: that Discord builds `upload_filename` from the
 //! requested name and that the client echoes the id it sent.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashMap;
 use std::collections::hash_map::RandomState;
 use std::hash::{BuildHasher, Hasher};
@@ -50,16 +49,16 @@ pub struct AnonymiseFileNames {
 impl AnonymiseFileNames {
     pub fn new() -> AnonymiseFileNames {
         AnonymiseFileNames {
-            manifest: Manifest {
-                id: "anonymise_file_names".into(),
-                name: "AnonymiseFileNames".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Anonymise uploaded file names".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("AnonymiseFileNames".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "anonymise_file_names",
+                    "AnonymiseFileNames",
+                    env!("CARGO_PKG_VERSION"),
+                    "Anonymise uploaded file names",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("AnonymiseFileNames".into());
+                m
             },
             names: Mutex::new(HashMap::new()),
             random: RandomState::new(),

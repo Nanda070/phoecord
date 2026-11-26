@@ -18,8 +18,7 @@
 //! everyone else's colours, fake ones included, as Vencord does.
 
 use crate::no_profile_themes::{PROFILES, profile_route};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 pub struct FakeProfileThemes {
     manifest: Manifest,
@@ -28,16 +27,16 @@ pub struct FakeProfileThemes {
 impl FakeProfileThemes {
     pub fn new() -> FakeProfileThemes {
         FakeProfileThemes {
-            manifest: Manifest {
-                id: "fake_profile_themes".into(),
-                name: "FakeProfileThemes".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Shows profile theme colours that people hide in their bio".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("FakeProfileThemes".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "fake_profile_themes",
+                    "FakeProfileThemes",
+                    env!("CARGO_PKG_VERSION"),
+                    "Shows profile theme colours that people hide in their bio",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("FakeProfileThemes".into());
+                m
             },
         }
     }

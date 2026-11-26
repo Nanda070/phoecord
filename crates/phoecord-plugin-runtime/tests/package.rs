@@ -209,7 +209,7 @@ mod live {
 
     #[test]
     fn built_in_plugins_come_first_and_keep_their_ids() {
-        use phoecord_core::{EventKind, Host, Layer, Manifest, Verdict};
+        use phoecord_core::{EventKind, Host, Manifest, Verdict};
         struct Builtin(Manifest);
         impl Plugin for Builtin {
             fn manifest(&self) -> &Manifest {
@@ -225,17 +225,7 @@ mod live {
         let root = TempDir::new();
         write_package(&root.0, "taken", 1, "events = [\"dispatch\"]");
         write_package(&root.0, "free", 1, "events = [\"dispatch\"]");
-        let manifest = |id: &str| Manifest {
-            id: id.into(),
-            name: id.into(),
-            version: "0".into(),
-            description: String::new(),
-            authors: vec![],
-            vencord: None,
-            layers: vec![Layer::Network],
-            api: 1,
-            fetch: Vec::new(),
-        };
+        let manifest = |id: &str| Manifest::new(id, id, "0", String::new());
         let chain = Chain::new(vec![Box::new(Builtin(manifest("taken"))) as Box<dyn Plugin>]);
         let mut set = PackageSet::new(common::runtime(), root.0.clone());
         let logs = set.sync(&chain);

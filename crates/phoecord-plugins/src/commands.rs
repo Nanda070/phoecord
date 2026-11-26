@@ -12,8 +12,7 @@
 //! Unverified against a live client: the shapes below follow the public API documentation and
 //! Vencord's `sendBotMessage`; check them with `phoecord launch` on a test account.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Fake application that "owns" `/phoecord` and authors its answers.
@@ -242,16 +241,16 @@ impl Commands {
     /// An empty registry; add commands with [`Commands::with`].
     pub fn empty() -> Commands {
         Commands {
-            manifest: Manifest {
-                id: COMMAND_PLUGIN_ID.into(),
-                name: "Commands".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "The /phoecord slash command: plugins, toggle".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("CommandsAPI".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    COMMAND_PLUGIN_ID,
+                    "Commands",
+                    env!("CARGO_PKG_VERSION"),
+                    "The /phoecord slash command: plugins, toggle",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("CommandsAPI".into());
+                m
             },
             subs: Vec::new(),
             counter: AtomicU64::new(0),
@@ -743,6 +742,8 @@ mod tests {
             Ok(())
         }
     }
+
+    impl phoecord_core::ChainHost for TestHost {}
 
     fn j(s: &str) -> Val {
         Val::from_json(serde_json::from_str(s).unwrap())

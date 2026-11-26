@@ -346,8 +346,8 @@ fn tick(delivery: &Delivery, stop: &AtomicBool) {
 mod tests {
     use super::*;
     use crate::hooks::found::{Found, GatewayRegistry, HttpPoll, HttpSend};
-    use phoecord_core::plugin::API_VERSION;
-    use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, TIMER_EVENT, Verdict};
+
+    use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, TIMER_EVENT, Verdict};
     use phoecord_plugin_runtime::Chain;
     use phoecord_transport::{config::Config, host::Shared};
     use std::time::Duration;
@@ -408,17 +408,7 @@ mod tests {
     fn engine() -> Arc<Engine> {
         let dir =
             std::env::temp_dir().join(format!("phoecord-test-transport-{}", std::process::id()));
-        let plugin = Queues(Manifest {
-            id: "queues".into(),
-            name: "Queues".into(),
-            version: "1.0.0".into(),
-            description: String::new(),
-            authors: Vec::new(),
-            vencord: None,
-            layers: vec![Layer::Network],
-            api: API_VERSION,
-            fetch: Vec::new(),
-        });
+        let plugin = Queues(Manifest::new("queues", "Queues", "1.0.0", String::new()));
         let chain = Chain::new(vec![Box::new(plugin)]);
         let engine = Engine::new(chain, Shared::new(dir), Config::default());
         engine.chain.set_enabled(vec!["queues".to_string()]);

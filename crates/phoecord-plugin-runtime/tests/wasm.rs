@@ -68,6 +68,19 @@ fn well_behaved_guest_works_in_the_chain_like_a_native_plugin() {
 }
 
 #[test]
+fn ui_events_reach_a_guest_as_a_name_and_a_payload() {
+    let chain = chain_of(guest());
+    let mut host = NullHost::default();
+    let click = phoecord_core::UiEvent::MenuAction {
+        entry: "copy_raw",
+        channel_id: 1,
+        message_id: 2,
+    };
+    assert_eq!(chain.ui(&mut host, click), Outcome::Untouched);
+    assert_eq!(host.logs, vec!["ui menu_action copy_raw".to_string()]);
+}
+
+#[test]
 fn a_guest_can_schedule_and_cancel_timers() {
     let chain = chain_of(guest());
     let mut host = NullHost::default();
@@ -98,7 +111,7 @@ fn a_guest_can_schedule_and_cancel_timers() {
 
 mod limits {
     use super::*;
-    use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Verdict};
+    use phoecord_core::{Event, EventKind, Host, Manifest, Verdict};
     use phoecord_plugin_runtime::wasm::WasmLimits;
     use std::time::{Duration, Instant};
 
@@ -118,17 +131,12 @@ mod limits {
     }
 
     fn native() -> Box<dyn Plugin> {
-        Box::new(Native(Manifest {
-            id: "native".into(),
-            name: "native".into(),
-            version: "0".into(),
-            description: String::new(),
-            authors: vec![],
-            vencord: None,
-            layers: vec![Layer::Network],
-            api: 1,
-            fetch: Vec::new(),
-        }))
+        Box::new(Native(Manifest::new(
+            "native",
+            "native",
+            "0",
+            String::new(),
+        )))
     }
 
     /// The guest faults on `event` (hard ceiling 200 ms, 32 MiB). It is switched off, logged once
@@ -294,6 +302,8 @@ impl phoecord_core::Host for QueryHost {
         self.0.clone()
     }
 }
+
+impl phoecord_core::ChainHost for QueryHost {}
 
 #[test]
 fn a_guest_reads_the_query_of_the_request_it_handles() {

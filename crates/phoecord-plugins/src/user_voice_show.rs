@@ -15,8 +15,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::{Guilds, Shared, Users, VoiceStates, dispatch_data, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::BTreeMap;
 
 const PLUGIN_ID: &str = "user_voice_show";
@@ -119,16 +118,16 @@ pub struct UserVoiceShow {
 impl UserVoiceShow {
     pub fn new() -> UserVoiceShow {
         UserVoiceShow {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "UserVoiceShow".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Show who is in voice (collects voice states)".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("UserVoiceShow".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "UserVoiceShow",
+                    env!("CARGO_PKG_VERSION"),
+                    "Show who is in voice (collects voice states)",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("UserVoiceShow".into());
+                m
             },
             state: Shared::default(),
         }

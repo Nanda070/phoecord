@@ -21,8 +21,8 @@
 
 use crate::commands::{Invocation, Kept, Subcommand, invocation, is_interaction, kept_answer};
 use crate::state::{Shared, dispatch_data};
-use phoecord_core::plugin::{API_VERSION, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::HostResponse;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "spotify_share_commands";
 const SUBS: [&str; 3] = ["track", "album", "artist"];
@@ -49,17 +49,16 @@ pub struct SpotifyShareCommands {
 impl SpotifyShareCommands {
     pub fn new() -> SpotifyShareCommands {
         SpotifyShareCommands {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "SpotifyShareCommands".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Share your current Spotify track, album or artist with a command"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("SpotifyShareCommands".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "SpotifyShareCommands",
+                    env!("CARGO_PKG_VERSION"),
+                    "Share your current Spotify track, album or artist with a command",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("SpotifyShareCommands".into());
+                m
             },
             kept: Kept::default(),
             track: Shared::default(),

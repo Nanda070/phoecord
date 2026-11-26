@@ -13,8 +13,8 @@
 //! Discord decides who may do it: your own messages, or others' with Manage Messages.
 
 use crate::commands::{Kept, Subcommand, invocation, is_interaction, kept_answer, message_ref};
-use phoecord_core::plugin::{API_VERSION, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::HostResponse;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "unsuppress_embeds";
 const SUB: &str = "unsuppress";
@@ -29,16 +29,16 @@ pub struct UnsuppressEmbeds {
 impl UnsuppressEmbeds {
     pub fn new() -> UnsuppressEmbeds {
         UnsuppressEmbeds {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "UnsuppressEmbeds".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Show the embeds of a message again, or hide them".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("UnsuppressEmbeds".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "UnsuppressEmbeds",
+                    env!("CARGO_PKG_VERSION"),
+                    "Show the embeds of a message again, or hide them",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("UnsuppressEmbeds".into());
+                m
             },
             kept: Kept::default(),
         }

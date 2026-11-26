@@ -332,8 +332,10 @@ impl Proxy {
 mod tests {
     use super::*;
     use host::ProxyHost;
-    use phoecord_core::plugin::API_VERSION;
-    use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, TIMER_EVENT, Verdict};
+
+    use phoecord_core::{
+        ChainHost, Event, EventKind, Host, Manifest, Plugin, TIMER_EVENT, Verdict,
+    };
 
     /// Rewrites MESSAGE_CREATE content and queues a presence re-send.
     struct Rewrite(Manifest);
@@ -377,17 +379,12 @@ mod tests {
         };
         let chain = Chain::new(vec![
             Box::new(phoecord_plugins::no_track::NoTrack::new()),
-            Box::new(Rewrite(Manifest {
-                id: "rewrite".into(),
-                name: "Rewrite".into(),
-                version: "0".into(),
-                description: String::new(),
-                authors: vec![],
-                vencord: None,
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
-            })),
+            Box::new(Rewrite(Manifest::new(
+                "rewrite",
+                "Rewrite",
+                "0",
+                String::new(),
+            ))),
         ]);
         let mut cfg = Config::default();
         cfg.set_enabled("rewrite", on).unwrap();
@@ -404,17 +401,7 @@ mod tests {
     }
 
     fn manifest(id: &str) -> Manifest {
-        Manifest {
-            id: id.into(),
-            name: id.into(),
-            version: "0".into(),
-            description: String::new(),
-            authors: vec![],
-            vencord: None,
-            layers: vec![Layer::Network],
-            api: API_VERSION,
-            fetch: Vec::new(),
-        }
+        Manifest::new(id, id, "0", String::new())
     }
 
     /// Wants its timer and `POST /ping`; both queue a send (op 3 from a timer, op 4 from REST),

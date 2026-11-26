@@ -8,8 +8,7 @@
 //! Settings (`[plugins.relationship_notifier]`, all default `true`): `friends`, `friend_requests`,
 //! `servers`, `groups`.
 
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -35,17 +34,16 @@ pub struct RelationshipNotifier {
 impl RelationshipNotifier {
     pub fn new() -> RelationshipNotifier {
         RelationshipNotifier {
-            manifest: Manifest {
-                id: "relationship_notifier".into(),
-                name: "RelationshipNotifier".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Notify you when you're unfriended or removed from a server or group"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("RelationshipNotifier".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    "relationship_notifier",
+                    "RelationshipNotifier",
+                    env!("CARGO_PKG_VERSION"),
+                    "Notify you when you're unfriended or removed from a server or group",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("RelationshipNotifier".into());
+                m
             },
             state: Mutex::new(State::default()),
         }
@@ -376,6 +374,8 @@ mod tests {
         }
     }
 
+    impl phoecord_core::ChainHost for TestHost {}
+
     const READY: &str = r#"{"op":0,"t":"READY","d":{"user":{"id":"1"},
         "guilds":[{"id":"10","name":"Ember"}],
         "private_channels":[{"id":"20","type":3,"name":"","recipients":[{"id":"4","username":"cy"},{"id":"5","username":"di"}]}],
@@ -386,7 +386,7 @@ mod tests {
     const GROUP_KICK: &str =
         r#"{"op":0,"t":"CHANNEL_RECIPIENT_REMOVE","d":{"channel_id":"20","user":{"id":"1"}}}"#;
 
-    fn dispatch(chain: &Chain, host: &mut dyn Host, name: &str, frame: &str) {
+    fn dispatch(chain: &Chain, host: &mut dyn phoecord_core::ChainHost, name: &str, frame: &str) {
         let mut p = json(frame);
         let mut extra = Vec::new();
         assert_eq!(

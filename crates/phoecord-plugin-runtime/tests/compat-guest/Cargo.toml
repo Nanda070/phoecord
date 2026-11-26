@@ -1,0 +1,21 @@
+# Compatibility guest for the WASM runtime tests (tests/frozen_wit.rs builds it for wasm32-wasip2).
+# Built against wit/frozen/, the frozen Plugin API v1 contract, never against wit/phoecord.wit: if
+# the host's WIT stops accepting it, a change to wit/phoecord.wit broke plugins already built.
+# Not a workspace member: it has its own workspace root and lockfile.
+[package]
+name = "phoecord-compat-guest"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.46"
+
+[workspace]
+
+[profile.release]
+opt-level = 1

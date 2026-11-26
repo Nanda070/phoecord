@@ -43,8 +43,7 @@
 
 use crate::commands::{Args, FnCmd, Subcommand};
 use crate::state::{Guilds, Shared, VoiceStates, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, TIMER_EVENT, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, TIMER_EVENT, Val, Verdict};
 
 const PLUGIN_ID: &str = "voice_chat_utilities";
 /// Shortest timer the host accepts.
@@ -381,16 +380,16 @@ impl State {
 impl VoiceChatUtilities {
     pub fn new() -> VoiceChatUtilities {
         VoiceChatUtilities {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "VoiceChatUtilities".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Move, mute, deafen or disconnect everyone in a voice channel".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("VoiceChatUtilities".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "VoiceChatUtilities",
+                    env!("CARGO_PKG_VERSION"),
+                    "Move, mute, deafen or disconnect everyone in a voice channel",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("VoiceChatUtilities".into());
+                m
             },
             state: Shared::default(),
         }

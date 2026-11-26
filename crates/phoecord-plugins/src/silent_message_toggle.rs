@@ -20,8 +20,7 @@
 //! not per channel, so there is nothing to persist across channel changes).
 
 use crate::commands::{Args, Subcommand};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -38,16 +37,16 @@ pub struct SilentMessageToggle {
 impl SilentMessageToggle {
     pub fn new() -> SilentMessageToggle {
         SilentMessageToggle {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "SilentMessageToggle".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Send messages without notifications".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("SilentMessageToggle".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "SilentMessageToggle",
+                    env!("CARGO_PKG_VERSION"),
+                    "Send messages without notifications",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("SilentMessageToggle".into());
+                m
             },
             armed: Arc::new(AtomicBool::new(false)),
         }

@@ -46,8 +46,7 @@
 
 use crate::commands::{APP_ID, Args, FnCmd, Subcommand};
 use crate::state::Shared;
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, TIMER_EVENT, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, TIMER_EVENT, Val, Verdict};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -636,17 +635,16 @@ pub struct SilentDelete {
 impl SilentDelete {
     pub fn new() -> SilentDelete {
         SilentDelete {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "SilentDelete".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "\"Silently\" delete a message: replace it with a placeholder first"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("SilentDelete".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "SilentDelete",
+                    env!("CARGO_PKG_VERSION"),
+                    "\"Silently\" delete a message: replace it with a placeholder first",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("SilentDelete".into());
+                m
             },
             state: Shared::new(State::default()),
         }
@@ -1009,6 +1007,8 @@ mod tests {
                 )
             }
         }
+
+        impl phoecord_core::ChainHost for Limited {}
         let p = SilentDelete::new();
         let mut l = Limited(host());
         command(&p, "silentdelete", &mut l.0, &[("message", "42")]);

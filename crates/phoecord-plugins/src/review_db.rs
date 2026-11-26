@@ -17,8 +17,8 @@
 //! section waits for Phase 2.
 
 use crate::commands::{Kept, Subcommand, invocation, is_interaction, kept_answer, snowflake_arg};
-use phoecord_core::plugin::{API_VERSION, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::HostResponse;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "review_db";
 const SUB: &str = "reviews";
@@ -40,16 +40,17 @@ pub struct ReviewDb {
 impl ReviewDb {
     pub fn new() -> ReviewDb {
         ReviewDb {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "ReviewDB".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Read the reviews people left on a user with /phoecord reviews".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("ReviewDB".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: vec![HOST.into()],
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "ReviewDB",
+                    env!("CARGO_PKG_VERSION"),
+                    "Read the reviews people left on a user with /phoecord reviews",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("ReviewDB".into());
+                m.fetch = vec![HOST.into()];
+                m
             },
             kept: Kept::default(),
         }

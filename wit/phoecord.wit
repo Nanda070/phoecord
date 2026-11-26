@@ -2,7 +2,16 @@
 // License: MIT (plugin authors build against this file).
 //
 // Mirrors `crates/phoecord-core/src/plugin.rs` (`Manifest`, `Event`, `EventKind`, `Verdict`, `Host`).
-// Change one, change the other, and bump `API_VERSION` when the change is not additive.
+//
+// FROZEN at v1 (task 2.4.3). wasmtime refuses a component whose WIT `variant`, `enum` or `record`
+// has a different set of cases or fields than the host's, so a plugin built against this file stops
+// loading the moment one of them changes. What may still be added without breaking built plugins:
+// - a new function at the end of `interface host` (a guest that does not import it still links);
+// - a new UI event: a new `name` under `event.ui` / `event-kind.ui` (see `ui-event`);
+// - a new dispatch name (like `PHOECORD_TIMER`).
+// Everything else (a new case, field or parameter, a rename) is a new major version.
+// `wit/frozen/phoecord-1.0.0.wit` is the frozen copy; the runtime tests build a guest against it
+// and check that `interface types` and the world here still match it.
 
 package phoecord:plugin@1.0.0;
 
@@ -60,6 +69,8 @@ interface types {
         rest-response(rest-kind),
         dispatch(string),
         send(s64),
+        /// A UI event, by name (`menu_action`).
+        ui(string),
     }
 
     record rest-kind {
@@ -78,6 +89,8 @@ interface types {
         dispatch(dispatch),
         /// A client to server gateway payload.
         send(send),
+        /// Something the user did in the Phoenix UI (read-only).
+        ui(ui-event),
     }
 
     record rest-request {
@@ -100,6 +113,15 @@ interface types {
 
     record send {
         op: s64,
+        payload: tree,
+    }
+
+    /// A UI event from a Phoenix loader hook. New events are new names, never new WIT cases:
+    /// - `menu_action`: one of the plugin's `[[menu]]` entries was clicked in a message's context
+    ///   menu; payload `{"entry": <menu id>, "channel_id": "<id>", "message_id": "<id>"}`. Sent to
+    ///   the plugin that declared the entry only.
+    record ui-event {
+        name: string,
         payload: tree,
     }
 

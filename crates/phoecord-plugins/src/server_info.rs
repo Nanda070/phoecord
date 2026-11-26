@@ -18,8 +18,8 @@
 //! user, which the per-plugin rate limit (5 calls per 5 s) makes too slow for a command.
 
 use crate::commands::{Invocation, Kept, Subcommand, invocation, is_interaction, kept_answer};
-use phoecord_core::plugin::{API_VERSION, HostResponse};
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::plugin::HostResponse;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 
 const PLUGIN_ID: &str = "server_info";
 const SUB: &str = "serverinfo";
@@ -37,17 +37,16 @@ pub struct ServerInfo {
 impl ServerInfo {
     pub fn new() -> ServerInfo {
         ServerInfo {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "ServerInfo".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Show facts about a server: owner, age, boosts, channels, roles"
-                    .into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("ServerInfo".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "ServerInfo",
+                    env!("CARGO_PKG_VERSION"),
+                    "Show facts about a server: owner, age, boosts, channels, roles",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("ServerInfo".into());
+                m
             },
             kept: Kept::default(),
         }

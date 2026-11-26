@@ -187,7 +187,30 @@ impl Guest for TestGuest {
             }
             .with_route(&r.route),
             Event::RestResponse(_) | Event::Send(_) => outcome(Verdict::Pass),
+            // Logs the UI event's name and its `entry` field.
+            Event::Ui(u) => {
+                let entry = u.payload.text_of("entry").unwrap_or_default();
+                host::log(&format!("ui {} {entry}", u.name));
+                outcome(Verdict::Pass)
+            }
         }
+    }
+}
+
+trait TextOf {
+    fn text_of(&self, key: &str) -> Option<String>;
+}
+
+impl TextOf for Tree {
+    /// The string under `key` of the root map.
+    fn text_of(&self, key: &str) -> Option<String> {
+        let Some(Node::Map(pairs)) = self.nodes.first() else {
+            return None;
+        };
+        pairs.iter().find_map(|(k, v)| match (self.nodes.get(*k as usize)?, self.nodes.get(*v as usize)?) {
+            (Node::String(k), Node::String(v)) if k == key => Some(v.clone()),
+            _ => None,
+        })
     }
 }
 

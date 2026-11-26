@@ -568,13 +568,12 @@ impl Raw {
                 Some(self.raw_body.to_vec()),
             ),
         };
-        HostResponse {
-            status: self.status,
-            body,
-            text,
-            headers,
-            bytes,
-        }
+        let mut r = HostResponse::new(self.status);
+        r.body = body;
+        r.text = text;
+        r.headers = headers;
+        r.bytes = bytes;
+        r
     }
 }
 

@@ -21,8 +21,7 @@
 //! "test" button (Phase 2 or never; the proxy cannot speak).
 
 use crate::state::{Guilds, Shared, Users, VoiceChange, VoiceStates, dispatch_data, is_one_of};
-use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use std::collections::HashMap;
 
 const PLUGIN_ID: &str = "vc_narrator";
@@ -168,16 +167,16 @@ pub struct VcNarrator {
 impl VcNarrator {
     pub fn new() -> VcNarrator {
         VcNarrator {
-            manifest: Manifest {
-                id: PLUGIN_ID.into(),
-                name: "VcNarrator".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Announce voice joins and leaves as notifications (no speech)".into(),
-                authors: vec!["Cheterin Group".into()],
-                vencord: Some("VcNarrator".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: Vec::new(),
+            manifest: {
+                let mut m = Manifest::new(
+                    PLUGIN_ID,
+                    "VcNarrator",
+                    env!("CARGO_PKG_VERSION"),
+                    "Announce voice joins and leaves as notifications (no speech)",
+                );
+                m.authors = vec!["Cheterin Group".into()];
+                m.vencord = Some("VcNarrator".into());
+                m
             },
             state: Shared::default(),
         }
