@@ -197,9 +197,10 @@ fn analyze(log: &Logger) -> Option<Report> {
         env!("CARGO_PKG_VERSION"),
         exe.display()
     ));
-    // Set by `phoecord launch --channel phoenix` (2.2.8). Nothing acts on it yet: the in-process
-    // transport (2.2.7) reads it to decide whether to install the network hooks.
-    match crate::choice::Launched::from_env() {
+    // Set by `phoecord launch --channel phoenix` (2.2.8): in `in-process` the loader starts the
+    // transport itself (2.2.7, after the build is known).
+    let launched = crate::choice::Launched::from_env();
+    match &launched {
         Some(l) => log.log(&format!("launched with transport {}", l.mode.name())),
         None => log.log("no transport from phoecord launch: proxy-era behaviour"),
     }
@@ -273,7 +274,13 @@ fn analyze(log: &Logger) -> Option<Report> {
     }
     let kind = version::ClientKind::of(&exe.to_string_lossy(), v.file_version.as_deref());
     if kind == version::ClientKind::Phoenix {
-        report_network_plan(log, sigs, text, &v, image_len());
+        let found = report_network_plan(log, sigs, text, &v, image_len());
+        if let Some(l) = launched
+            .as_ref()
+            .filter(|l| l.mode == crate::choice::Mode::InProcess)
+        {
+            start_in_process(l, found, &v.text_hash);
+        }
     } else {
         log.log("Electron client: the in-process network hooks do not apply");
     }
@@ -301,16 +308,15 @@ fn image_len() -> u32 {
 }
 
 /// Logs which network entry points this Phoenix build could run in-process, and whether the
-/// launch would (all or nothing, 2.2.8). The transport itself is started by the launch mode of
-/// 2.2.8 once the loader builds its own `Engine` from `config.toml`; until then the proxy carries
-/// the traffic and nothing is hooked here.
+/// launch would (all or nothing, 2.2.8); returns what the locators found. The transport is
+/// started only by an `in-process` launch ([`start_in_process`]).
 fn report_network_plan(
     log: &Logger,
     sigs: &[signatures::Signature],
     text: &[u8],
     v: &version::ClientVersion,
     image_len: u32,
-) {
+) -> crate::hooks::found::HookPlan {
     let found = crate::hooks::found::HookPlan::locate(&crate::hooks::found::Scan {
         sigs,
         text,
@@ -329,4 +335,34 @@ fn report_network_plan(
     } else {
         "network: through the proxy for this launch"
     });
+    found
+}
+
+/// An `in-process` launch (2.2.8): the loader runs the plugin chain (2.2.7). On other targets
+/// than Windows x64 there is no detour, so nothing starts.
+fn start_in_process(
+    launched: &crate::choice::Launched,
+    found: crate::hooks::found::HookPlan,
+    text_hash: &str,
+) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        // SAFETY: a null module name returns the host exe's base, mapped for the life of the
+        // process.
+        let base = unsafe { GetModuleHandleW(std::ptr::null()) } as usize;
+        let log: crate::hooks::guard::LogFn =
+            std::sync::Arc::new(|l: &str| Logger::from_env().log(l));
+        crate::start::start(
+            launched,
+            found,
+            base..base + image_len() as usize,
+            text_hash,
+            log,
+        );
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        let _ = (launched, found, text_hash);
+        Logger::from_env().log("in-process: not on this architecture; nothing hooked");
+    }
 }

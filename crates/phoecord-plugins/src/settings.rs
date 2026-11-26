@@ -44,7 +44,6 @@ pub const KNOWN: &[&str] = &[
     "send_timestamps",
     "silent_delete",
     "silent_message_toggle",
-    "show_hidden_channels",
     "translate",
     "valid_reply",
     "valid_user",
@@ -866,12 +865,6 @@ pub fn specs(id: &str) -> Vec<SettingSpec> {
                 "setting-auto-disable",
             ),
         ],
-        "show_hidden_channels" => vec![SettingSpec::new(
-            "rewrite_payload",
-            SettingKind::Bool,
-            Val::Bool(false),
-            "setting-rewrite-payload",
-        )],
         "translate" => vec![
             SettingSpec::new(
                 "sentInput",

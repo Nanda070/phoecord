@@ -15,6 +15,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 phoecord-core = { workspace = true, optional = true }
 phoecord-transport = { workspace = true, optional = true }
+phoecord-plugin-runtime = { workspace = true, optional = true }
+phoecord-plugins = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 sha2 = "0.11"
@@ -45,7 +47,13 @@ windows-sys = { version = "0.61", features = [
 # The DLL itself: `DllMain`, export forwarding, hooks. The proxy depends on this crate without it,
 # for the IPC protocol and the pipe server only.
 default = ["dll"]
-dll = ["dep:retour", "dep:phoecord-core", "dep:phoecord-transport"]
+dll = [
+    "dep:retour",
+    "dep:phoecord-core",
+    "dep:phoecord-transport",
+    "dep:phoecord-plugin-runtime",
+    "dep:phoecord-plugins",
+]
 
 [dev-dependencies]
 phoecord-plugin-runtime.workspace = true

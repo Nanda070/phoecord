@@ -232,6 +232,23 @@ fn remove_own_ca_files(env: &Env, entries: &[Entry], report: &mut UninstallRepor
             report.removed.push(Step::File { path });
         }
     }
+    // Made while PhoeCord runs, never logged, and PhoeCord's own: the dev console token, the launch
+    // log, the window's onboarding marker (a reinstall shows the onboarding again) and the update
+    // state with any downloaded installer. `plugins/` goes only when empty.
+    for name in ["dev-token", "launch.log", "onboarded"] {
+        let path = env.data_dir.join(name);
+        if std::fs::remove_file(&path).is_ok() {
+            report.removed.push(Step::File { path });
+        }
+    }
+    let updates = env.data_dir.join(crate::update::DIR);
+    if std::fs::remove_dir_all(&updates).is_ok() {
+        report.removed.push(Step::Dir { path: updates });
+    }
+    let plugins = env.data_dir.join("plugins");
+    if std::fs::remove_dir(&plugins).is_ok() {
+        report.removed.push(Step::Dir { path: plugins });
+    }
 }
 
 /// With every step undone: drop `install.log` if still there and the data folder if it is empty
@@ -368,11 +385,26 @@ mod tests {
         // `launch` made the CA before `setup` ran, so the log never claimed it.
         phoecord_proxy::ca::Authority::load_or_create(&e.data_dir).unwrap();
         std::fs::write(e.data_dir.join("config.toml"), b"x").unwrap();
+        // What a running PhoeCord leaves: none of it is in the log.
+        for f in ["dev-token", "launch.log", "onboarded"] {
+            std::fs::write(e.data_dir.join(f), b"x").unwrap();
+        }
+        std::fs::create_dir_all(e.data_dir.join("updates")).unwrap();
+        std::fs::write(e.data_dir.join("updates/state.json"), b"{}").unwrap();
+        std::fs::create_dir_all(e.data_dir.join("plugins")).unwrap();
+        std::fs::create_dir_all(e.data_dir.join("plugins/mine")).unwrap();
         let sys = FakeSystem::default();
         install(&e, &sys).unwrap();
         let r = uninstall_all(&e, &sys).unwrap();
         assert!(r.is_clean(), "{:?}", r.failed);
-        for gone in ["ca.pem", "ca.key", "install.log"] {
+        for gone in [
+            "ca.pem",
+            "ca.key",
+            "install.log",
+            "dev-token",
+            "launch.log",
+            "onboarded",
+        ] {
             assert!(!e.data_dir.join(gone).exists(), "{gone} left");
             assert!(
                 r.removed
@@ -382,7 +414,10 @@ mod tests {
                 r.removed
             );
         }
+        assert!(!e.data_dir.join("updates").exists());
+        // The user's config and plugin packages stay.
         assert!(e.data_dir.join("config.toml").is_file());
+        assert!(e.data_dir.join("plugins/mine").is_dir());
         assert!(e.data_dir.exists());
     }
 

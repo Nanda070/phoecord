@@ -13,21 +13,21 @@ Visual plugins and panels are in scope, not only network ones: every 🎨 plugin
 | Layer | What it means | When | Count |
 |:---|:---|:---|---:|
 | 🌐 Network | Done fully in the proxy; works on today's Discord and on Phoenix | Phase 1 (stage 1.2) | 39 |
-| 🌐 + 🎨 | Data part in the proxy now (or a `/phoecord` command), on-screen part with UI hooks | Phase 1 + Phase 2 | 29 |
+| 🌐 + 🎨 | Data part in the proxy now (or a `/phoecord` command), on-screen part with UI hooks | Phase 1 + Phase 2 | 28 |
 | 🎨 UI | Needs hooks into the client's own code | Phase 2 (from stage 2.3) | 88 |
 | 🖌️ Theme | Done by the theme engine (palette, spacing) | Phase 2 (stage 2.3) | 3 |
 | ♻️ Replaced | PhoeCord provides it natively in another form | as noted | 6 |
-| ⛔ N/A | Web-only, DevTools-only, Vencord internals or out of scope | never | 18 |
+| ⛔ N/A | Web-only, DevTools-only, Vencord internals or out of scope | never | 19 |
 
-Total: 169 Vencord plugins, 4 Vencord core modules, 10 userplugins. Phase 1 ships **68** of them, fully or in their network part.
+Total: 169 Vencord plugins, 4 Vencord core modules, 10 userplugins. Phase 1 ships **67** of them, fully or in their network part.
 
 Release targets (owner's rulings, 2026-11-26), in the **v1.0** column of every table:
 
 | v1.0 | What it means | Count |
 |:---|:---|---:|
-| `v1.0` | In v1.0, network and on-screen parts: every 🌐 and 🌐 + 🎨 plugin, the theme engine (🖌️), 2.4.1's ten and the 30 🎨 plugins below | 98 |
+| `v1.0` | In v1.0, network and on-screen parts: every 🌐 and 🌐 + 🎨 plugin, the theme engine (🖌️), 2.4.1's nine and the 30 🎨 plugins below | 97 |
 | `1.x` | After v1.0, until parity | 59 |
-| `—` | Not in any release: ⛔, ♻️ (PhoeCord does it its own way), and FakeDeafenDetector, USRBG, Decor and TrustMeBro (ruled out; ReviewDB writes and FixImagesQuality's default mode are out too, their other parts stay) | 28 |
+| `—` | Not in any release: ⛔ (ShowHiddenChannels among them, removed 2026-11-26), ♻️ (PhoeCord does it its own way), and FakeDeafenDetector, USRBG, Decor and TrustMeBro (ruled out; ReviewDB writes and FixImagesQuality's default mode are out too, their other parts stay) | 29 |
 
 The 30 🎨 plugins of v1.0: BetterFolders, ShowMeYourName, RoleColorEverywhere, CallTimer, ImageZoom, PinDMs, ShowConnections, ReverseImageSearch, FavoriteEmojiFirst, MessageClickActions, ReplyTimestamp, TypingTweaks, VolumeBooster, VoiceDownload, AlwaysTrust, SpotifyControls, CopyUserURLs, BetterRoleContext, ShowAllMessageButtons, UserMessagesPronouns, ForceOwnerCrown, BiggerStreamPreview, ExpressionManager, ShikiCodeblocks, QuickReply, NoUnblockToJump, ShowTimeoutDuration, MoreQuickReactions, PictureInPicture, BlurNSFW. No usage data exists, so this is a judgment, not a measurement; reserves: ServerListIndicators, MutedServersActivityBadge, AlwaysAnimate, CopyEmojiMarkdown, FullSearchContext, KeepCurrentChannel, oneko, BetterActivities.
 
@@ -160,7 +160,7 @@ The 30 🎨 plugins of v1.0: BetterFolders, ShowMeYourName, RoleColorEverywhere,
 | ShikiCodeblocks | VS Code-style code blocks | 🎨 UI | v1.0 | 2 |
 | ShowAllMessageButtons | Always show all message buttons | 🎨 UI | v1.0 | 2 |
 | ShowConnections | Connected accounts in popouts | 🎨 UI | v1.0 | 2 |
-| ShowHiddenChannels | Show channels you cannot open | 🌐 + 🎨 | v1.0 | done: data — `/phoecord hidden`; optional READY rewrite `rewrite_payload` (off, ban risk) / 2 (lock icon, hidden page) |
+| ShowHiddenChannels | Show channels you cannot open | ⛔ N/A | — | removed (owner's ruling, 2026-11-26): no longer works on any Discord client |
 | ShowHiddenThings | Show hidden and moderator-only things | 🌐 + 🎨 | v1.0 | done: data — timeouts and paused invites, `/phoecord hiddenthings` / 2 (icons, mod view) |
 | ShowMeYourName | Usernames next to nicknames | 🎨 UI | v1.0 | 2 |
 | ShowTimeoutDuration | How long a timeout lasts | 🎨 UI | v1.0 | 2 |

@@ -56,6 +56,11 @@ pub mod hooks;
 #[cfg(feature = "dll")]
 pub mod transport;
 
+/// Starting the in-process transport in a launch that chose it: the engine from `config.toml`,
+/// the transport, the clock and the `send` detour (task 2.2.7).
+#[cfg(feature = "dll")]
+pub mod start;
+
 #[cfg(all(windows, feature = "dll"))]
 pub mod entry;
 #[cfg(all(windows, feature = "dll"))]
