@@ -13,3 +13,4 @@ setting-show-logo = Показывать логотип сервиса
 setting-clickable-links = Кликабельные ссылки на трек
 setting-hide-with-activity = Скрывать при другой активности
 setting-hide-with-spotify = Скрывать, пока играет Spotify
+setting-listenbrainz-host = Хост API ListenBrainz (свой сервер нужно ещё добавить в fetch_hosts)

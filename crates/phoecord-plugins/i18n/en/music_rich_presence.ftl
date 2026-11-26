@@ -13,3 +13,4 @@ setting-show-logo = Show the service logo
 setting-clickable-links = Clickable track links
 setting-hide-with-activity = Hide while another activity shows
 setting-hide-with-spotify = Hide while Spotify plays
+setting-listenbrainz-host = ListenBrainz API host (a self-hosted one also needs fetch_hosts)

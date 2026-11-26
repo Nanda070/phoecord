@@ -545,6 +545,12 @@ pub fn specs(id: &str) -> Vec<SettingSpec> {
                 "setting-username",
             ),
             SettingSpec::new(
+                "listenbrainzHost",
+                SettingKind::Text,
+                Val::Str("api.listenbrainz.org".into()),
+                "setting-listenbrainz-host",
+            ),
+            SettingSpec::new(
                 "apiKey",
                 SettingKind::Text,
                 Val::Str("".into()),
