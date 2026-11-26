@@ -1,0 +1,102 @@
+---
+import { t, type Lang } from "../i18n";
+import { REPO } from "../lib/release";
+import {
+  CONTRIBUTORS,
+  GROUP_LINKS,
+  HELPED,
+  OTHERS,
+  PROJECTS,
+  TEAM,
+  THANKS,
+} from "../lib/credits";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = t(lang).creditsPage;
+---
+<section class="page-head credits-head">
+  <div class="wrap">
+    <p class="eyebrow">{s.group}</p>
+    <h1>{s.title}</h1>
+    <p>{s.lead}</p>
+    <div class="hero-actions">
+      {GROUP_LINKS.map((l) => <a class="btn btn-ghost btn-sm" href={l.href} rel="noopener">{l.label}</a>)}
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="section credits-section">
+    <h2>{s.team}</h2>
+    <div class="team-grid">
+      {TEAM.map((m) => (
+        <div class="card member">
+          <p class="eyebrow">{m.role[lang]}</p>
+          <h3>{m.name}</h3>
+          {m.handle && <p class="handle">{m.handle}</p>}
+          <p>{m.area[lang]}</p>
+          {m.links.length > 0 && (
+            <div class="member-links">
+              {m.links.map((l) => <a href={l.href} rel="noopener">{l.label}</a>)}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+    <p class="others"><a href={CONTRIBUTORS} rel="noopener">{OTHERS[lang]}</a></p>
+
+    <div class="helped">
+      <p class="eyebrow">{s.helped}</p>
+      <ul>
+        {HELPED[lang].map((h) => <li>{h}</li>)}
+        <li>…</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section credits-section">
+    <h2>{s.thanks}</h2>
+    <p class="section-lead">{s.thanksLead}</p>
+    <div class="cards">
+      {THANKS.map((x) => (
+        <a class="card project" href={x.href} rel="noopener">
+          <h3>{x.name}</h3>
+          <p>{x.text[lang]}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="section credits-section">
+    <h2>{s.contact}</h2>
+    <div class="card contact">
+      <p>{s.contactLead}</p>
+      <dl>
+        <dt>Discord</dt><dd>nandak070</dd>
+        <dt>Telegram</dt><dd><a href="https://t.me/nanda070" rel="noopener">nanda070</a></dd>
+        <dt>GitHub</dt><dd><a href={REPO} rel="noopener">Nanda070/phoecord</a></dd>
+      </dl>
+      <p class="muted"><a href={`${REPO}/blob/main/SECURITY.md`} rel="noopener">{s.security}</a></p>
+    </div>
+  </section>
+
+  <section class="section credits-section">
+    <h2>{s.projects}</h2>
+    <p class="section-lead">{s.projectsLead}</p>
+    {PROJECTS.map((g) => (
+      <div class="project-group">
+        <p class="eyebrow">{g.title[lang]}</p>
+        <div class="plugin-grid">
+          {g.projects.map((p) => (
+            <a class="plugin project" href={p.href} rel="noopener">
+              <h3>{p.name}</h3>
+              <p>{p.text[lang]}</p>
+              <span class="open">{s.open} →</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    ))}
+  </section>
+</div>

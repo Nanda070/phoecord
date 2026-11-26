@@ -11,7 +11,7 @@ const en = {
   title: "PhoeCord: plugins for Discord's native client",
   description:
     "PhoeCord brings Vencord-style plugins to Discord's native Phoenix client and to today's Discord. Free, open source, GPL-3.0.",
-  nav: { home: "Home", plugins: "Plugins", download: "Download", source: "Source", discord: "Discord" },
+  nav: { home: "Home", plugins: "Plugins", download: "Download", credits: "Credits", source: "Source", discord: "Discord" },
   switchLang: "Русский",
   hero: {
     tag: "For Discord's new native client",
@@ -79,6 +79,21 @@ const en = {
     uninstallText: "Uninstall from Installed apps (Windows), or run phoecord uninstall. Both remove the certificate, the shortcuts and every file PhoeCord added.",
     verify: "Every release is signed: SHA256SUMS comes with a minisign signature.",
   },
+  creditsPage: {
+    group: "Cheterin Group",
+    title: "Credits",
+    lead: "PhoeCord is part of Cheterin Group — a small development crew behind bots, Minecraft plugins, and open-source tools.",
+    team: "Team",
+    helped: "Also helped",
+    thanks: "Thanks",
+    thanksLead: "PhoeCord stands on other people's open-source work.",
+    contact: "Contact",
+    contactLead: "Questions about PhoeCord, plugins or the project — write to Nanda.",
+    security: "A vulnerability or a leak? Report it privately, as SECURITY.md says.",
+    projects: "Other Cheterin Group projects",
+    projectsLead: "A little more from the same workshop.",
+    open: "Open",
+  },
 };
 
 const ru: typeof en = {
@@ -87,7 +102,7 @@ const ru: typeof en = {
   title: "PhoeCord: плагины для нативного клиента Discord",
   description:
     "PhoeCord добавляет плагины в стиле Vencord в нативный клиент Discord Phoenix и в нынешний Discord. Бесплатно, открытый код, GPL-3.0.",
-  nav: { home: "Главная", plugins: "Плагины", download: "Скачать", source: "Код", discord: "Discord" },
+  nav: { home: "Главная", plugins: "Плагины", download: "Скачать", credits: "Авторы", source: "Код", discord: "Discord" },
   switchLang: "English",
   hero: {
     tag: "Для нового нативного клиента Discord",
@@ -154,6 +169,21 @@ const ru: typeof en = {
     uninstallTitle: "Удаление",
     uninstallText: "Удалите через «Установленные приложения» (Windows) или выполните phoecord uninstall. Оба способа убирают сертификат, ярлыки и все файлы, которые добавил PhoeCord.",
     verify: "Каждый релиз подписан: к SHA256SUMS прилагается подпись minisign.",
+  },
+  creditsPage: {
+    group: "Cheterin Group",
+    title: "Авторы",
+    lead: "PhoeCord — часть группы разработки Cheterin Group. Мы делаем ботов, Minecraft-плагины и open-source инструменты.",
+    team: "Команда",
+    helped: "Также помогали",
+    thanks: "Спасибо",
+    thanksLead: "PhoeCord стоит на чужой открытой работе.",
+    contact: "Связь",
+    contactLead: "По вопросам PhoeCord, плагинов и проекта — пишите Nanda.",
+    security: "Нашли уязвимость или утечку? Сообщите приватно, как описано в SECURITY.md.",
+    projects: "Другие проекты Cheterin Group",
+    projectsLead: "Ещё немного из той же мастерской.",
+    open: "Открыть",
   },
 };
 

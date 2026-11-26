@@ -195,3 +195,29 @@ pre.code { margin: 0; padding: 18px; overflow-x: auto; background: var(--bg-2); 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Credits */
+.eyebrow { margin: 0; font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--orange); }
+.credits-head .hero-actions { justify-content: center; margin-top: 22px; }
+.credits-section { padding-top: 70px; }
+.section-lead { text-align: center; color: var(--muted); margin: -18px 0 26px; }
+.team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.member h3 { margin: 8px 0 2px; font-size: 1.3rem; }
+.member .handle { margin: 0 0 10px; font-family: var(--mono); font-size: .9rem; color: var(--muted); }
+.member-links { display: flex; gap: 14px; margin-top: 14px; font-weight: 600; }
+.others { text-align: center; margin: 22px 0 0; color: var(--muted); }
+.others a { color: var(--muted); border-bottom: 1px dashed var(--border); }
+.others a:hover { color: var(--gold); }
+.helped { margin: 40px auto 0; max-width: 560px; text-align: center; }
+.helped ul { list-style: none; padding: 0; margin: 12px 0 0; color: var(--muted); }
+.helped li { padding: 3px 0; }
+a.project { display: block; color: var(--text); }
+a.project:hover { color: var(--text); border-color: rgba(255, 138, 31, .45); }
+.project .open { font-size: .85rem; font-weight: 600; color: var(--orange); }
+.project-group { margin-top: 34px; }
+.project-group .eyebrow { margin-bottom: 14px; }
+.contact { max-width: 620px; margin: 0 auto; }
+.contact > p:first-child { margin-top: 0; }
+.contact dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 16px 0; }
+.contact dt { color: var(--muted); }
+.contact dd { margin: 0; font-family: var(--mono); }

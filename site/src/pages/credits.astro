@@ -1,0 +1,8 @@
+---
+import Base from "../layouts/Base.astro";
+import Credits from "../components/Credits.astro";
+import { t } from "../i18n";
+---
+<Base lang="en" path="/credits" title={t("en").creditsPage.title}>
+  <Credits lang="en" />
+</Base>

@@ -45,6 +45,7 @@ const active = (p: string) => (p === path ? "active" : undefined);
         <nav>
           <a href={link("/plugins")} class={active("/plugins")}>{s.nav.plugins}</a>
           <a href={link("/download")} class={active("/download")}>{s.nav.download}</a>
+          <a href={link("/credits")} class={active("/credits")}>{s.nav.credits}</a>
           <a href={REPO} rel="noopener">{s.nav.source}</a>
           <span class="lang" aria-label={s.switchLang}>
             {lang === "en" ? <b aria-current="true">EN</b> : <a href={otherHref} hreflang="en">EN</a>}
@@ -71,6 +72,7 @@ const active = (p: string) => (p === path ? "active" : undefined);
         <div class="footer-links">
           <a href={link("/plugins")}>{s.nav.plugins}</a>
           <a href={link("/download")}>{s.nav.download}</a>
+          <a href={link("/credits")}>{s.nav.credits}</a>
           <a href={REPO} rel="noopener">GitHub</a>
           <a href={DISCORD} rel="noopener">Discord</a>
         </div>
