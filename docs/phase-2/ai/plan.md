@@ -371,7 +371,7 @@ Was the open part of task 1.2.15 (moved when Phase 1 closed, ruling 2026-11-26).
 
 **Done when:** with the default mode on, images in chat load at original resolution on Phoenix; nothing changes with the plugin off, and the proxy-side behaviour on Electron stays as it is.
 
-### 2.3.10. Generic view-render wrap and message-row accessories (owner open)
+### 2.3.10. Generic view-render wrap and message-row accessories (matvee)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -382,7 +382,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin adds an element to a message row through the frozen API, and a locator miss turns off only the wrap it guards on Phoenix.
 
-### 2.3.11. Every context menu (owner open)
+### 2.3.11. Every context menu (Nanda)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -393,7 +393,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** each menu kind takes plugin entries, and a click reaches the plugin as a UI event on Phoenix.
 
-### 2.3.12. Modals (owner open)
+### 2.3.12. Modals (Nanda)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -404,7 +404,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin opens and closes a modal; Escape and a click outside close it on Phoenix.
 
-### 2.3.13. User names (owner open)
+### 2.3.13. User names (matvee)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -415,7 +415,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin changes the text, colour and trailing icons of a name in chat, the member list and mentions on Phoenix.
 
-### 2.3.14. Profiles (owner open)
+### 2.3.14. Profiles (Nanda)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -426,7 +426,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin adds a section to the profile popout and the full profile on Phoenix.
 
-### 2.3.15. Chat input (owner open)
+### 2.3.15. Chat input (buslan)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -437,7 +437,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin adds a button to the chat bar and reads or changes the draft before send on Phoenix.
 
-### 2.3.16. Voice and audio (owner open)
+### 2.3.16. Voice and audio (buslan)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -448,7 +448,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin shows an element in the voice panel and sets a user's volume above the client's limit on Phoenix.
 
-### 2.3.17. Account panel (owner open)
+### 2.3.17. Account panel (buslan)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -459,7 +459,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin adds an element above the account panel on Phoenix.
 
-### 2.3.18. Media (owner open)
+### 2.3.18. Media (buslan)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -470,7 +470,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin wraps an image or video element (blur, zoom lens, pop-out) and the stream preview size on Phoenix.
 
-### 2.3.19. Channel and server lists (owner open)
+### 2.3.19. Channel and server lists (buslan)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -481,7 +481,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin adds, reorders and decorates entries in both lists on Phoenix.
 
-### 2.3.20. Client behaviour patches (owner open)
+### 2.3.20. Client behaviour patches (Nanda)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -492,7 +492,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** each patch is one located function with its own on/off, and a miss turns off only that patch on Phoenix.
 
-### 2.3.21. Overlay (owner open)
+### 2.3.21. Overlay (matvee)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -503,7 +503,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a plugin notification shows as a toast inside Phoenix on Phoenix.
 
-### 2.3.22. Themes picker (owner open)
+### 2.3.22. Themes picker (matvee)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
@@ -514,7 +514,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Done when:** a theme is picked and applied without a restart on Phoenix.
 
-### 2.3.23. Toolbox (owner open)
+### 2.3.23. Toolbox (Nanda)
 
 Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
 
