@@ -2,7 +2,10 @@ name: Release
 
 # A `v*` tag builds the CLI (and the loader `version.dll` on Windows) for Linux, Windows and macOS,
 # calls package.yml for the native installers (.exe, .dmg, .deb, .rpm), writes SHA256SUMS over every
-# file and publishes a GitHub release, which installed copies pick up as an automatic update (2.4.5). Everything is unsigned (no code signing at any stage) and uses only GITHUB_TOKEN.
+# file and leaves a draft GitHub release. The owner then signs SHA256SUMS with the offline minisign
+# key and publishes it (scripts/sign-release.ps1, audit A1 of 2.4.6); installed copies pick up only
+# signed releases as an automatic update (2.4.5). No code signing; CI uses only GITHUB_TOKEN and never
+# sees the signing key.
 # `workflow_dispatch` with dry_run builds and checksums but publishes nothing.
 # Tags are pushed by the owner only (docs/GOVERNANCE.md, "Releases"). A tag with `-` is a prerelease.
 
@@ -43,6 +46,19 @@ jobs:
           if [ "$GITHUB_REF_NAME" != "v$version" ]; then
             echo "::error::tag $GITHUB_REF_NAME does not match Cargo.toml version $version (expected v$version)"
             exit 1
+          fi
+      - name: The update key is in the tree
+        shell: bash
+        run: |
+          # Installed copies refuse updates signed with no key, and a build without the key
+          # (update-key.pub holding only its comment line) could never be updated automatically.
+          lines=$(grep -c '[^[:space:]]' crates/phoecord-installer/update-key.pub || true)
+          if [ "$lines" -lt 2 ]; then
+            if [ "$GITHUB_REF_TYPE" = tag ]; then
+              echo "::error::crates/phoecord-installer/update-key.pub has no key: run scripts/new-update-key.ps1 and commit the public key before tagging"
+              exit 1
+            fi
+            echo "::warning::crates/phoecord-installer/update-key.pub has no key yet"
           fi
 
   binaries:
@@ -178,11 +194,11 @@ jobs:
 
           ## Updating
 
-          An installed PhoeCord checks for a new release once a day, downloads it, checks it against `SHA256SUMS` and installs it the next time the PhoeCord window or its background proxy starts (on Linux, the window asks for your password). Turn this off in the window's Settings, or with `[update] auto = false` in `config.toml`. To update by hand, install the new file over the old one; the command-line archives are never updated automatically.
+          An installed PhoeCord checks for a new release once a day, downloads it, checks it against `SHA256SUMS` and the owner's signature `SHA256SUMS.minisig`, and installs it the next time the PhoeCord window or its background proxy starts (on Linux, the window asks for your password). Turn this off in the window's Settings, or with `[update] auto = false` in `config.toml`. To update by hand, install the new file over the old one; the command-line archives are never updated automatically.
 
           ## Before you install
 
-          These builds have no publisher certificate (the Mac app is only ad-hoc signed). Check them against `SHA256SUMS` before you run them.
+          These builds have no publisher certificate (the Mac app is only ad-hoc signed). Check them against `SHA256SUMS` before you run them. `SHA256SUMS` itself is signed with the owner's minisign key: with [minisign](https://jedisct1.github.io/minisign/) installed, `minisign -Vm SHA256SUMS -p update-key.pub` (the key is `crates/phoecord-installer/update-key.pub` in the repository) must print "Signature and comment signature verified" and `phoecord <version>`.
 
           - **Windows:** SmartScreen shows "Windows protected your PC". Click **More info**, then **Run anyway**. Verify a file with `Get-FileHash .\<file> -Algorithm SHA256` and compare it with the line in `SHA256SUMS`.
           - **macOS:** Gatekeeper blocks the app on first start. Right-click it, choose **Open**, then **Open** again. If macOS still refuses, open System Settings, Privacy and Security, scroll to the message about PhoeCord and choose **Open Anyway**. As a last resort, run `xattr -dr com.apple.quarantine /Applications/PhoeCord.app` in Terminal.
@@ -197,12 +213,13 @@ jobs:
           flags=()
           case "$GITHUB_REF_NAME" in *-*) flags+=(--prerelease) ;; esac
           if [ -n "$AUTO_NOTES" ]; then flags+=(--generate-notes); fi
-          # Created as a draft and published once every file is uploaded: installed copies look for
-          # updates in published releases and refuse one whose installer or SHA256SUMS is missing.
+          # Left as a draft: the owner checks the files, signs SHA256SUMS offline and publishes it with
+          # scripts/sign-release.ps1. Installed copies look for updates in published releases only and
+          # refuse one without a valid SHA256SUMS.minisig.
           gh release create "$GITHUB_REF_NAME" release/* \
             --title "$GITHUB_REF_NAME" \
             --notes-file notes.md \
             --verify-tag \
             --draft \
             "${flags[@]}"
-          gh release edit "$GITHUB_REF_NAME" --draft=false
+          echo "::notice::$GITHUB_REF_NAME is a draft: run scripts/sign-release.ps1 -Tag $GITHUB_REF_NAME to sign and publish it"

@@ -5,9 +5,12 @@
 //! 1. **Check** ([`Updater::check`], at most once a day, in the background of the installer window
 //!    and of `phoecord run`): read the release list, take the newest release that is not a draft,
 //!    not marked prerelease and has no `-` in its tag; if it is newer than this build, download the
-//!    installer that matches how PhoeCord was installed ([`Kind`]) and the release's `SHA256SUMS`,
-//!    and keep the installer in `<data>/updates/` only when its hash is the one listed. A missing
-//!    asset, a missing sums file, a file that is not listed in it or any mismatch is refused.
+//!    installer that matches how PhoeCord was installed ([`Kind`]), the release's `SHA256SUMS` and
+//!    its minisign signature `SHA256SUMS.minisig`; the signature must verify with the public key
+//!    compiled into this build ([`UPDATE_KEY`]) and its trusted comment must name the release's
+//!    version ([`trusted_comment`]); the installer is kept in `<data>/updates/` only when its hash
+//!    is the one listed. A build without a key, a missing or bad signature, a missing asset, a
+//!    missing sums file, a file that is not listed in it or any mismatch is refused.
 //! 2. **Apply** ([`Updater::ready`] then [`plan`], at the next start of the window or of
 //!    `phoecord run`): the downloaded file is hashed again, then handed to the OS's own installer
 //!    (Windows: the NSIS setup, silent; macOS: the `.app` is replaced from the `.dmg`; Linux: `dpkg`
@@ -16,8 +19,9 @@
 //! 3. **Tell** ([`Updater::settle`], at every start): once the running build is the pending
 //!    version, the update is recorded as applied, its file removed, and the window shows it once.
 //!
-//! The binaries are unsigned and the checksums come from the same release: this protects against
-//! a broken download, not against a compromised GitHub account or release (audited in 2.4.6).
+//! The binaries have no publisher certificate, but `SHA256SUMS` is signed by the owner with an
+//! offline minisign key (`scripts/sign-release.ps1`, audit finding A1 of 2.4.6): a compromised
+//! GitHub account or release cannot ship an update without that key.
 //!
 //! Network access goes through [`Fetch`], so tests use a fake and never touch the network.
 
@@ -50,6 +54,18 @@ pub fn current_version() -> Version {
 
 /// The checksum file every release carries (`release.yml`, job `checksums`).
 pub const SUMS: &str = "SHA256SUMS";
+/// The owner's minisign signature of [`SUMS`], added to the draft release by
+/// `scripts/sign-release.ps1` before it is published.
+pub const SUMS_SIG: &str = "SHA256SUMS.minisig";
+/// The minisign public key updates are checked with (`minisign.pub` format: a comment line, then
+/// the key). A file with no key line makes every update refused ([`Refused::NoKey`]);
+/// `release.yml` refuses to build a release from such a tree.
+pub const UPDATE_KEY: &str = include_str!("../update-key.pub");
+/// The trusted comment the owner signs `SHA256SUMS` of `version` with (`minisign -t`). Tied to the
+/// version, so a signed list of one release cannot be reused under another tag.
+pub fn trusted_comment(version: &Version) -> String {
+    format!("phoecord {version}")
+}
 /// Folder in the data folder for downloads and [`State`].
 pub const DIR: &str = "updates";
 const STATE_FILE: &str = "state.json";
@@ -58,6 +74,7 @@ pub const CHECK_EVERY: u64 = 24 * 60 * 60;
 /// Size caps: the release list, the sums file, an installer.
 const LIST_LIMIT: u64 = 4 << 20;
 const SUMS_LIMIT: u64 = 1 << 20;
+const SIG_LIMIT: u64 = 4 << 10;
 const ASSET_LIMIT: u64 = 400 << 20;
 
 /// A published release.
@@ -209,6 +226,25 @@ pub fn parse_sums(text: &str) -> BTreeMap<String, String> {
         .collect()
 }
 
+/// Checks the owner's signature `sig` (a `.minisig` file) of `sums` with `key`, and that its trusted
+/// comment is [`trusted_comment`] of `version`. Only prehashed (current minisign) signatures count.
+pub fn verify_sums(
+    key: &minisign_verify::PublicKey,
+    sums: &[u8],
+    sig: &[u8],
+    version: &Version,
+) -> Result<(), Refused> {
+    let sig = std::str::from_utf8(sig).map_err(|_| Refused::BadSignature)?;
+    let sig = minisign_verify::Signature::decode(sig).map_err(|_| Refused::BadSignature)?;
+    key.verify(sums, &sig, false)
+        .map_err(|_| Refused::BadSignature)?;
+    let comment = sig.trusted_comment().trim_end();
+    if comment != trusted_comment(version) {
+        return Err(Refused::WrongRelease(comment.to_string()));
+    }
+    Ok(())
+}
+
 pub fn sha256_hex(bytes: &[u8]) -> String {
     phoecord_proxy::trust::sha256_hex(bytes)
 }
@@ -323,8 +359,15 @@ pub enum Checked {
 /// Why a release was refused. Kept apart from network errors so the text can say "refused".
 #[derive(Debug, PartialEq, Eq)]
 pub enum Refused {
+    /// This build carries no usable [`UPDATE_KEY`].
+    NoKey,
     NoAsset(String),
     NoSums,
+    NoSignature,
+    /// The signature is malformed, made with another key, or does not match `SHA256SUMS`.
+    BadSignature,
+    /// The signature is valid but its trusted comment names another release.
+    WrongRelease(String),
     NotListed(String),
     Mismatch(String),
 }
@@ -332,6 +375,12 @@ pub enum Refused {
 impl std::fmt::Display for Refused {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Refused::NoKey => write!(f, "this build has no update signing key"),
+            Refused::NoSignature => write!(f, "the release has no {SUMS_SIG}"),
+            Refused::BadSignature => write!(f, "{SUMS_SIG} does not verify with PhoeCord's key"),
+            Refused::WrongRelease(c) => {
+                write!(f, "{SUMS_SIG} was made for another release ({c:?})")
+            }
             Refused::NoAsset(n) => write!(f, "the release has no {n}"),
             Refused::NoSums => write!(f, "the release has no {SUMS}"),
             Refused::NotListed(n) => write!(f, "{n} is not listed in {SUMS}"),
@@ -351,6 +400,8 @@ pub struct Updater<'a> {
     /// `std::env::consts::ARCH`.
     pub arch: String,
     pub url: String,
+    /// `minisign.pub` text; [`UPDATE_KEY`] outside tests.
+    pub key: String,
     pub fetch: &'a dyn Fetch,
 }
 
@@ -363,6 +414,7 @@ impl<'a> Updater<'a> {
             kind: detect(Os::current(), exe, &|p| p.exists()),
             arch: std::env::consts::ARCH.to_string(),
             url: releases_url(),
+            key: UPDATE_KEY.to_string(),
             fetch,
         }
     }
@@ -449,7 +501,16 @@ impl<'a> Updater<'a> {
             .iter()
             .find(|a| a.name == SUMS)
             .ok_or(Refused::NoSums)?;
-        let sums = String::from_utf8_lossy(&self.fetch.get(&sums.url, SUMS_LIMIT)?).into_owned();
+        let sig = rel
+            .assets
+            .iter()
+            .find(|a| a.name == SUMS_SIG)
+            .ok_or(Refused::NoSignature)?;
+        let key = minisign_verify::PublicKey::decode(&self.key).map_err(|_| Refused::NoKey)?;
+        let sums = self.fetch.get(&sums.url, SUMS_LIMIT)?;
+        let sig = self.fetch.get(&sig.url, SIG_LIMIT)?;
+        verify_sums(&key, &sums, &sig, &rel.version)?;
+        let sums = String::from_utf8_lossy(&sums).into_owned();
         let expected = parse_sums(&sums)
             .remove(&name)
             .ok_or_else(|| Refused::NotListed(name.clone()))?;
@@ -798,12 +859,77 @@ mod tests {
         })
     }
 
-    /// A fake GitHub with release 0.6.0 carrying the Windows setup and SHA256SUMS.
+    /// A minisign key made the way `minisign -G` makes one, from a fixed seed.
+    struct TestKey {
+        sk: ed25519_dalek::SigningKey,
+        id: [u8; 8],
+    }
+
+    impl TestKey {
+        fn new(seed: u8) -> TestKey {
+            TestKey {
+                sk: ed25519_dalek::SigningKey::from_bytes(&[seed; 32]),
+                id: [seed; 8],
+            }
+        }
+
+        fn b64(bytes: &[u8]) -> String {
+            use base64::Engine as _;
+            base64::engine::general_purpose::STANDARD.encode(bytes)
+        }
+
+        /// `minisign.pub`.
+        fn public(&self) -> String {
+            let mut bin = b"Ed".to_vec();
+            bin.extend_from_slice(&self.id);
+            bin.extend_from_slice(self.sk.verifying_key().as_bytes());
+            format!(
+                "untrusted comment: minisign public key\n{}\n",
+                Self::b64(&bin)
+            )
+        }
+
+        /// `minisign -S -m <file> -t <comment>`: a prehashed signature (BLAKE2b-512 of the file).
+        fn sign(&self, data: &[u8], comment: &str) -> Vec<u8> {
+            use blake2::Digest as _;
+            use ed25519_dalek::Signer as _;
+            let hash = blake2::Blake2b512::digest(data);
+            let sig = self.sk.sign(&hash).to_bytes();
+            let mut bin = b"ED".to_vec();
+            bin.extend_from_slice(&self.id);
+            bin.extend_from_slice(&sig);
+            let mut global = sig.to_vec();
+            global.extend_from_slice(comment.as_bytes());
+            let global = self.sk.sign(&global).to_bytes();
+            format!(
+                "untrusted comment: signature from minisign secret key\n{}\ntrusted comment: {comment}\n{}\n",
+                Self::b64(&bin),
+                Self::b64(&global)
+            )
+            .into_bytes()
+        }
+    }
+
+    /// The key the fake releases are signed with.
+    fn owner() -> TestKey {
+        TestKey::new(7)
+    }
+
+    /// Puts `text` as release 0.6.0's SHA256SUMS, signed by `owner()` for 0.6.0.
+    fn put_sums(f: &mut FakeFetch, text: &str) {
+        let sig = owner().sign(text.as_bytes(), "phoecord 0.6.0");
+        f.bodies
+            .insert(format!("https://dl.test/v0.6.0/{SUMS}"), text.into());
+        f.bodies
+            .insert(format!("https://dl.test/v0.6.0/{SUMS_SIG}"), sig);
+    }
+
+    /// A fake GitHub with release 0.6.0 carrying the Windows setup, SHA256SUMS and its signature.
     fn github(setup: &[u8], listed: Option<&[u8]>) -> FakeFetch {
         let name = "PhoeCord_0.6.0_x64-setup.exe";
         let list = serde_json::json!([
             release("v0.7.0-rc.1", false, true, &[name]),
-            release("v0.6.0", false, false, &[name, SUMS]),
+            release("v0.6.0", false, false, &[name, SUMS, SUMS_SIG]),
             release("v0.5.0", false, false, &[]),
         ]);
         let mut f = FakeFetch::default();
@@ -815,8 +941,7 @@ mod tests {
             sha256_hex(listed.unwrap_or(setup)),
             "0".repeat(64)
         );
-        f.bodies
-            .insert(format!("https://dl.test/v0.6.0/{SUMS}"), sums.into_bytes());
+        put_sums(&mut f, &sums);
         f
     }
 
@@ -827,7 +952,105 @@ mod tests {
             kind,
             arch: "x86_64".into(),
             url: LIST.into(),
+            key: owner().public(),
             fetch,
+        }
+    }
+
+    fn refused(e: anyhow::Error) -> Refused {
+        e.downcast::<Refused>().expect("a refusal")
+    }
+
+    #[test]
+    fn only_a_release_signed_with_the_compiled_key_is_downloaded() {
+        let t = tempfile::tempdir().unwrap();
+        let setup_url = "https://dl.test/v0.6.0/PhoeCord_0.6.0_x64-setup.exe";
+
+        // No signature file in the release.
+        let mut f = github(b"setup", None);
+        let name = "PhoeCord_0.6.0_x64-setup.exe";
+        let list = serde_json::json!([release("v0.6.0", false, false, &[name, SUMS])]);
+        f.bodies.insert(LIST.into(), list.to_string().into_bytes());
+        let e = updater(t.path(), Kind::Nsis, &f)
+            .check(1, true)
+            .unwrap_err();
+        assert_eq!(refused(e), Refused::NoSignature);
+
+        // Signed with another key (a stolen GitHub account with its own key).
+        let mut f = github(b"setup", None);
+        let sums = f.bodies[&format!("https://dl.test/v0.6.0/{SUMS}")].clone();
+        f.bodies.insert(
+            format!("https://dl.test/v0.6.0/{SUMS_SIG}"),
+            TestKey::new(9).sign(&sums, "phoecord 0.6.0"),
+        );
+        let e = updater(t.path(), Kind::Nsis, &f)
+            .check(1, true)
+            .unwrap_err();
+        assert_eq!(refused(e), Refused::BadSignature);
+        assert!(!f.asked.borrow().iter().any(|u| u == setup_url));
+
+        // SHA256SUMS changed after signing (an installer swapped together with its line).
+        let mut f = github(b"evil", None);
+        let good = format!("{}  {name}\n", sha256_hex(b"setup"));
+        let sig = owner().sign(good.as_bytes(), "phoecord 0.6.0");
+        f.bodies
+            .insert(format!("https://dl.test/v0.6.0/{SUMS_SIG}"), sig);
+        let e = updater(t.path(), Kind::Nsis, &f)
+            .check(1, true)
+            .unwrap_err();
+        assert_eq!(refused(e), Refused::BadSignature);
+
+        // A valid signature of another release's list.
+        let mut f = github(b"setup", None);
+        let sums = f.bodies[&format!("https://dl.test/v0.6.0/{SUMS}")].clone();
+        f.bodies.insert(
+            format!("https://dl.test/v0.6.0/{SUMS_SIG}"),
+            owner().sign(&sums, "phoecord 0.5.0"),
+        );
+        let e = updater(t.path(), Kind::Nsis, &f)
+            .check(1, true)
+            .unwrap_err();
+        assert_eq!(refused(e), Refused::WrongRelease("phoecord 0.5.0".into()));
+
+        // Garbage in place of the signature.
+        let mut f = github(b"setup", None);
+        f.bodies.insert(
+            format!("https://dl.test/v0.6.0/{SUMS_SIG}"),
+            b"not a signature".to_vec(),
+        );
+        let e = updater(t.path(), Kind::Nsis, &f)
+            .check(1, true)
+            .unwrap_err();
+        assert_eq!(refused(e), Refused::BadSignature);
+
+        // A build without a key refuses every update.
+        let f = github(b"setup", None);
+        let mut u = updater(t.path(), Kind::Nsis, &f);
+        u.key = UPDATE_KEY.lines().next().unwrap_or_default().to_string();
+        let e = u.check(1, true).unwrap_err();
+        assert_eq!(refused(e), Refused::NoKey);
+
+        // Nothing was kept by any of them.
+        assert!(updater(t.path(), Kind::Nsis, &f).state().pending.is_none());
+        assert!(!t.path().join(DIR).join(name).exists());
+
+        // The owner's signature for this release passes.
+        let f = github(b"setup", None);
+        assert!(matches!(
+            updater(t.path(), Kind::Nsis, &f).check(1, true).unwrap(),
+            Checked::Ready(_)
+        ));
+    }
+
+    #[test]
+    fn the_compiled_key_file_is_a_key_or_a_comment_only() {
+        // `release.yml` refuses to release with the comment-only file; until then it must parse
+        // as "no key", not panic.
+        let mut lines = UPDATE_KEY.lines().filter(|l| !l.trim().is_empty());
+        assert!(lines.next().unwrap().starts_with("untrusted comment:"));
+        if lines.next().is_some() {
+            minisign_verify::PublicKey::decode(UPDATE_KEY)
+                .expect("update-key.pub is a minisign key");
         }
     }
 
@@ -990,10 +1213,7 @@ mod tests {
 
         // SHA256SUMS that does not list the file.
         let mut f = github(b"x", None);
-        f.bodies.insert(
-            format!("https://dl.test/v0.6.0/{SUMS}"),
-            format!("{}  other.exe\n", "0".repeat(64)).into_bytes(),
-        );
+        put_sums(&mut f, &format!("{}  other.exe\n", "0".repeat(64)));
         let e = updater(t.path(), Kind::Nsis, &f)
             .check(1, true)
             .unwrap_err();
