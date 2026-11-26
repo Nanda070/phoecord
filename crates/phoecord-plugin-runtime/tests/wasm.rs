@@ -76,7 +76,13 @@ fn ui_events_reach_a_guest_as_a_name_and_a_payload() {
         channel_id: 1,
         message_id: 2,
     };
+    // A menu click goes only to the plugin that declared the entry, never through `Chain::ui`.
     assert_eq!(chain.ui(&mut host, click), Outcome::Untouched);
+    assert!(host.logs.is_empty());
+    assert_eq!(
+        chain.ui_to(&mut host, "test_guest", click),
+        Some(Outcome::Untouched)
+    );
     assert_eq!(host.logs, vec!["ui menu_action copy_raw".to_string()]);
 }
 
