@@ -60,6 +60,7 @@ mod tests {
             include_str!("tabs/install.rs"),
             include_str!("tabs/plugins.rs"),
             include_str!("tabs/settings.rs"),
+            include_str!("update.rs"),
         ] {
             for part in src.split('"').skip(1).step_by(2) {
                 if part.starts_with("gui-")

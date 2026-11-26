@@ -302,6 +302,8 @@ pub enum Msg {
     UninstallDone(Result<Box<UninstallReport>, String>),
     Launched(Result<(), Box<LaunchFailure>>),
     Plugin(crate::packages::Msg),
+    /// PhoeCord's own update (`crate::update`).
+    Update(crate::update::Note),
 }
 
 /// The window's handle on background work. Every job is a thread that ends by sending a message
@@ -351,6 +353,19 @@ impl Backend {
 
     pub fn ctx_clone(&self) -> eframe::egui::Context {
         self.ctx.clone()
+    }
+
+    /// Run `job` on its own thread and send what it returns.
+    pub fn spawn_job(&self, name: &str, job: impl FnOnce() -> Option<Msg> + Send + 'static) {
+        let (tx, ctx) = (self.tx.clone(), self.ctx.clone());
+        let _ = std::thread::Builder::new()
+            .name(name.into())
+            .spawn(move || {
+                if let Some(m) = job() {
+                    let _ = tx.send(m);
+                    ctx.request_repaint();
+                }
+            });
     }
 
     /// Read the status again now.

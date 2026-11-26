@@ -134,6 +134,9 @@ pub struct App {
     pub upstream: String,
     pub upstream_msg: Option<(Tone, String)>,
     pub reduce_motion: bool,
+    /// PhoeCord's own updates: the latest note and the last error (`crate::update`).
+    pub update_note: Option<crate::update::Note>,
+    pub update_error: Option<String>,
     pub dialog: Option<Dialog>,
     closing: Option<Dialog>,
     pub toasts: Vec<Toast>,
@@ -145,7 +148,11 @@ pub struct App {
 const REDUCE_KEY: &str = "reduce_motion";
 
 impl App {
-    pub fn new(cc: &eframe::CreationContext<'_>, mode: crate::backend::Mode) -> App {
+    pub fn new(
+        cc: &eframe::CreationContext<'_>,
+        mode: crate::backend::Mode,
+        notes: Vec<crate::update::Note>,
+    ) -> App {
         theme::apply(&cc.egui_ctx);
         let reduce_motion = cc
             .storage
@@ -205,6 +212,8 @@ impl App {
             leaving: HashSet::new(),
             upstream_msg: None,
             reduce_motion,
+            update_note: None,
+            update_error: None,
             dialog: None,
             closing: None,
             toasts: Vec::new(),
@@ -213,7 +222,41 @@ impl App {
         };
         app.reload_plugins();
         app.pending_open = app.backend.mode.open.clone();
+        app.update_error = crate::update::last_error(&app.backend.mode);
+        for n in notes {
+            app.update_noted(&cc.egui_ctx, n);
+        }
+        crate::update::check_in_background(&app.backend);
         app
+    }
+
+    /// Show an update note as a toast and keep it for the Settings line.
+    fn update_noted(&mut self, ctx: &egui::Context, n: crate::update::Note) {
+        use crate::update::Note;
+        let (text, tone) = match &n {
+            Note::Applied { from, to } => (
+                self.tr
+                    .f("gui-update-applied", &[("from", from), ("to", to)]),
+                Tone::Ok,
+            ),
+            Note::Failed(why) => (
+                self.tr.f("gui-update-failed", &[("why", why)]),
+                Tone::Danger,
+            ),
+            Note::Ready(v) => (
+                self.tr.f("gui-update-ready", &[("version", v)]),
+                Tone::Neutral,
+            ),
+            Note::Manual { version, .. } => (
+                self.tr.f("gui-update-manual", &[("version", version)]),
+                Tone::Neutral,
+            ),
+        };
+        if let Note::Failed(why) = &n {
+            self.update_error = Some(why.clone());
+        }
+        self.toast(ctx, text, tone);
+        self.update_note = Some(n);
     }
 
     pub fn reload_plugins(&mut self) {
@@ -321,6 +364,7 @@ impl App {
 
     fn handle(&mut self, ctx: &egui::Context, m: Msg) {
         match m {
+            Msg::Update(n) => self.update_noted(ctx, n),
             Msg::Status(s) => {
                 let s = *s;
                 if self.selected.is_none_or(|c| s.client(c).is_none()) {

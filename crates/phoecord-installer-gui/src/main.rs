@@ -18,11 +18,14 @@ mod tabs;
 mod terms;
 mod text;
 mod theme;
+mod update;
 mod widgets;
 
 fn main() -> eframe::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let mode = backend::Mode::from_args(&args);
+    // A downloaded PhoeCord update is installed before the window opens (exits when it takes over).
+    let notes = update::at_start(&mode);
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_title("PhoeCord")
@@ -35,6 +38,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "PhoeCord",
         options,
-        Box::new(move |cc| Ok(Box::new(app::App::new(cc, mode)))),
+        Box::new(move |cc| Ok(Box::new(app::App::new(cc, mode, notes)))),
     )
 }

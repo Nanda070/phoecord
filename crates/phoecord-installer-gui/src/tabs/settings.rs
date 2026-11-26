@@ -90,6 +90,48 @@ impl App {
             });
         });
 
+        // PhoeCord's own updates (2.4.5).
+        let t = self.tr.t("gui-settings-update");
+        let h = self.tr.t("gui-settings-update-hint");
+        self.setting(ui, &t, &h, |app, ui| {
+            ui.horizontal(|ui| {
+                let label = app.tr.t("gui-settings-update-switch");
+                let on = phoecord_installer::update::auto_enabled(&app.config.extra);
+                if widgets::switch(ui, on, &label).clicked()
+                    && let Err(e) =
+                        app.save_config(|c| phoecord_installer::update::set_auto(&mut c.extra, !on))
+                {
+                    let t = app.tr.f("gui-pkg-err-io", &[("why", &e)]);
+                    app.toast(ui.ctx(), t, Tone::Danger);
+                }
+                ui.add_space(theme::S2);
+                widgets::body(ui, label);
+            });
+            ui.add_space(theme::S1);
+            let version = phoecord_installer::update::current_version().to_string();
+            let mut line = app
+                .tr
+                .f("gui-settings-update-version", &[("version", &version)]);
+            match &app.update_note {
+                Some(crate::update::Note::Ready(v)) => {
+                    line = app.tr.f("gui-update-ready", &[("version", v)]);
+                }
+                Some(crate::update::Note::Manual { version, page }) => {
+                    line = app.tr.f(
+                        "gui-settings-update-manual",
+                        &[("version", version), ("page", page)],
+                    );
+                }
+                _ => {}
+            }
+            widgets::caption(ui, &line);
+            if let Some(e) = &app.update_error {
+                let col = Tone::Danger.colors().0;
+                let msg = app.tr.f("gui-update-failed", &[("why", e)]);
+                widgets::text(ui, msg, theme::regular(theme::T_CAPTION), col);
+            }
+        });
+
         // Upstream proxy.
         let t = self.tr.t("gui-settings-upstream");
         let h = self.tr.t("gui-settings-upstream-hint");
