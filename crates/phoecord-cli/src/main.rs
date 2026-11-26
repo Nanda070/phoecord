@@ -21,7 +21,7 @@ use phoecord_installer::uninstall::Kept;
 use phoecord_plugin_runtime::Chain;
 use phoecord_plugin_runtime::package::PackageSet;
 use phoecord_plugin_runtime::wasm::WasmRuntime;
-use phoecord_proxy::config::{Config, Paths};
+use phoecord_proxy::config::{Config, Paths, PhoenixTransport};
 use phoecord_proxy::{Proxy, ca, server, trust};
 use std::time::{Duration, Instant};
 
@@ -61,10 +61,30 @@ impl From<ChannelArg> for phoecord_installer::Channel {
     }
 }
 
+/// `--transport`: how a Desktop Phoenix launch carries its traffic (2.2.8).
+#[derive(Clone, Copy, clap::ValueEnum)]
+enum TransportArg {
+    Auto,
+    Proxy,
+    InProcess,
+}
+
+impl From<TransportArg> for PhoenixTransport {
+    fn from(t: TransportArg) -> Self {
+        match t {
+            TransportArg::Auto => Self::Auto,
+            TransportArg::Proxy => Self::Proxy,
+            TransportArg::InProcess => Self::InProcess,
+        }
+    }
+}
+
 /// What `launch` was asked to start: an explicit command, or a channel (none: the only client).
 struct Launch {
     command: Vec<String>,
     channel: Option<phoecord_installer::Channel>,
+    /// `--transport`; `None`: `[phoenix] transport` from the config.
+    transport: Option<PhoenixTransport>,
 }
 
 #[derive(Subcommand)]
@@ -78,6 +98,13 @@ enum Cmd {
             hide_possible_values = true
         )]
         channel: Option<ChannelArg>,
+        #[arg(
+            long,
+            value_enum,
+            conflicts_with = "command",
+            hide_possible_values = true
+        )]
+        transport: Option<TransportArg>,
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         command: Vec<String>,
     },
@@ -240,10 +267,15 @@ fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Re
     };
     match cmd {
         Cmd::Run => runtime()?.block_on(run(paths, None, l10n, lang_flag(resolved))),
-        Cmd::Launch { command, channel } => {
+        Cmd::Launch {
+            command,
+            channel,
+            transport,
+        } => {
             let launch = Launch {
                 command,
                 channel: channel.map(Into::into),
+                transport: transport.map(Into::into),
             };
             runtime()?.block_on(run(paths, Some(launch), l10n, lang_flag(resolved)))
         }
@@ -433,10 +465,25 @@ async fn run(
     reconcile_loader(l10n);
     let cfg = Config::load_or_init(&paths.config)?;
     let listen = cfg.listen.clone();
-    if let Some(l) = &launch {
+    // Pick the client (and for Phoenix its transport) before anything starts: a wrong or missing
+    // choice must change nothing.
+    let mut client_start = match &launch {
+        Some(l) => {
+            let start = client_start(l, &cfg, &paths, &listen, l10n)?;
+            // In-process: no proxy process at all, not even an idle one (2.2.8).
+            if let ClientStart::InProcess(s) = &start {
+                return start_injected(s, l10n);
+            }
+            Some(start)
+        }
+        None => None,
+    };
+    if client_start.is_some() {
         match phoecord_installer::launch::probe_proxy(&listen) {
             Occupant::PhoeCord(version) => {
-                return reuse_proxy(l, &listen, &version, &cfg.clients, l10n);
+                if let Some(start) = client_start.take() {
+                    return reuse_proxy(start, &listen, &version, l10n);
+                }
             }
             Occupant::Other => {
                 anyhow::bail!(tf(l10n, "cli-err-port-taken", &[("listen", &listen)]))
@@ -444,16 +491,6 @@ async fn run(
             Occupant::Nobody => {}
         }
     }
-    // Pick the client before anything starts: a wrong or missing choice must change nothing.
-    let client_cmd = match &launch {
-        Some(l) => Some(phoecord_installer::launch::command(
-            &l.command,
-            l.channel,
-            &phoecord_installer::discover::discover_with(&cfg.clients),
-            &listen,
-        )?),
-        None => None,
-    };
     let proxy = Proxy::new(paths, cfg, chain(), false)?;
     proxy.publish_dev_token()?;
     proxy.shared.set_language_flag(lang_flag);
@@ -488,7 +525,16 @@ async fn run(
     );
     let server = tokio::spawn(server::serve(proxy.clone(), listener));
 
-    if let Some(cmd) = client_cmd {
+    if let Some(ClientStart::Injected(s)) = &client_start {
+        start_injected(s, l10n)?;
+        // Nothing to wait on: serve until Ctrl+C, as after a launcher that hands off.
+        tokio::select! {
+            r = server => r??,
+            _ = interrupted() => {}
+        }
+        return Ok(());
+    }
+    if let Some(ClientStart::Command(cmd)) = client_start {
         tracing::info!(
             "{}",
             tf(
@@ -536,19 +582,7 @@ async fn interrupted() {
 }
 
 /// A PhoeCord proxy already serves `listen` (autostart, another `launch`): only start the client.
-fn reuse_proxy(
-    launch: &Launch,
-    listen: &str,
-    version: &str,
-    extra: &[std::path::PathBuf],
-    l10n: &Localizer,
-) -> Result<()> {
-    let mut cmd = phoecord_installer::launch::command(
-        &launch.command,
-        launch.channel,
-        &phoecord_installer::discover::discover_with(extra),
-        listen,
-    )?;
+fn reuse_proxy(start: ClientStart, listen: &str, version: &str, l10n: &Localizer) -> Result<()> {
     println!(
         "{}",
         tf(
@@ -557,8 +591,142 @@ fn reuse_proxy(
             &[("listen", listen), ("version", version)]
         )
     );
-    cmd.spawn()
-        .with_context(|| l10n.t("cli-err-start-discord"))?;
+    match start {
+        ClientStart::Command(mut cmd) => {
+            cmd.spawn()
+                .with_context(|| l10n.t("cli-err-start-discord"))?;
+            Ok(())
+        }
+        ClientStart::Injected(s) | ClientStart::InProcess(s) => start_injected(&s, l10n),
+    }
+}
+/// How `launch` starts the client.
+enum ClientStart {
+    /// A plain process (Electron clients, an explicit command, Phoenix without the loader).
+    Command(std::process::Command),
+    /// Phoenix on the proxy transport, with the loader injected for the UI.
+    Injected(phoecord_installer::phoenix::Injected),
+    /// Phoenix in-process: the loader runs the plugin chain and no proxy is started.
+    InProcess(phoecord_installer::phoenix::Injected),
+}
+
+/// The client `launch` starts and, for Desktop Phoenix, the transport it gets (2.2.8).
+fn client_start(
+    l: &Launch,
+    cfg: &Config,
+    paths: &Paths,
+    listen: &str,
+    l10n: &Localizer,
+) -> Result<ClientStart> {
+    use phoecord_installer::{Channel, phoenix};
+    let clients = phoecord_installer::discover::discover_with(&cfg.clients);
+    let is_phoenix = l.command.is_empty() && l.channel == Some(Channel::Phoenix);
+    if !is_phoenix {
+        // Only Phoenix has another transport; `auto` and `proxy` are what every other client gets.
+        if l.transport == Some(PhoenixTransport::InProcess) {
+            anyhow::bail!(l10n.t("cli-err-transport-phoenix-only"));
+        }
+        return Ok(ClientStart::Command(phoecord_installer::launch::command(
+            &l.command, l.channel, &clients, listen,
+        )?));
+    }
+    let client = phoecord_installer::launch::choose(&clients, l.channel)?;
+    let env = phoecord_installer::system::Env::system()?;
+    let loader = phoecord_installer::loader::default_source(&env);
+    let signatures = cfg!(windows)
+        .then(|| std::env::var_os("LOCALAPPDATA"))
+        .and_then(phoecord_loader::signatures::default_dir);
+    let cache = paths.data.join(phoenix::CACHE_FILE);
+    let inputs = phoenix::Inputs {
+        os: env.os,
+        requested: l.transport.unwrap_or(cfg.phoenix.transport),
+        exe: &client.exe,
+        loader: &loader,
+        signatures: signatures.as_deref(),
+        cache: &cache,
+    };
+    let choice = phoenix::choose(&inputs, &mut phoenix::DiskProbe::default())
+        .map_err(|e| anyhow::anyhow!(unavailable_line(l10n, &e)))?;
+    println!("{}", choice_line(l10n, &choice));
+    if let Some(e) = &choice.cache_error {
+        eprintln!("{}", tf(l10n, "cli-phoenix-cache-failed", &[("why", e)]));
+    }
+    let in_process = choice.mode == phoecord_loader::choice::Mode::InProcess;
+    let proxy = (!in_process).then_some(listen);
+    Ok(
+        match (
+            phoenix::injected(&client, &choice, proxy, &cache),
+            in_process,
+        ) {
+            (Some(s), true) => ClientStart::InProcess(s),
+            (Some(s), false) => ClientStart::Injected(s),
+            (None, _) => {
+                ClientStart::Command(phoecord_installer::launch::client_command(&client, listen))
+            }
+        },
+    )
+}
+
+/// The line `launch` prints about Phoenix's transport.
+fn choice_line(l10n: &Localizer, c: &phoecord_installer::phoenix::Choice) -> String {
+    use phoecord_installer::phoenix::Why;
+    let why = match &c.why {
+        Why::Forced => l10n.t("cli-phoenix-why-forced"),
+        Why::NotWindows => l10n.t("cli-phoenix-why-not-windows"),
+        Why::NoLoader(p) => tf(
+            l10n,
+            "cli-phoenix-why-no-loader",
+            &[("path", &p.display().to_string())],
+        ),
+        Why::NoSignatures => l10n.t("cli-phoenix-why-no-signatures"),
+        Why::CheckFailed(e) => tf(l10n, "cli-phoenix-why-check-failed", &[("why", e)]),
+        Why::MarkedFailed => l10n.t("cli-phoenix-why-marked-failed"),
+        Why::Cached => l10n.t("cli-phoenix-why-cached"),
+        Why::Checked => l10n.t("cli-phoenix-why-checked"),
+    };
+    let key = match c.mode {
+        phoecord_loader::choice::Mode::InProcess => "cli-phoenix-in-process",
+        phoecord_loader::choice::Mode::Proxy => "cli-phoenix-proxy",
+    };
+    let mut line = tf(l10n, key, &[("why", &why)]);
+    if !c.missing.is_empty() {
+        line.push_str(&tf(
+            l10n,
+            "cli-phoenix-missing",
+            &[("list", &c.missing.join("; "))],
+        ));
+    }
+    line
+}
+
+/// Why `--transport in-process` cannot run here, in words.
+fn unavailable_line(l10n: &Localizer, e: &phoecord_installer::phoenix::Unavailable) -> String {
+    use phoecord_installer::phoenix::Why;
+    match &e.0 {
+        Why::NoLoader(p) => tf(
+            l10n,
+            "cli-err-in-process-no-loader",
+            &[("path", &p.display().to_string())],
+        ),
+        _ => l10n.t("cli-err-in-process-windows-only"),
+    }
+}
+
+/// Start Phoenix with the loader injected (`phoecord_loader::inject`, 2.1.7).
+fn start_injected(s: &phoecord_installer::phoenix::Injected, l10n: &Localizer) -> Result<()> {
+    let pid =
+        phoecord_installer::phoenix::spawn(s).with_context(|| l10n.t("cli-err-start-discord"))?;
+    println!(
+        "{}",
+        tf(
+            l10n,
+            "cli-phoenix-started",
+            &[
+                ("pid", &pid.to_string()),
+                ("dll", &s.dll.display().to_string())
+            ]
+        )
+    );
     Ok(())
 }
 
@@ -970,6 +1138,89 @@ mod tests {
             phoecord_installer::Channel::Canary,
         ));
         assert!(describe_error(&e, &en).contains("canary"));
+    }
+
+    #[test]
+    fn transport_is_a_launch_flag_and_not_for_an_explicit_command() {
+        let parsed = |args: &[&str]| {
+            Cli::try_parse_from(args).map(|c| match c.cmd {
+                Some(Cmd::Launch { transport, .. }) => transport.map(PhoenixTransport::from),
+                _ => panic!("not launch"),
+            })
+        };
+        assert_eq!(
+            parsed(&[
+                "phoecord",
+                "launch",
+                "--channel",
+                "phoenix",
+                "--transport",
+                "in-process"
+            ])
+            .unwrap(),
+            Some(PhoenixTransport::InProcess)
+        );
+        assert_eq!(
+            parsed(&["phoecord", "launch", "--transport", "proxy"]).unwrap(),
+            Some(PhoenixTransport::Proxy)
+        );
+        assert_eq!(parsed(&["phoecord", "launch"]).unwrap(), None);
+        assert!(parsed(&["phoecord", "launch", "--transport", "fast"]).is_err());
+        assert!(parsed(&["phoecord", "launch", "--transport", "proxy", "C:\\x.exe"]).is_err());
+    }
+
+    #[test]
+    fn in_process_is_refused_for_every_client_but_phoenix() {
+        let t = tempfile::tempdir().unwrap();
+        let paths = Paths {
+            config: t.path().join("config.toml"),
+            data: t.path().to_path_buf(),
+        };
+        let l10n = Localizer::new("en");
+        let launch = Launch {
+            command: Vec::new(),
+            channel: Some(phoecord_installer::Channel::Stable),
+            transport: Some(PhoenixTransport::InProcess),
+        };
+        let e = match client_start(&launch, &Config::default(), &paths, "127.0.0.1:1", &l10n) {
+            Err(e) => e,
+            Ok(_) => panic!("in-process accepted for Stable"),
+        };
+        assert_eq!(e.to_string(), l10n.t("cli-err-transport-phoenix-only"));
+    }
+
+    #[test]
+    fn the_choice_line_says_the_mode_why_and_what_is_missing() {
+        use phoecord_installer::phoenix::{Choice, Why};
+        use phoecord_loader::choice::Mode;
+        let choice = Choice {
+            mode: Mode::Proxy,
+            why: Why::Checked,
+            missing: vec!["send: no outgoing send locator".into()],
+            loader: None,
+            signatures_hash: None,
+            cache_error: None,
+        };
+        let en = choice_line(&Localizer::new("en"), &choice);
+        assert!(en.contains("through the PhoeCord proxy"), "{en}");
+        assert!(en.contains("checked this build now"), "{en}");
+        assert!(
+            en.ends_with("not found: send: no outgoing send locator"),
+            "{en}"
+        );
+        let ru = choice_line(
+            &Localizer::new("ru"),
+            &Choice {
+                mode: Mode::InProcess,
+                why: Why::Cached,
+                missing: Vec::new(),
+                ..choice
+            },
+        );
+        assert!(
+            ru.contains("без прокси") && !ru.contains("не найдено"),
+            "{ru}"
+        );
     }
 
     #[test]

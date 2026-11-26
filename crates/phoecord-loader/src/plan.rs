@@ -10,8 +10,7 @@
 //! No OS code and no binary access: the caller says which locators resolved, so every case is
 //! tested on every OS. `crate::transport` applies the plan.
 
-#[cfg(feature = "dll")]
-use crate::hooks::found::HookPlan;
+use crate::found::HookPlan;
 
 /// A network entry point of `phoecord_transport::Engine`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -149,8 +148,8 @@ impl Plan {
 
     /// The plan for what the hook locators found in this build. `HookPlan::send` is the REST
     /// transport's `send`, so it is the *request* entry point; sending on the gateway has no
-    /// locator yet (2.1.6, 2.2.4), and neither has any UI feature.
-    #[cfg(feature = "dll")]
+    /// locator yet (2.1.6, 2.2.4), and neither has any UI feature. `phoecord launch` builds the
+    /// same plan from `Discord.exe` on disk ([`crate::check::transport_plan`]).
     pub fn from_hooks(hooks: &HookPlan) -> Plan {
         Plan::resolve(|target| match target {
             Target::Net(EntryPoint::Request) => probe(&hooks.send),
@@ -195,6 +194,23 @@ impl Plan {
     /// Why a UI feature is off; `None` when it is on.
     pub fn ui_off(&self, feature: UiFeature) -> Option<&Reason> {
         self.ui[feature as usize].as_ref()
+    }
+
+    /// Every entry point runs in-process: the condition for a Phoenix launch without the proxy
+    /// (2.2.8, ruling 2026-11-26: the transport is all or nothing per launch).
+    pub fn all_in_process(&self) -> bool {
+        self.net.iter().all(|r| *r == Route::InProcess)
+    }
+
+    /// One line per entry point that is not in-process (the network half of [`Plan::report`]).
+    pub fn net_report(&self) -> Vec<String> {
+        EntryPoint::ALL
+            .into_iter()
+            .filter_map(|p| match self.route(p) {
+                Route::InProcess => None,
+                Route::Proxy(why) => Some(format!("{}: {why}", p.name())),
+            })
+            .collect()
     }
 
     /// No entry point runs in-process.
@@ -305,6 +321,40 @@ mod tests {
         ]));
         assert!(plan.proxy_only());
         assert!(UiFeature::ALL.iter().all(|&f| plan.ui_off(f).is_none()));
+    }
+
+    #[test]
+    fn all_in_process_needs_every_entry_point() {
+        assert!(Plan::resolve(without(&[])).all_in_process());
+        // A missing UI locator does not matter for the transport.
+        assert!(Plan::resolve(without(&[Target::Ui(UiFeature::Theme)])).all_in_process());
+        // Dispatch stays in-process without a send function, but the launch does not.
+        let no_send = Plan::resolve(without(&[Target::Net(EntryPoint::Send)]));
+        assert!(!no_send.all_in_process() && !no_send.proxy_only());
+        assert_eq!(no_send.net_report(), ["send: not found"]);
+        assert!(!Plan::unknown_build().all_in_process());
+    }
+
+    #[test]
+    fn todays_hook_locators_never_give_a_whole_launch() {
+        // Every locator of `HookPlan` resolves, but the gateway send has none yet (2.2.4).
+        use crate::found::{Found, GatewayRegistry, HookPlan, HttpPoll, HttpSend};
+        let mut hooks = HookPlan::none();
+        hooks.send = Ok(Found {
+            rva: 1,
+            target: HttpSend,
+        });
+        hooks.poll = Ok(Found {
+            rva: 2,
+            target: HttpPoll,
+        });
+        hooks.registry = Ok(Found {
+            rva: 3,
+            target: GatewayRegistry,
+        });
+        let plan = Plan::from_hooks(&hooks);
+        assert_eq!(plan.route(EntryPoint::Request), &Route::InProcess);
+        assert!(!plan.all_in_process());
     }
 
     #[test]

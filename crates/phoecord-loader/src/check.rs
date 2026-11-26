@@ -3,8 +3,14 @@
 //!
 //! Only the AOB signatures of `signatures/*.toml` are checked. The typed locators for the hook
 //! targets (2.2.5, part 2) do not exist yet; when they do, they belong in the same report.
+//!
+//! [`transport_plan`] is the same check as the in-process transport sees it: the hook locators of
+//! [`crate::found`] run on the exe on disk and give a [`Plan`]. `phoecord launch --channel
+//! phoenix` picks the launch's transport from it (2.2.8).
 
+use crate::found::{HookPlan, Scan};
 use crate::pe::Pe;
+use crate::plan::Plan;
 use crate::signatures::{ResolveError, SignatureError, SignatureSet, resolve_all};
 use crate::version::{self, ClientVersion, VersionError};
 use std::{fmt, io, path::Path};
@@ -89,6 +95,36 @@ pub fn check(exe: &[u8], signatures_dir: &Path) -> Result<Report, CheckError> {
         entries,
         skipped,
     })
+}
+
+/// The degradation plan the loader would make for this exe: the build's signature table (the same
+/// selection as [`check`]), the hook locators run over its `.text`, then [`Plan::from_hooks`]. A
+/// build without a table is [`Plan::unknown_build`]. Signature files that do not load are skipped,
+/// as the loader skips them; what they held is then simply not found.
+pub fn transport_plan(
+    exe: &[u8],
+    signatures_dir: &Path,
+) -> Result<(ClientVersion, Plan), CheckError> {
+    let version = version::detect(exe).map_err(CheckError::Exe)?;
+    let text = Pe::parse(exe)
+        .map_err(|e| CheckError::Exe(e.into()))?
+        .section_bytes(".text")
+        .ok_or(CheckError::Exe(VersionError::NoTextSection))?;
+    let image_len = Pe::image_size(exe)
+        .ok()
+        .and_then(|n| u32::try_from(n).ok())
+        .unwrap_or(0);
+    let (set, _skipped) = SignatureSet::load_dir(signatures_dir).map_err(CheckError::Signatures)?;
+    let plan = match set.select(&version) {
+        Some((_, sigs)) => Plan::from_hooks(&HookPlan::locate(&Scan {
+            sigs,
+            text,
+            text_rva: version.text_rva,
+            image_len,
+        })),
+        None => Plan::unknown_build(),
+    };
+    Ok((version, plan))
 }
 
 #[cfg(test)]
@@ -206,6 +242,51 @@ mod tests {
         assert!(matches!(
             check(&exe(), &dir.0.join("absent")),
             Err(CheckError::Signatures(_))
+        ));
+    }
+
+    /// [`exe`] with `SizeOfImage` set, as a real image has it (the locators check results against it).
+    fn exe_with_image_size() -> Vec<u8> {
+        let mut bytes = exe();
+        let at = 0x80 + 24 + 56;
+        bytes[at..at + 4].copy_from_slice(&0x10_000u32.to_le_bytes());
+        bytes
+    }
+
+    #[test]
+    fn the_transport_plan_runs_the_hook_locators() {
+        use crate::plan::{EntryPoint, Reason, Route};
+        let dir = Dir::new(
+            "plan",
+            &[(
+                "a.toml",
+                "[build.\"1.0.0.1\"]\n\
+                 http_send = { aob = \"55 8B EC\" }\n\
+                 http_poll = { aob = \"8B EC 90\" }",
+            )],
+        );
+        let (version, plan) = transport_plan(&exe_with_image_size(), &dir.0).unwrap();
+        assert_eq!(version.file_version.as_deref(), Some("1.0.0.1"));
+        assert_eq!(plan.route(EntryPoint::Request), &Route::InProcess);
+        assert_eq!(plan.route(EntryPoint::Response), &Route::InProcess);
+        assert!(matches!(
+            plan.route(EntryPoint::Dispatch),
+            Route::Proxy(Reason::Locator(why)) if why.contains("gateway_registry")
+        ));
+        assert!(!plan.all_in_process());
+    }
+
+    #[test]
+    fn a_build_without_a_table_is_an_unknown_build() {
+        let dir = Dir::new(
+            "plan-unknown",
+            &[("a.toml", "[build.\"9.9.9.9\"]\nf = { aob = \"55 8B EC\" }")],
+        );
+        let (_, plan) = transport_plan(&exe_with_image_size(), &dir.0).unwrap();
+        assert_eq!(plan, Plan::unknown_build());
+        assert!(matches!(
+            transport_plan(b"nope", &dir.0),
+            Err(CheckError::Exe(_))
         ));
     }
 }

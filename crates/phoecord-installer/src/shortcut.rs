@@ -34,7 +34,8 @@ pub fn name(channel: Channel) -> String {
         Channel::Stable => "Discord",
         Channel::Ptb => "Discord PTB",
         Channel::Canary => "Discord Canary",
-        Channel::Phoenix => "Phoenix",
+        // Its own name, so it is never taken for Discord's own Phoenix shortcut (2.2.8).
+        Channel::Phoenix => "Discord Phoenix",
     };
     format!("{client} (PhoeCord)")
 }
@@ -130,6 +131,43 @@ mod tests {
         assert_eq!(name(Channel::Stable), "Discord (PhoeCord)");
         assert_eq!(name(Channel::Ptb), "Discord PTB (PhoeCord)");
         assert_eq!(arguments(Channel::Ptb), "launch --channel ptb");
+        assert_eq!(name(Channel::Phoenix), "Discord Phoenix (PhoeCord)");
+        assert_eq!(arguments(Channel::Phoenix), "launch --channel phoenix");
+    }
+
+    #[test]
+    fn phoenix_gets_its_own_shortcut_and_uninstall_removes_it() {
+        let t = tempfile::tempdir().unwrap();
+        let e = env(Os::Windows, t.path());
+        let sys = FakeSystem::default();
+        let r = install_with(&e, &sys, Some(Channel::Phoenix)).unwrap();
+        let lnk = e.start_menu.join("Discord Phoenix (PhoeCord).lnk");
+        assert_eq!(
+            r.shortcut,
+            Outcome::Created {
+                name: "Discord Phoenix (PhoeCord)".into(),
+                path: lnk.clone()
+            }
+        );
+        assert!(
+            sys.calls().contains(&format!(
+                "shortcut_create {} {} launch --channel phoenix",
+                lnk.display(),
+                e.proxy_exe.display()
+            )),
+            "{:?}",
+            sys.calls()
+        );
+        // Discord's own shortcuts are never touched: the only one made is ours.
+        let made: Vec<_> = sys
+            .calls()
+            .into_iter()
+            .filter(|c| c.starts_with("shortcut_create"))
+            .collect();
+        assert_eq!(made.len(), 1);
+        let u = uninstall_all(&e, &sys).unwrap();
+        assert!(u.is_clean(), "{:?}", u.failed);
+        assert!(!lnk.exists());
     }
 
     #[test]

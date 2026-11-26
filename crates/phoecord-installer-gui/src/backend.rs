@@ -466,7 +466,8 @@ const LAUNCH_TAIL_LINES: usize = 4;
 
 /// Run `exe launch --channel <c>` with no console window, its output in `<data>/launch.log`, and
 /// watch it until the proxy answers or [`LAUNCH_WATCH`] passes. A `launch` that exits on its own is a
-/// failure, unless it only handed the client to a proxy that already runs (it exits 0 then).
+/// failure, unless it only handed the client to a proxy that already runs (it exits 0 then), or it
+/// started Phoenix in-process, with no proxy at all (2.2.8; it exits 0 then too).
 fn start_client(paths: &Paths, exe: &Path, channel: Channel) -> Result<(), LaunchFailure> {
     let early = |e: anyhow::Error| LaunchFailure {
         said: format!("{e:#}"),
@@ -501,7 +502,9 @@ fn start_client(paths: &Paths, exe: &Path, channel: Channel) -> Result<(), Launc
     loop {
         std::thread::sleep(Duration::from_millis(200));
         match child.try_wait() {
-            Ok(Some(status)) if status.success() && up() => return Ok(()),
+            Ok(Some(status)) if status.success() && (up() || channel == Channel::Phoenix) => {
+                return Ok(());
+            }
             Ok(Some(status)) => {
                 let said = std::fs::read_to_string(&log)
                     .map(|t| log_tail(&t, LAUNCH_TAIL_LINES))
@@ -646,6 +649,16 @@ mod tests {
         let (paths, exe) = fake_launch(t.path(), "exit 3");
         let f = start_client(&paths, &exe, Channel::Stable).unwrap_err();
         assert!(f.said.contains('3'), "{}", f.said);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn phoenix_started_in_process_quits_without_a_proxy_and_that_is_fine() {
+        let t = tempfile::tempdir().unwrap();
+        let (paths, exe) = fake_launch(t.path(), "exit 0");
+        start_client(&paths, &exe, Channel::Phoenix).unwrap();
+        let (paths, exe) = fake_launch(t.path(), "exit 1");
+        assert!(start_client(&paths, &exe, Channel::Phoenix).is_err());
     }
 
     #[test]

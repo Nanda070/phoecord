@@ -30,6 +30,44 @@ pub fn default_dir(local_app_data: Option<OsString>) -> Option<PathBuf> {
     )
 }
 
+/// The `*.toml` files of `dir` in the order the loader reads them (by path, so a later file
+/// replaces a build of the same key).
+fn toml_files(dir: &Path) -> io::Result<Vec<PathBuf>> {
+    let mut paths: Vec<_> = fs::read_dir(dir)?
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x == "toml"))
+        .collect();
+    paths.sort();
+    Ok(paths)
+}
+
+/// Lowercase hex SHA-256 over every `*.toml` file of `dir`, in the loader's read order: each
+/// file's name and contents, length-prefixed so no two folders hash alike by moving bytes from one
+/// file to the next. Any change the loader could see (a file added, removed, renamed or edited,
+/// even a comment) changes it; a folder that does not exist hashes like an empty one. Part of the
+/// key of the Phoenix check cache (2.2.8): a signature hot-fix (2.2.10) re-runs the check.
+pub fn folder_hash(dir: &Path) -> io::Result<String> {
+    use sha2::{Digest, Sha256};
+    let files = match toml_files(dir) {
+        Ok(f) => f,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Vec::new(),
+        Err(e) => return Err(e),
+    };
+    let mut h = Sha256::new();
+    for p in files {
+        let name = p
+            .file_name()
+            .map_or_else(Vec::new, |n| n.to_string_lossy().as_bytes().to_vec());
+        let body = fs::read(&p)?;
+        h.update((name.len() as u64).to_le_bytes());
+        h.update(&name);
+        h.update((body.len() as u64).to_le_bytes());
+        h.update(&body);
+    }
+    Ok(h.finalize().iter().map(|b| format!("{b:02x}")).collect())
+}
+
 #[derive(Debug)]
 pub enum SignatureError {
     Toml(String),
@@ -150,15 +188,9 @@ impl SignatureSet {
     /// Loads every `*.toml` in `dir` (sorted by name; a later file replaces a build of the same
     /// key). Files that fail to parse are skipped and reported in the second element.
     pub fn load_dir(dir: &Path) -> io::Result<(SignatureSet, Vec<(String, SignatureError)>)> {
-        let mut paths: Vec<_> = fs::read_dir(dir)?
-            .filter_map(Result::ok)
-            .map(|e| e.path())
-            .filter(|p| p.extension().is_some_and(|x| x == "toml"))
-            .collect();
-        paths.sort();
         let mut all = SignatureSet::default();
         let mut errors = Vec::new();
-        for p in paths {
+        for p in toml_files(dir)? {
             let label = p
                 .file_name()
                 .map_or_else(String::new, |n| n.to_string_lossy().into());
@@ -368,5 +400,39 @@ mod tests {
         assert!(!set.is_empty());
         assert_eq!(errors.len(), 1);
         assert_eq!(errors[0].0, "b.toml");
+    }
+
+    #[test]
+    fn folder_hash_follows_every_toml_file_and_nothing_else() {
+        let dir = std::env::temp_dir().join(format!("phoecord-sig-hash-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        // A missing folder hashes like an empty one.
+        let missing = folder_hash(&dir).unwrap();
+        std::fs::create_dir_all(&dir).unwrap();
+        let empty = folder_hash(&dir).unwrap();
+        assert_eq!(missing, empty);
+        std::fs::write(dir.join("a.toml"), TOML).unwrap();
+        let one = folder_hash(&dir).unwrap();
+        assert_ne!(one, empty);
+        // Files the loader does not read change nothing.
+        std::fs::write(dir.join("notes.txt"), "x").unwrap();
+        assert_eq!(folder_hash(&dir).unwrap(), one);
+        // A comment is a change; so is a rename and a second file.
+        std::fs::write(dir.join("a.toml"), format!("# hot-fix\n{TOML}")).unwrap();
+        let edited = folder_hash(&dir).unwrap();
+        assert_ne!(edited, one);
+        std::fs::rename(dir.join("a.toml"), dir.join("b.toml")).unwrap();
+        assert_ne!(folder_hash(&dir).unwrap(), edited);
+        std::fs::write(dir.join("c.toml"), "# c").unwrap();
+        let two = folder_hash(&dir).unwrap();
+        assert_ne!(two, edited);
+        // Moving bytes from one file into the next is not the same folder.
+        std::fs::write(dir.join("b.toml"), "ab").unwrap();
+        std::fs::write(dir.join("c.toml"), "c").unwrap();
+        let before = folder_hash(&dir).unwrap();
+        std::fs::write(dir.join("b.toml"), "a").unwrap();
+        std::fs::write(dir.join("c.toml"), "bc").unwrap();
+        assert_ne!(folder_hash(&dir).unwrap(), before);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }

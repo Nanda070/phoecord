@@ -172,6 +172,12 @@ fn analyze(log: &Logger) -> Option<Report> {
         env!("CARGO_PKG_VERSION"),
         exe.display()
     ));
+    // Set by `phoecord launch --channel phoenix` (2.2.8). Nothing acts on it yet: the in-process
+    // transport (2.2.7) reads it to decide whether to install the network hooks.
+    match crate::choice::Launched::from_env() {
+        Some(l) => log.log(&format!("launched with transport {}", l.mode.name())),
+        None => log.log("no transport from phoecord launch: proxy-era behaviour"),
+    }
 
     let started = Instant::now();
     let v = match detect_in_memory() {

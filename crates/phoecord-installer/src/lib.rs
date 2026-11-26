@@ -35,6 +35,7 @@ pub mod launch;
 pub mod loader;
 pub mod log;
 pub mod pe_version;
+pub mod phoenix;
 pub mod shortcut;
 pub mod signatures;
 pub mod system;

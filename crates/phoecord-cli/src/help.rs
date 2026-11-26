@@ -79,6 +79,8 @@ pub fn localize(mut cmd: Command, l: &Localizer) -> Command {
                         } else {
                             "cli-arg-remove-id"
                         }))
+                    } else if id == "transport" {
+                        a.help(l.t("cli-arg-transport"))
                     } else if id == "loader" {
                         a.help(l.t("cli-arg-setup-loader"))
                     } else {

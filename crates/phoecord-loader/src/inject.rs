@@ -20,7 +20,14 @@
 
 #[cfg(windows)]
 mod imp {
-    use std::{ffi::OsStr, io, mem, os::windows::ffi::OsStrExt, path::Path, ptr};
+    use std::{
+        collections::BTreeMap,
+        ffi::{OsStr, OsString},
+        io, mem,
+        os::windows::ffi::OsStrExt,
+        path::Path,
+        ptr,
+    };
     use windows_sys::Win32::{
         Foundation::{CloseHandle, HANDLE, PAPCFUNC},
         System::{
@@ -28,8 +35,8 @@ mod imp {
             LibraryLoader::{GetModuleHandleW, GetProcAddress},
             Memory::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE, VirtualAllocEx},
             Threading::{
-                CREATE_SUSPENDED, CreateProcessW, PROCESS_INFORMATION, QueueUserAPC, ResumeThread,
-                STARTUPINFOW,
+                CREATE_SUSPENDED, CREATE_UNICODE_ENVIRONMENT, CreateProcessW, PROCESS_INFORMATION,
+                QueueUserAPC, ResumeThread, STARTUPINFOW,
             },
         },
     };
@@ -93,9 +100,53 @@ mod imp {
         line
     }
 
+    /// The environment block for `CreateProcessW` with `CREATE_UNICODE_ENVIRONMENT`: `base` with
+    /// every `extra` variable set over it (names compare case-insensitively, as Windows does),
+    /// sorted by name, each `NAME=value` NUL-terminated, the block ended by one more NUL.
+    fn env_block(
+        base: impl IntoIterator<Item = (OsString, OsString)>,
+        extra: &[(&str, &str)],
+    ) -> Vec<u16> {
+        let mut vars: BTreeMap<String, (OsString, OsString)> = BTreeMap::new();
+        let key = |n: &OsStr| n.to_string_lossy().to_uppercase();
+        for (n, v) in base {
+            vars.insert(key(&n), (n, v));
+        }
+        for (n, v) in extra {
+            vars.insert(key(OsStr::new(n)), (OsString::from(n), OsString::from(v)));
+        }
+        let mut block = Vec::new();
+        for (n, v) in vars.values() {
+            block.extend(n.encode_wide());
+            block.push(u16::from(b'='));
+            block.extend(v.encode_wide());
+            block.push(0);
+        }
+        if block.is_empty() {
+            block.push(0);
+        }
+        block.push(0);
+        block
+    }
+
     /// Starts `exe` suspended, with `args` after it on the command line (each quoted). The
     /// current directory is `exe`'s own folder, matching how the real launcher starts it.
     pub fn spawn_suspended(exe: &Path, args: &[&str]) -> io::Result<Suspended> {
+        spawn(exe, args, None)
+    }
+
+    /// [`spawn_suspended`], with this process's environment plus `env` set over it: how
+    /// `phoecord launch` hands Phoenix its proxy variables and the loader its transport
+    /// (`crate::choice`).
+    pub fn spawn_suspended_with_env(
+        exe: &Path,
+        args: &[&str],
+        env: &[(&str, &str)],
+    ) -> io::Result<Suspended> {
+        spawn(exe, args, Some(env_block(std::env::vars_os(), env)))
+    }
+
+    fn spawn(exe: &Path, args: &[&str], env: Option<Vec<u16>>) -> io::Result<Suspended> {
         let exe_str = exe.to_str().ok_or_else(|| {
             io::Error::new(io::ErrorKind::InvalidInput, "exe path is not valid UTF-8")
         })?;
@@ -106,11 +157,18 @@ mod imp {
         let mut si: STARTUPINFOW = unsafe { mem::zeroed() };
         si.cb = mem::size_of::<STARTUPINFOW>() as u32;
         let mut pi: PROCESS_INFORMATION = unsafe { mem::zeroed() };
+        let flags = if env.is_some() {
+            CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT
+        } else {
+            CREATE_SUSPENDED
+        };
 
         // SAFETY: `app_name` and `cmdline` are NUL-terminated wide strings kept alive for the
         // call; `cmdline`'s buffer is writable and large enough (`CreateProcessW` may rewrite it
-        // in place, never grows it). `cwd` is NUL-terminated or null. `si`/`pi` are correctly
-        // sized, zeroed structs the call fills in. No handles are inherited
+        // in place, never grows it). `cwd` is NUL-terminated or null. `env` is null (inherit) or a
+        // UTF-16 block built by `env_block` (every entry NUL-terminated, the block ended by an
+        // extra NUL), matching `CREATE_UNICODE_ENVIRONMENT`, kept alive for the call. `si`/`pi`
+        // are correctly sized, zeroed structs the call fills in. No handles are inherited
         // (`bInheritHandles = 0`), so this process's own open handles never leak into the target.
         let ok = unsafe {
             CreateProcessW(
@@ -119,8 +177,8 @@ mod imp {
                 ptr::null(),
                 ptr::null(),
                 0, // bInheritHandles
-                CREATE_SUSPENDED,
-                ptr::null(),
+                flags,
+                env.as_ref().map_or(ptr::null(), |e| e.as_ptr().cast()),
                 cwd.as_ref().map_or(ptr::null(), |c| c.as_ptr()),
                 &si,
                 &mut pi,
@@ -302,6 +360,21 @@ mod imp {
         }
 
         #[test]
+        fn the_environment_block_sets_over_the_base_and_is_sorted() {
+            let base = [
+                (OsString::from("Path"), OsString::from(r"C:\bin")),
+                (OsString::from("https_proxy"), OsString::from("old")),
+            ];
+            let block = env_block(base, &[("HTTPS_PROXY", "http://127.0.0.1:1"), ("A", "1")]);
+            let text = String::from_utf16(&block).unwrap();
+            assert_eq!(
+                text,
+                "A=1\0HTTPS_PROXY=http://127.0.0.1:1\0Path=C:\\bin\0\0"
+            );
+            assert_eq!(env_block([], &[]), [0, 0]);
+        }
+
+        #[test]
         fn full_command_line_joins_with_spaces() {
             assert_eq!(
                 command_line("C:\\x\\a.exe", &["--flag", "value with space"]),
@@ -312,4 +385,4 @@ mod imp {
 }
 
 #[cfg(windows)]
-pub use imp::{Suspended, queue_load_library, resume, spawn_suspended};
+pub use imp::{Suspended, queue_load_library, resume, spawn_suspended, spawn_suspended_with_env};

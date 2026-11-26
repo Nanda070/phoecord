@@ -124,6 +124,12 @@ pub fn uninstall_all(env: &Env, sys: &dyn System) -> Result<UninstallReport> {
     }
     let mut failed: Vec<Entry> = Vec::new(); // newest first
     remove_own_ca_files(env, &entries, &mut report);
+    // The Phoenix check cache (2.2.8) is written by `launch`, never logged: PhoeCord's by definition.
+    if crate::phoenix::remove_cache(&env.data_dir) {
+        report.removed.push(Step::File {
+            path: env.data_dir.join(crate::phoenix::CACHE_FILE),
+        });
+    }
     let had_log = log.path().exists();
     for (i, entry) in entries.iter().enumerate().rev() {
         // The log lives in the data folder: once nothing but folders and the log are left to undo,
@@ -378,6 +384,25 @@ mod tests {
         }
         assert!(e.data_dir.join("config.toml").is_file());
         assert!(e.data_dir.exists());
+    }
+
+    #[test]
+    fn removes_the_phoenix_check_cache_and_then_the_folder() {
+        let t = tempfile::tempdir().unwrap();
+        let e = env(Os::Windows, t.path());
+        let sys = FakeSystem::default();
+        install(&e, &sys).unwrap();
+        let cache = e.data_dir.join(crate::phoenix::CACHE_FILE);
+        std::fs::write(&cache, b"{}").unwrap();
+        let r = uninstall_all(&e, &sys).unwrap();
+        assert!(r.is_clean(), "{:?}", r.failed);
+        assert!(!cache.exists());
+        assert!(
+            r.removed
+                .iter()
+                .any(|s| matches!(s, Step::File { path } if *path == cache))
+        );
+        assert!(!e.data_dir.exists());
     }
 
     #[test]

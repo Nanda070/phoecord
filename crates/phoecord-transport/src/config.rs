@@ -28,6 +28,8 @@ pub struct Config {
     /// `launch`, `setup` and the window look in them next to the default places.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub clients: Vec<PathBuf>,
+    /// `[phoenix]`: how `phoecord launch --channel phoenix` runs Desktop Phoenix (2.2.8).
+    pub phoenix: Phoenix,
     /// One table per plugin id; `enabled` is a key inside it, the rest are the plugin's own settings.
     pub plugins: BTreeMap<String, toml::Table>,
     /// Anything else in the file is kept as it is when the config is saved.
@@ -56,8 +58,38 @@ impl Default for Config {
             language: None,
             upstream: None,
             clients: Vec::new(),
+            phoenix: Phoenix::default(),
             plugins,
             extra: toml::Table::new(),
+        }
+    }
+}
+
+/// `[phoenix]` in `config.toml`.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Phoenix {
+    /// Which transport a Phoenix launch uses; `phoecord launch --transport` overrides it.
+    pub transport: PhoenixTransport,
+}
+
+/// `[phoenix] transport` (rulings, 2026-11-26): `auto` picks per launch from the cached signature
+/// check; `proxy` and `in-process` force one, for debugging.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PhoenixTransport {
+    #[default]
+    Auto,
+    Proxy,
+    InProcess,
+}
+
+impl PhoenixTransport {
+    pub fn name(self) -> &'static str {
+        match self {
+            PhoenixTransport::Auto => "auto",
+            PhoenixTransport::Proxy => "proxy",
+            PhoenixTransport::InProcess => "in-process",
         }
     }
 }
@@ -240,6 +272,30 @@ mod tests {
             back.plugins["fake_nitro"]["emoji_size"].as_integer(),
             Some(64)
         );
+    }
+
+    #[test]
+    fn the_phoenix_transport_is_auto_unless_set() {
+        let c = Config::default();
+        assert_eq!(c.phoenix.transport, PhoenixTransport::Auto);
+        // Written out, so the key is there to edit.
+        let text = toml::to_string_pretty(&c).unwrap();
+        assert!(text.contains("[phoenix]\ntransport = \"auto\""), "{text}");
+        let back: Config = toml::from_str(&text).unwrap();
+        assert_eq!(back.phoenix, c.phoenix);
+        for (value, want) in [
+            ("proxy", PhoenixTransport::Proxy),
+            ("in-process", PhoenixTransport::InProcess),
+        ] {
+            let c: Config =
+                toml::from_str(&format!("[phoenix]\ntransport = \"{value}\"\n")).unwrap();
+            assert_eq!(c.phoenix.transport, want);
+            assert_eq!(want.name(), value);
+        }
+        // An old config without the table, or an empty one, is `auto`.
+        let old: Config = toml::from_str("listen = \"127.0.0.1:1\"\n[phoenix]\n").unwrap();
+        assert_eq!(old.phoenix.transport, PhoenixTransport::Auto);
+        assert!(toml::from_str::<Config>("[phoenix]\ntransport = \"fast\"\n").is_err());
     }
 
     #[test]

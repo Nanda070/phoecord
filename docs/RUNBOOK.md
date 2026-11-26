@@ -58,6 +58,7 @@ Write down right away: when it started (UTC), Discord client and version, PhoeCo
 - If the proxy already runs (autostart), `launch` only starts the client with the proxy flag.
 - "address used by another program, not PhoeCord": something else holds the port; change `listen` in `config.toml`.
 - `phoecord setup --channel canary` adds a Start-menu shortcut "Discord Canary (PhoeCord)"; `phoecord uninstall` removes it.
+- Desktop Phoenix: `phoecord launch --channel phoenix` (shortcut "Discord Phoenix (PhoeCord)") prints one line saying which transport it picked and why: `in-process, no proxy` or `through the PhoeCord proxy`, with the reason (checked now, from the cache, forced, marked failed, no loader, no signature folder, check failed) and the hooks that were not found. `loader.log` then shows `launched with transport …`. To force a mode for one launch: `--transport proxy` or `--transport in-process` (or `[phoenix] transport` in `config.toml`). A build "marked failed" stays on the proxy until a signature update (`phoecord signatures install`); deleting `phoenix-check.json` from the data folder makes the next launch check again.
 
 macOS 13 (Ventura) or later is required (the client starts with `open --env`).
 

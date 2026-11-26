@@ -7,8 +7,9 @@
 //! `phoecord_loader::inject` (`docs/AGENTS.md`: `unsafe` only in `phoecord-loader`); this is only
 //! argument handling and the result message.
 //!
-//! This is a developer tool for proving the mechanism and measuring it (2.1.7's "done when"), not
-//! `phoecord launch`'s normal path yet: wiring it into `--channel phoenix` is 2.1.1/2.2.8.
+//! This is a developer tool for proving the mechanism and measuring it (2.1.7's "done when").
+//! `phoecord launch --channel phoenix` injects the same way, with the transport it picked
+//! (`phoecord_installer::phoenix`, 2.2.8).
 
 use crate::tf;
 use anyhow::Result;

@@ -13,7 +13,7 @@
 //! structures, installing them through [`crate::hook`]). Their ABI is the outcome of 2.1.5–2.1.7;
 //! they will call the runtime from [`install`] and nothing else.
 
-pub mod found;
+pub use crate::found;
 pub mod gateway;
 pub mod guard;
 pub mod http;

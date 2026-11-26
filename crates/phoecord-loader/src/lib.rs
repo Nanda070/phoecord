@@ -27,6 +27,12 @@
 
 pub mod aob;
 pub mod check;
+pub mod choice;
+/// The typed locators of the in-process hook targets (`hooks::found` is this module). Built without
+/// the `dll` feature too: `phoecord launch` runs the same locators on `Discord.exe` on disk to pick
+/// Phoenix's transport (2.2.8).
+#[path = "hooks/found.rs"]
+pub mod found;
 #[cfg(windows)]
 pub mod inject;
 pub mod ipc;

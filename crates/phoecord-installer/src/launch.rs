@@ -192,7 +192,8 @@ pub fn client_command(client: &Client, addr: &str) -> Command {
     let update = client.root.parent().map(|p| p.join("Update.exe"));
     let mut cmd = match (client.source, update) {
         // Phoenix has no Update.exe and no app-x.y.z folders: start its executable, from its own
-        // folder as its Start-menu shortcut does. Plain launch only; no injection (task 2.1.7).
+        // folder as its Start-menu shortcut does. A plain launch: used when there is no loader
+        // to inject (`phoenix::injected` starts it otherwise, 2.2.8).
         (Source::Native, _) if client.channel == Channel::Phoenix => {
             let mut c = Command::new(&client.exe);
             c.arg(&flag).current_dir(&client.root);
