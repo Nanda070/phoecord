@@ -68,7 +68,7 @@ Verified and holding:
 - **Loader**: the real `version.dll` is loaded by its full system path (no search-order hijack); every `unsafe` block has a `// SAFETY:` comment; the hook entry points run under the panic guard; the `send` detour reads client memory through `ReadProcessMemory`, so a wrong layout is a refused read, not a crash; `unsafe` appears in no other crate.
 - **WASM**: no WASI imports are linked, only PhoeCord's own host interface; every host call checks its right; events are filtered by the manifest; 50 ms soft (strikes) and 1 s hard limits by epoch interruption; 32 MiB of memory per plugin.
 
-2.4.6 stays open until the secret key has a password (`minisign -C`) and an offline backup.
+With A1 fixed, the secret key password-protected and backed up offline (2026-11-26), 2.4.6 is closed.
 
 ## Where to report
 
