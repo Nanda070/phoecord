@@ -50,7 +50,7 @@ category = "Utility"
 description = "Native mod loader for Discord: install, repair and remove PhoeCord and its plugins"
 homepage = "https://github.com/Nanda070/phoecord"
 license-file = "../../LICENSE"
-icons = ["assets/icon/icon.icns", "assets/icon/icon.ico", "assets/icon/icon-1024.png"]
+icons = ["assets/icon/icon.icns", "assets/icon/icon.ico", "assets/icon/icon-256.png"]
 out-dir = "../../target/packages"
 binaries-dir = "../../target/release"
 # The loader is built everywhere so one command works on every OS; only the NSIS template ships it.
@@ -100,6 +100,8 @@ section = "net"
 # certutil trusts the CA in the NSS stores Discord reads; libGL and xkbcommon are loaded by the
 # window at run time, so dpkg cannot see them. cargo-packager writes only `Depends`.
 depends = ["libnss3-tools", "libgl1", "libxkbcommon0"]
+# The same menu entry as the .rpm (one file for both: Russian comment, StartupWMClass, no stray space).
+desktop-template = "assets/linux/phoecord-installer.desktop"
 
 # `cargo generate-rpm -p crates/phoecord-installer-gui` after `cargo packager` (ruling Q2). The same
 # files as the .deb: both binaries in /usr/bin, a menu entry for the window, its icon, the licences.

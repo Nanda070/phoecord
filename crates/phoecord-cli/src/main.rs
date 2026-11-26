@@ -338,10 +338,13 @@ fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Re
             let extra = Config::load(&paths.config)
                 .map(|c| c.clients)
                 .unwrap_or_default();
-            println!(
-                "{}",
-                phoenix_line(l10n, &phoecord_installer::discover::discover_with(&extra))
-            );
+            // Phoenix is a Windows client: elsewhere its line would only show a Windows path.
+            if cfg!(windows) {
+                println!(
+                    "{}",
+                    phoenix_line(l10n, &phoecord_installer::discover::discover_with(&extra))
+                );
+            }
             let source = l10n.t(&format!("lang-source-{}", resolved.source.id()));
             println!(
                 "{}",

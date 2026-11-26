@@ -41,3 +41,29 @@ fn main() -> eframe::Result<()> {
         Box::new(move |cc| Ok(Box::new(app::App::new(cc, mode, notes)))),
     )
 }
+
+#[cfg(test)]
+mod package_tests {
+    /// The `.deb` and the `.rpm` share one menu entry and one icon size (found checking the
+    /// 0.6.0 packages in Docker: the `.deb` had a generated entry and the 1024 px icon).
+    #[test]
+    fn deb_and_rpm_ship_the_same_menu_entry_and_icon() {
+        let manifest = include_str!("../Cargo.toml");
+        let entry = "assets/linux/phoecord-installer.desktop";
+        assert!(
+            manifest.contains(&format!("desktop-template = \"{entry}\"")),
+            "the .deb must use the shared menu entry"
+        );
+        assert!(manifest.contains(&format!("source = \"{entry}\"")));
+        let icons = manifest
+            .lines()
+            .find(|l| l.starts_with("icons = "))
+            .expect("icons line");
+        assert!(icons.contains("icon-256.png") && !icons.contains("icon-1024.png"));
+        let desktop = include_str!("../assets/linux/phoecord-installer.desktop");
+        for line in desktop.lines() {
+            assert_eq!(line, line.trim_end(), "trailing space in {line:?}");
+        }
+        assert!(desktop.contains("\nExec=phoecord-installer\n"));
+    }
+}
