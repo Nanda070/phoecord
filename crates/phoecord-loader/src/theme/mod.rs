@@ -18,10 +18,16 @@
 //! [`ThemeWatcher`] polls the file every [`POLL_INTERVAL`] and hands back the new theme when it
 //! changed: "editing `theme.toml` changes the colours within 2 seconds".
 //!
-//! Not here yet, because it needs the Phoenix binary (stage 2.1 and 2.2): which field names
-//! Phoenix's palette has, the hook on the active theme global that writes them, and a default
-//! theme matching Discord's own palette. Until then field names are free-form
-//! (`lower_case`, digits, `_`, `.`, `-`).
+//! `themes/default.toml` ships a starting-point theme with Discord's own published surface
+//! colours, under field names of our own choosing — not yet a true no-op default, since Phoenix's
+//! real palette field names are still unknown.
+//!
+//! Not here yet, because it needs an anchor the private `phoecord-recon` notes do not have:
+//! which field names Phoenix's palette has, and the hook on the active theme global that would
+//! write them (`docs/research/gpui.md` describes the general GPUI/Zed pattern — `cx.global::<T>()`
+//! behind an `ActiveTheme`-style accessor — as a template to look for, not a finding about
+//! Phoenix). Until the field names are known, they stay free-form (`lower_case`, digits, `_`,
+//! `.`, `-`).
 
 mod parse;
 
@@ -237,6 +243,17 @@ mod tests {
         assert_eq!(theme.colors["element.hover"], hsla(0.0, 0.0, 1.0, 1.0));
         let keys: Vec<&str> = problems.iter().map(|p| p.key.as_str()).collect();
         assert_eq!(keys, vec!["extra", "Border", "border", "panel"]);
+    }
+
+    /// The shipped `themes/default.toml` (task 2.3.1) parses cleanly: every key is valid and every
+    /// colour decodes, so a typo there is caught here rather than by whoever loads it first.
+    #[test]
+    fn the_shipped_default_theme_parses_with_no_problems() {
+        let text = include_str!("../../../../themes/default.toml");
+        let (theme, problems) = Theme::from_toml(text, "default").unwrap();
+        assert_eq!(theme.name, "Discord (default)");
+        assert!(problems.is_empty(), "{problems:?}");
+        assert_eq!(theme.colors.len(), 12);
     }
 
     #[test]

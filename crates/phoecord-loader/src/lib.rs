@@ -42,6 +42,7 @@ pub mod pe;
 pub mod plan;
 pub mod signatures;
 pub mod theme;
+pub mod ui;
 pub mod version;
 
 #[cfg(windows)]

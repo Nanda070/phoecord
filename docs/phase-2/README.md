@@ -98,10 +98,10 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 
 | Task | What | Who | Status |
 |:--|:--|:--|:--|
-| **2.3.1** 🔴 | Theme engine: `theme.toml` → GPUI palette, live switching | matvee | ⏳ part 1 merged, PR #102 (format, colour parsing, 2 s file watcher; the palette hook and default theme wait for 2.1) |
+| **2.3.1** 🔴 | Theme engine: `theme.toml` → GPUI palette, live switching | matvee | ⏳ part 1 merged, PR #102; `themes/default.toml` ships (branch `feat/theme-and-message-logger`) with Discord's published surface colours under placeholder field names — still not a true no-op default, and no live hook: `phoecord-recon` has no `GlobalTheme` anchor for Phoenix (only Zed/GPUI's general pattern in `docs/research/gpui.md`); blocked on that, not on access |
 | **2.3.2** 🟡 | 3 built-in themes + import of Vencord themes where they translate to a palette | — | ⏳ |
 | **2.3.3** 🔴 | PhoeCord settings tab in Phoenix: plugins, settings, install / remove packages with rights shown, en + ru | ken | ⏳ moved from matvee (ruling, 2026-11-26) |
-| **2.3.4** 🔴 | MessageLogger UI: deleted messages struck through, edit history on hover | matvee | ⏳ |
+| **2.3.4** 🔴 | MessageLogger UI: deleted messages struck through, edit history on hover | matvee | ⏳ `phoecord_loader::ui::message_logger` (branch `feat/theme-and-message-logger`): pure `Accessory::for_message` (deleted / edited-with-history), tested; not wired to a real message row — `MessageRow::render`'s address is not in `phoecord-recon`, only the app-level render chain (`docs/re/gpui-lifecycle.md`) is mapped |
 | **2.3.5** 🟡 | Message context menu: plugin action entries in right-click and `...` menus | — | ⏳ |
 | **2.3.6** 🟡 | Optimistic delete hook: `Store::delete_message` visible to plugins (MessageLogger sees local deletes) | — | ⏳ |
 | **2.3.7** 🔴 | Degradation verified: unknown build → network only, no crashes; missing signature → that feature off only | ken | ⏳ preparation merged, PR #104: scenarios 1 and 2 covered for the plan with fake locator results; nothing verified inside a client |

@@ -1,0 +1,27 @@
+# The shipped default theme (task 2.3.1).
+#
+# Status: a starting point, not yet a "no-op" theme as the task asks for. The field names below
+# are placeholders of our own choosing (`background`, `background.secondary`, ...), not Phoenix's
+# real palette field names: those are unknown (see `crates/phoecord-loader/src/theme/mod.rs`, and
+# `docs/phase-2/README.md`, task 2.3.1 — `phoecord-recon` has no `GlobalTheme` anchor for Phoenix
+# yet, only Zed/GPUI's general pattern in `docs/research/gpui.md`). There is also no hook yet that
+# reads this file into the running client, so loading it today changes nothing either way.
+#
+# The colours are Discord's own published brand/surface colours (the "New Discord Colors"
+# palette, 2024), used here only as plausible values until the real field names are known.
+
+name = "Discord (default)"
+
+[colors]
+background = "#313338"
+"background.secondary" = "#2b2d31"
+"background.tertiary" = "#1e1f22"
+"background.floating" = "#222327"
+text = "#f2f3f5"
+"text.muted" = "#949ba4"
+"text.link" = "#00a8fc"
+brand = "#5865f2"
+online = "#23a55a"
+idle = "#f0b232"
+dnd = "#f23f43"
+offline = "#80848e"
