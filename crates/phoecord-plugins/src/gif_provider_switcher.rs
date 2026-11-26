@@ -24,9 +24,8 @@
 //! may load pictures from the providers' media hosts.
 
 use crate::state::Shared;
-use phoecord_core::plugin::API_VERSION;
 use phoecord_core::route::query_pairs;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, Plugin, Val, Verdict};
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Val, Verdict};
 use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
@@ -376,16 +375,17 @@ impl Api<'_> {
 impl GifProviderSwitcher {
     pub fn new() -> GifProviderSwitcher {
         GifProviderSwitcher {
-            manifest: Manifest {
-                id: "gif_provider_switcher".into(),
-                name: "GifProviderSwitcher".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                description: "Tenor or Giphy for GIF search instead of Klipy".into(),
-                authors: vec!["Lunascape".into(), "Ven".into()],
-                vencord: Some("GifProviderSwitcher".into()),
-                layers: vec![Layer::Network],
-                api: API_VERSION,
-                fetch: vec![TENOR_HOST.into(), GIPHY_HOST.into()],
+            manifest: {
+                let mut m = Manifest::new(
+                    "gif_provider_switcher",
+                    "GifProviderSwitcher",
+                    env!("CARGO_PKG_VERSION"),
+                    "Tenor or Giphy for GIF search instead of Klipy",
+                );
+                m.authors = vec!["Lunascape".into(), "Ven".into()];
+                m.vencord = Some("GifProviderSwitcher".into());
+                m.fetch = vec![TENOR_HOST.into(), GIPHY_HOST.into()];
+                m
             },
             state: Shared::default(),
         }
@@ -572,13 +572,9 @@ mod tests {
                 self.answers[0].clone()
             };
             let (status, body) = answer?;
-            Ok(HostResponse {
-                status,
-                body: (!body.is_empty()).then(|| j(&body)),
-                text: None,
-                bytes: None,
-                headers: Vec::new(),
-            })
+            let mut r = HostResponse::new(status);
+            r.body = (!body.is_empty()).then(|| j(&body));
+            Ok(r)
         }
     }
 
