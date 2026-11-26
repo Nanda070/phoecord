@@ -63,6 +63,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Changed
 
+- 2.4.5: `TERMS.md` §4 and §6 (and `TERMS.ru.md`) now describe the automatic updates (daily check of GitHub, signed `SHA256SUMS`, install at next start, how to turn off) and how to verify a hand-downloaded file with `minisign`.
 - 2.4.5: Windows has one installer, the setup `.exe`; the `.msi` is no longer built (a setup run over a 0.5 `.msi` install offers to remove it). Releases are published only after every file is uploaded.
 - macOS: the minimum is now macOS 13 (Ventura), because the client is started with `open --env`, which macOS 13 added. Macs on macOS 11 and 12 cannot install 0.5.1.
 - `Host::emit_send` from a REST event (for example a `/phoecord` command) or a timer goes to the live gateway connection at once instead of being lost; every plugin-queued send passes the Send chain once.
