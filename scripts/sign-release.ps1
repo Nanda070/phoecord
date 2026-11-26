@@ -36,7 +36,7 @@ if ((Get-Content $pub | Where-Object { $_.Trim() }).Count -lt 2) {
 }
 if (-not (Test-Path $SecretKey)) { throw "secret key not found: $SecretKey" }
 
-$info = gh release view $Tag --json isDraft, assets | ConvertFrom-Json
+$info = gh release view $Tag --json 'isDraft,assets' | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0) { throw "no release $Tag" }
 if (-not $info.isDraft) { throw "$Tag is already published; signing must happen before it is" }
 $names = @($info.assets | ForEach-Object { $_.name })
