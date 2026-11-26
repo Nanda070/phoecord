@@ -13,6 +13,7 @@ pub mod gateway;
 pub mod hostnet;
 pub mod ipc;
 pub mod live;
+pub mod multipart;
 pub mod process;
 pub mod rest;
 pub mod server;

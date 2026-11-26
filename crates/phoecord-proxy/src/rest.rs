@@ -73,6 +73,28 @@ pub fn multipart_payload_json(content_type: &str, body: &[u8]) -> Option<Val> {
     })
 }
 
+/// Largest multipart message body read into memory for plugins (larger uploads stream through
+/// untouched; their `payload_json` is then not seen).
+const MAX_MULTIPART: u64 = 64 * 1024 * 1024;
+
+/// `POST /channels/{id}/messages` or `PATCH /channels/{id}/messages/{id}`.
+fn is_message_write(method: &str, route: &str) -> bool {
+    let segs: Vec<&str> = route.trim_matches('/').split('/').collect();
+    matches!(
+        (method, segs.as_slice()),
+        ("POST", ["channels", _, "messages"]) | ("PATCH", ["channels", _, "messages", _])
+    )
+}
+
+fn content_length(h: &HeaderMap) -> Option<u64> {
+    h.get(header::CONTENT_LENGTH)?
+        .to_str()
+        .ok()?
+        .trim()
+        .parse()
+        .ok()
+}
+
 fn is_json(h: &HeaderMap) -> bool {
     h.get(header::CONTENT_TYPE)
         .and_then(|v| v.to_str().ok())
@@ -183,6 +205,8 @@ async fn forward(
     let mut stream = Some(body);
     let mut json = None;
     let mut multipart = false;
+    // A message send or edit with files (2.4.2 a): plugins see and may change `payload_json`.
+    let mut form: Option<crate::multipart::Form> = None;
     if app.wants_request(&method, &route) {
         let ct = parts
             .headers
@@ -193,6 +217,15 @@ async fn forward(
         if is_json(&parts.headers) {
             let b = stream.take().unwrap().collect().await?.to_bytes();
             json = serde_json::from_slice(&b).ok().map(Val::from_json);
+            kept = Some(b);
+        } else if is_message_write(&method, &route)
+            && ct.to_ascii_lowercase().starts_with("multipart/")
+            && content_length(&parts.headers).is_some_and(|n| n <= MAX_MULTIPART)
+        {
+            let b = stream.take().unwrap().collect().await?.to_bytes();
+            form = crate::multipart::Form::parse(&ct, &b);
+            json = form.as_ref().and_then(crate::multipart::Form::payload_json);
+            multipart = json.is_some();
             kept = Some(b);
         } else if method == "POST" && route == "/interactions" && ct.starts_with("multipart/") {
             // Slash command interactions: plugins read `payload_json`; the body is never edited.
@@ -208,7 +241,18 @@ async fn forward(
         RequestOutcome::Forward { changed } => changed,
     };
 
+    let rebuilt = match (&form, &json) {
+        (Some(f), Some(v)) if changed && multipart => f.rebuild(v),
+        _ => None,
+    };
     let out: Body = match (changed && !multipart, json, kept, stream) {
+        _ if rebuilt.is_some() => {
+            let b = rebuilt.unwrap();
+            parts
+                .headers
+                .insert(header::CONTENT_LENGTH, HeaderValue::from(b.len()));
+            full(b)
+        }
         (true, Some(v), _, _) => {
             let b = serde_json::to_vec(&v.to_json())?;
             parts
@@ -287,5 +331,17 @@ mod tests {
         assert!(
             multipart_payload_json("multipart/form-data; boundary=xyz", other.as_bytes()).is_none()
         );
+    }
+
+    #[test]
+    fn message_writes_are_sends_and_edits() {
+        assert!(is_message_write("POST", "/channels/1/messages"));
+        assert!(is_message_write("PATCH", "/channels/1/messages/2"));
+        assert!(!is_message_write("GET", "/channels/1/messages"));
+        assert!(!is_message_write(
+            "POST",
+            "/channels/1/messages/2/reactions"
+        ));
+        assert!(!is_message_write("POST", "/interactions"));
     }
 }
