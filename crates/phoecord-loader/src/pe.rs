@@ -33,6 +33,10 @@ pub struct Pe<'a> {
     resource_dir: (u32, u32),
     /// `data` is a loaded image (sections at their RVAs), not a file (sections at raw offsets).
     mapped: bool,
+    /// `ImageBase` from the optional header: the VA a static pointer in `.rdata` (a vtable slot,
+    /// for instance) is relocated against on a build without ASLR rebasing, and what a locator
+    /// adds to an RVA to compare against such a pointer.
+    pub image_base: u64,
 }
 
 fn u16_at(d: &[u8], o: usize) -> Result<u16, PeError> {
@@ -44,6 +48,12 @@ fn u16_at(d: &[u8], o: usize) -> Result<u16, PeError> {
 fn u32_at(d: &[u8], o: usize) -> Result<u32, PeError> {
     d.get(o..o + 4)
         .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+        .ok_or(PeError("truncated"))
+}
+
+fn u64_at(d: &[u8], o: usize) -> Result<u64, PeError> {
+    d.get(o..o + 8)
+        .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
         .ok_or(PeError("truncated"))
 }
 
@@ -84,9 +94,12 @@ impl<'a> Pe<'a> {
         let nsec = u16_at(data, pe + 6)? as usize;
         let opt_size = u16_at(data, pe + 20)? as usize;
         let opt = pe + 24;
-        let dirs = match u16_at(data, opt)? {
-            0x20b => opt + 112,
-            0x10b => opt + 96,
+        let magic = u16_at(data, opt)?;
+        let (dirs, image_base) = match magic {
+            // PE32+: ImageBase is an 8-byte field at offset 24 of the optional header.
+            0x20b => (opt + 112, u64_at(data, opt + 24)?),
+            // PE32: ImageBase is a 4-byte field at offset 28.
+            0x10b => (opt + 96, u32_at(data, opt + 28)? as u64),
             _ => return Err(PeError("unknown optional header")),
         };
         let dir = |i: usize| -> Result<(u32, u32), PeError> {
@@ -111,6 +124,7 @@ impl<'a> Pe<'a> {
             export_dir: dir(0)?,
             resource_dir: dir(2)?,
             mapped,
+            image_base,
         })
     }
 
@@ -331,6 +345,14 @@ mod tests {
     fn rejects_garbage() {
         assert!(Pe::parse(b"hello").is_err());
         assert!(Pe::parse(&[]).is_err());
+    }
+
+    #[test]
+    fn reads_image_base() {
+        let mut bytes = build_pe(&[1, 2, 3], &[], None);
+        // Optional header starts at 0x98 (PE32+); ImageBase is the 8-byte field at offset 24.
+        bytes[0x98 + 24..0x98 + 32].copy_from_slice(&0x1_4000_0000u64.to_le_bytes());
+        assert_eq!(Pe::parse(&bytes).unwrap().image_base, 0x1_4000_0000);
     }
 
     #[test]

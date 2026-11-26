@@ -159,6 +159,7 @@ mod tests {
                 bytes: b"....anchor",
             },
             functions: vec![(0x1000, 0x1010), (0x1020, 0x1030), (0x1040, 0x1050)],
+            image_base: 0,
         };
         let idx = CallIndex::build(&img);
         assert_eq!(idx.calls_to(0x1040), &[0x1007, 0x1020, 0x1025]);
@@ -196,6 +197,7 @@ mod tests {
                 bytes: b"",
             },
             functions: vec![(0x1000, 0x1020)],
+            image_base: 0,
         };
         let idx = CallIndex::build(&img);
         assert!(idx.calls_to(0x1008).is_empty());

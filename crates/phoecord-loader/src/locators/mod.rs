@@ -16,10 +16,22 @@
 //!   (`call rel32`) and who loads which address (RIP-relative `lea` / `mov`);
 //! - [`exactly_one`] and [`winner`]: turn candidates into a result or a typed error.
 //!
-//! The locators for the hook targets themselves (`ReqwestTransport`, the gateway registry, the
-//! allocator shims) need what stage 2.1 finds in the Phoenix binary and come in part 2. Tests use
-//! mock sections, never Discord bytes.
+//! Part 2 adds the locators for the hook targets themselves ([`allocator`], [`http_transport`],
+//! [`gateway`]), each a masked AOB anchor derived from the private `phoecord-recon` notes (never
+//! raw bytes of the dump, per `docs/AGENTS.md`, "Never commit … disassembly"). Every one is
+//! checked against this one build of Phoenix (`0.1.0.2208`) only; cross-build verification is
+//! task 2.2.9.
+//!
+//! [`Image::find_ptr`] (8-byte pointer scan of `.rdata`, needs [`Image::image_base`]) is built for
+//! the one target this part does not close: `http_poll`, the `.rdata` vtable slot of the response
+//! future's `poll`. The recon notes have the `poll` function's own address but not a `.text` site
+//! that refers to the vtable slot itself, so there is nothing yet to anchor a locator on without
+//! guessing — exactly what this framework exists to avoid. `find_ptr` is tested on its own and
+//! waits for that anchor. Tests use mock sections, never Discord bytes.
 
+pub mod allocator;
+pub mod gateway;
+pub mod http_transport;
 mod index;
 
 pub use index::CallIndex;
@@ -142,6 +154,9 @@ pub struct Image<'a> {
     pub rdata: Region<'a>,
     /// `(begin, end)` RVAs of every function, sorted by `begin` (`.pdata` on Windows x64).
     pub functions: Vec<(u32, u32)>,
+    /// `ImageBase`: what an RVA is added to for comparison against a raw pointer value stored in
+    /// `.rdata` (a vtable slot, for instance). `0` for a mock image with no such pointers to find.
+    pub image_base: u64,
 }
 
 impl<'a> Image<'a> {
@@ -163,7 +178,24 @@ impl<'a> Image<'a> {
             text,
             rdata,
             functions,
+            image_base: pe.image_base,
         })
+    }
+
+    /// Every RVA in `.rdata` holding an 8-byte little-endian pointer equal to `image_base + rva`
+    /// (a vtable slot or similar static reference to it), 8-byte aligned to the start of the
+    /// section the way the Rust/LLVM codegen that builds such tables does.
+    pub fn find_ptr(&self, rva: u32) -> Vec<u32> {
+        let va = self.image_base.wrapping_add(u64::from(rva)).to_le_bytes();
+        self.rdata
+            .bytes
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .enumerate()
+            .filter(|(_, w)| **w == va)
+            .map(|(i, _)| self.rdata.rva + (i * 8) as u32)
+            .collect()
     }
 
     /// Every RVA in `.rdata` where `needle` starts.
@@ -228,7 +260,19 @@ mod tests {
                 bytes: rdata,
             },
             functions,
+            image_base: 0,
         }
+    }
+
+    #[test]
+    fn finds_rdata_pointers_to_an_rva() {
+        let mut rdata = vec![0u8; 24];
+        // A fake vtable: drop(8) + the pointer to text RVA 0x1005 at offset 8, under base 0x9000_0000.
+        rdata[8..16].copy_from_slice(&(0x9000_0000u64 + 0x1005).to_le_bytes());
+        let mut img = image(&[0; 16], &rdata, vec![]);
+        img.image_base = 0x9000_0000;
+        assert_eq!(img.find_ptr(0x1005), vec![0x8008]);
+        assert_eq!(img.find_ptr(0x1006), Vec::<u32>::new());
     }
 
     #[test]
