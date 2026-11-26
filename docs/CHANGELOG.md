@@ -6,6 +6,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Fixed
 
+- Installer window: the onboarding shows only on the first start after install, not again after every update (ruling 2026-11-26).
 - Installer window: on a short window the onboarding text no longer runs under the bottom bar (its line crossed the text); the column is clipped at the bar and scrolls.
 
 ## [0.6.0] - 2026-11-26

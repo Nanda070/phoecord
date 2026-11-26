@@ -1,7 +1,8 @@
 //! First start: four short screens before the main window. What PhoeCord does, the terms (the
 //! same screen as later updates of the terms), which Discord to use, and a last screen that starts
-//! the install. Shown on the first start of each installed version (a marker file in the data
-//! folder), whether or not the terms were accepted before: the terms screen is then skipped.
+//! the install. Shown once per machine, on the first start after PhoeCord is installed (a marker
+//! file in the data folder), not again after an update (ruling, 2026-11-26); when the terms were
+//! accepted before, the terms screen is skipped.
 
 use crate::app::{App, Tab};
 use crate::motion::{self, dur};
@@ -19,15 +20,14 @@ pub const TERMS: u8 = 1;
 pub const PICK: u8 = 2;
 pub const DONE: u8 = 3;
 
-/// The file in the data folder that records the version whose onboarding was finished.
+/// The file in the data folder that records that the onboarding was finished (it holds the version
+/// that finished it, for support; any version counts).
 const MARKER: &str = "onboarded";
 
-/// The onboarding is due: this version of the app has not finished it on this machine. A fresh
-/// install or an update from setup shows it once; a marker that cannot be read counts as missing.
+/// The onboarding is due: no version of PhoeCord has finished it on this machine. An update,
+/// automatic or by hand, never shows it again; a marker that cannot be read counts as missing.
 pub fn needed(data: &Path) -> bool {
-    std::fs::read_to_string(data.join(MARKER))
-        .map(|v| v.trim() != env!("CARGO_PKG_VERSION"))
-        .unwrap_or(true)
+    std::fs::read_to_string(data.join(MARKER)).is_err()
 }
 
 /// Record that this version finished the onboarding.
@@ -399,13 +399,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn shown_once_per_version() {
+    fn shown_once_per_machine_not_after_updates() {
         let t = tempfile::tempdir().unwrap();
         let data = t.path().join("data/phoecord");
         assert!(needed(&data), "nothing recorded yet");
         mark_done(&data).unwrap();
         assert!(!needed(&data));
-        std::fs::write(data.join(MARKER), "1.4.2\n").unwrap();
-        assert!(needed(&data), "an older version finished it");
+        // Finished by an older version, then PhoeCord updated itself: not shown again.
+        std::fs::write(data.join(MARKER), "0.5.0\n").unwrap();
+        assert!(!needed(&data));
     }
 }
