@@ -7,16 +7,22 @@
 # encrypted with the password minisign asks for, to -SecretKey (default
 # %USERPROFILE%\.minisign\phoecord-update.key). Back the secret key and its password up offline: a
 # lost key means installed copies cannot be updated automatically until they are reinstalled by hand.
-# Needs minisign (scoop install minisign, or winget install jedisct1.minisign).
+# Needs minisign (winget install jedisct1.minisign).
 param(
     [string]$SecretKey = (Join-Path $env:USERPROFILE '.minisign\phoecord-update.key')
 )
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 
-if (-not (Get-Command minisign -ErrorAction SilentlyContinue)) {
-    throw 'minisign not found: scoop install minisign, or winget install jedisct1.minisign'
+# minisign from PATH, or the x64 build winget unpacks (its alias is not always on PATH).
+function Find-Minisign {
+    $c = Get-Command minisign -ErrorAction SilentlyContinue
+    if ($c) { return $c.Source }
+    $w = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages\jedisct1.minisign_Microsoft.Winget.Source_8wekyb3d8bbwe\minisign-win64\x86_64\minisign.exe'
+    if (Test-Path $w) { return $w }
+    throw 'minisign not found: winget install jedisct1.minisign'
 }
+$minisign = Find-Minisign
 if (Test-Path $SecretKey) {
     throw "$SecretKey already exists; refusing to replace a release key"
 }
@@ -27,7 +33,7 @@ if ((Get-Content $pub | Where-Object { $_.Trim() }).Count -gt 1) {
 
 New-Item -ItemType Directory -Force (Split-Path $SecretKey) | Out-Null
 # -f: overwrite the placeholder public key file; minisign asks for the password twice.
-minisign -G -f -p $pub -s $SecretKey
+& $minisign -G -f -p $pub -s $SecretKey
 if ($LASTEXITCODE -ne 0) { throw 'minisign -G failed' }
 
 Write-Host ""

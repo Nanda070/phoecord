@@ -52,7 +52,7 @@ Checked against code: `main` after PR #132, 2026-11-26. Scope: the CA, the proxy
 
 | # | Area | Finding | Severity | Status |
 |:--|:--|:--|:--|:--|
-| A1 | Updates | An update is trusted if it is in a release of this repository and matches that release's `SHA256SUMS`. Both come from GitHub, so whoever controls the repository or one maintainer's account can ship code to every install with automatic updates on. | High | **Fixed** (owner's ruling, 2026-11-26): `SHA256SUMS` is signed with the owner's offline minisign (Ed25519) key, trusted comment `phoecord <version>`; the public key is compiled in (`update-key.pub`) and an update without a valid signature for its own version is refused (`update::verify_sums`). `release.yml` leaves a draft; the owner checks every file against `SHA256SUMS`, signs and publishes with `scripts/sign-release.ps1`. **Until the owner runs `scripts/new-update-key.ps1` and commits the public key, every update is refused** and a release tag fails in CI |
+| A1 | Updates | An update is trusted if it is in a release of this repository and matches that release's `SHA256SUMS`. Both come from GitHub, so whoever controls the repository or one maintainer's account can ship code to every install with automatic updates on. | High | **Fixed** (owner's ruling, 2026-11-26): `SHA256SUMS` is signed with the owner's offline minisign (Ed25519) key, trusted comment `phoecord <version>`; the public key is compiled in (`update-key.pub`) and an update without a valid signature for its own version is refused (`update::verify_sums`). `release.yml` leaves a draft; the owner checks every file against `SHA256SUMS`, signs and publishes with `scripts/sign-release.ps1`. The key was made on the owner's computer on 2026-11-26 (key ID `CC88851881F300F5`); the public key is committed |
 | A2 | CA | `ca.key` and `dev-token` are written owner-only (`0600`) on Unix. On Windows they get the ACL of the data folder in the user's profile: that user, `SYSTEM` and `Administrators`, which can read anything of the user anyway. | Medium | Accepted; documented here. Tightening the ACL needs Win32 calls outside the loader (`unsafe`), against the rules |
 | A3 | CA | On Unix, `0600` was only applied when the file was created; a `ca.key` or `dev-token` already there kept its old bits. | Low | Fixed: the bits are set on every write |
 | A4 | Proxy | `Host::rest` refused `..` and `%2e%2e` in a route but not `.%2e`, `%2e.` or `%2e`, so a plugin could send the user's session to a non-API path on the same Discord host. | Low | Fixed: a dot segment in any spelling is refused; tests added |
@@ -68,7 +68,7 @@ Verified and holding:
 - **Loader**: the real `version.dll` is loaded by its full system path (no search-order hijack); every `unsafe` block has a `// SAFETY:` comment; the hook entry points run under the panic guard; the `send` detour reads client memory through `ReadProcessMemory`, so a wrong layout is a refused read, not a crash; `unsafe` appears in no other crate.
 - **WASM**: no WASI imports are linked, only PhoeCord's own host interface; every host call checks its right; events are filtered by the manifest; 50 ms soft (strikes) and 1 s hard limits by epoch interruption; 32 MiB of memory per plugin.
 
-2.4.6 stays open until the owner's key is committed (`scripts/new-update-key.ps1`).
+2.4.6 stays open until the secret key has a password (`minisign -C`) and an offline backup.
 
 ## Where to report
 

@@ -18,9 +18,16 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 
-foreach ($tool in 'gh', 'minisign') {
-    if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) { throw "$tool not found" }
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { throw 'gh not found' }
+# minisign from PATH, or the x64 build winget unpacks (its alias is not always on PATH).
+function Find-Minisign {
+    $c = Get-Command minisign -ErrorAction SilentlyContinue
+    if ($c) { return $c.Source }
+    $w = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages\jedisct1.minisign_Microsoft.Winget.Source_8wekyb3d8bbwe\minisign-win64\x86_64\minisign.exe'
+    if (Test-Path $w) { return $w }
+    throw 'minisign not found: winget install jedisct1.minisign'
 }
+$minisign = Find-Minisign
 if ($Tag -notmatch '^v(\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?)$') { throw "not a release tag: $Tag" }
 $version = $Matches[1]
 $pub = 'crates/phoecord-installer/update-key.pub'
@@ -64,9 +71,9 @@ if ($bad) { throw ("refusing to sign:`n  " + ($bad -join "`n  ")) }
 Write-Host "all $($listed.Count) files match SHA256SUMS"
 
 $sig = "$sums.minisig"
-minisign -S -s $SecretKey -m $sums -x $sig -t "phoecord $version"
+& $minisign -S -s $SecretKey -m $sums -x $sig -t "phoecord $version"
 if ($LASTEXITCODE -ne 0) { throw 'minisign -S failed' }
-minisign -V -p $pub -m $sums -x $sig
+& $minisign -V -p $pub -m $sums -x $sig
 if ($LASTEXITCODE -ne 0) { throw "the signature does not verify with $pub (wrong secret key?)" }
 
 gh release upload $Tag $sig

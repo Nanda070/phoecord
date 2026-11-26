@@ -80,7 +80,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Security
 
-- 2.4.6, audit finding A1: automatic updates need the owner's signature. A release's `SHA256SUMS` is signed with an offline minisign key (`SHA256SUMS.minisig`, trusted comment `phoecord <version>`), the public key is built into PhoeCord, and an update whose list is unsigned, signed with another key or signed for another version is refused. CI leaves releases as drafts; the owner publishes them after signing (`scripts/sign-release.ps1`; the key is made once with `scripts/new-update-key.ps1`). Until the key is committed no update is accepted and a release tag fails.
+- 2.4.6, audit finding A1: automatic updates need the owner's signature. A release's `SHA256SUMS` is signed with an offline minisign key (`SHA256SUMS.minisig`, trusted comment `phoecord <version>`), the public key is built into PhoeCord, and an update whose list is unsigned, signed with another key or signed for another version is refused. CI leaves releases as drafts; the owner publishes them after signing (`scripts/sign-release.ps1`; the key is made once with `scripts/new-update-key.ps1`). The public key (ID `CC88851881F300F5`) is in `crates/phoecord-installer/update-key.pub`.
 - 2.4.6 audit: `ca.key` and `dev-token` are set owner-only on every write on Unix, not only when created; `Host::rest` refuses dot segments written with `%2e` in any mix. Findings and what stays open: `SECURITY.md`, "Audit".
 
 ## [0.5.0] - 2026-11-25

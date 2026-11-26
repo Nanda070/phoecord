@@ -1043,6 +1043,35 @@ mod tests {
     }
 
     #[test]
+    fn a_signature_made_by_the_minisign_tool_verifies() {
+        // Made with minisign 0.12 and a throwaway key (`minisign -S -t "phoecord 0.6.0"`), so the
+        // updater reads what scripts/sign-release.ps1 produces.
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/minisign/");
+        let read = |n: &str| std::fs::read(format!("{dir}{n}")).unwrap();
+        let key = minisign_verify::PublicKey::decode(&String::from_utf8(read("test.pub")).unwrap())
+            .unwrap();
+        let sums = read("SHA256SUMS");
+        let sig = read("SHA256SUMS.minisig");
+        verify_sums(&key, &sums, &sig, &Version::new(0, 6, 0)).unwrap();
+        assert_eq!(
+            verify_sums(&key, &sums, &sig, &Version::new(0, 6, 1)),
+            Err(Refused::WrongRelease("phoecord 0.6.0".into()))
+        );
+        let mut changed = sums.clone();
+        changed[0] = b'b';
+        assert_eq!(
+            verify_sums(&key, &changed, &sig, &Version::new(0, 6, 0)),
+            Err(Refused::BadSignature)
+        );
+        // The release key does not accept the throwaway key's signature.
+        let release = minisign_verify::PublicKey::decode(UPDATE_KEY).unwrap();
+        assert_eq!(
+            verify_sums(&release, &sums, &sig, &Version::new(0, 6, 0)),
+            Err(Refused::BadSignature)
+        );
+    }
+
+    #[test]
     fn the_compiled_key_file_is_a_key_or_a_comment_only() {
         // `release.yml` refuses to release with the comment-only file; until then it must parse
         // as "no key", not panic.
