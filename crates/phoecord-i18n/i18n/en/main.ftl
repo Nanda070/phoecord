@@ -116,6 +116,7 @@ plugin-desc-review_db = Read the reviews people left on a user with /phoecord re
 plugin-desc-translate = Translate messages, and optionally everything you send
 plugin-desc-dearrow = Less sensational YouTube embed titles and thumbnails (DeArrow)
 plugin-desc-fix_images_quality = Load attached images at their original quality
+plugin-desc-gif_provider_switcher = Search GIFs on Tenor or Giphy instead of Klipy
 plugin-desc-friend_invites = Create, list and revoke friend invite links with commands
 plugin-desc-petpet = Make a headpat GIF of an avatar or picture with /phoecord petpet
 plugin-desc-custom_commands = Your own text snippets with arguments, sent with a command

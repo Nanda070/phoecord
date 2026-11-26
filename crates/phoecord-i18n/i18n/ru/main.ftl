@@ -121,6 +121,7 @@ plugin-desc-review_db = Показывает отзывы о пользоват�
 plugin-desc-translate = Переводит сообщения и, по желанию, всё, что вы отправляете
 plugin-desc-dearrow = Спокойные заголовки и превью YouTube в сообщениях (DeArrow)
 plugin-desc-fix_images_quality = Загружает вложенные изображения в исходном качестве
+plugin-desc-gif_provider_switcher = Поиск GIF в Tenor или Giphy вместо Klipy
 plugin-desc-friend_invites = Создаёт, показывает и отзывает ссылки-приглашения в друзья командами
 plugin-desc-petpet = Делает GIF «погладь» из аватара или картинки: /phoecord petpet
 plugin-desc-custom_commands = Ваши заготовки текста с аргументами, отправляемые командой

@@ -81,7 +81,7 @@ Release targets: **v1.0** = every 🌐 and 🌐 + 🎨 plugin, the theme engine,
 | FullSearchContext | Full context menus on search results | 🎨 UI | 2 |
 | GameActivityToggle | Toggle showing your game | 🌐 Network | done |
 | GifPaste | Insert GIF links instead of sending | 🎨 UI | 2 |
-| GifProviderSwitcher | Tenor or Giphy for GIF search | 🌐 Network | 1.2.15, blocked: waits for the owner to add the query string (the GIF search text) to plugin routes |
+| GifProviderSwitcher | Tenor or Giphy for GIF search | 🌐 Network | done: `gif_provider_switcher` (setting `provider`; the selector in the picker and `/tenor` are Phase 2 UI); unverified on a live client |
 | GreetStickerPicker | Pick any greet sticker | 🎨 UI | 2 |
 | HideMedia | Hide attachments and embeds per message | 🎨 UI | 2 |
 | IgnoreActivities | Hide chosen activities from your status | 🌐 Network | done — `/phoecord activities`, `/phoecord ignoreactivity` |

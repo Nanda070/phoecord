@@ -14,6 +14,7 @@ phoecord-core.workspace = true
 phoecord-i18n = { path = "../phoecord-i18n" }
 image.workspace = true
 regex.workspace = true
+serde_json.workspace = true
 time = { workspace = true, features = ["local-offset"] }
 
 [lints]
@@ -21,5 +22,4 @@ workspace = true
 
 [dev-dependencies]
 phoecord-plugin-runtime.workspace = true
-serde_json.workspace = true
 time = { workspace = true, features = ["local-offset", "macros"] }

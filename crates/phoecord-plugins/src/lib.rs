@@ -26,6 +26,7 @@ pub mod fix_images_quality;
 pub mod follow_user;
 pub mod friend_invites;
 pub mod game_activity_toggle;
+pub mod gif_provider_switcher;
 pub mod i_love_spam;
 pub mod ignore_activities;
 pub mod implicit_relationships;
@@ -351,6 +352,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(no_track::NoTrack::new()),
         Box::new(dearrow::Dearrow::new()),
         Box::new(fix_images_quality::FixImagesQuality::new()),
+        Box::new(gif_provider_switcher::GifProviderSwitcher::new()),
         Box::new(silent_typing::SilentTyping::new()),
         Box::new(clear_urls::ClearUrls::new()),
         Box::new(unindent::Unindent::new()),

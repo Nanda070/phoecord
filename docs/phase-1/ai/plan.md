@@ -246,7 +246,7 @@ Every row of [`docs/PLUGINS.md`](../../PLUGINS.md) whose "Where" column names a 
 | 1.2.12 Commands | the `/phoecord` command framework from 1.2.8; `Host::rest` for FriendInvites and UnsuppressEmbeds | matvee |
 | 1.2.13 Presence | `Send` op 3 rewriting; `Host::emit_send`; `Host::fetch` for MusicRichPresence (Last.fm, ListenBrainz) | matvee |
 | 1.2.14 Profiles | `RestResponse` rewriting of profile responses; USRBG and Decor wait for a Phase 2 UI hook | buslan07 |
-| 1.2.15 External services | `Host::fetch` (DeArrow API, Tenor/Giphy); GifProviderSwitcher needs the query string in plugin routes | buslan07 |
+| 1.2.15 External services | `Host::fetch` (DeArrow API, Tenor/Giphy); GifProviderSwitcher reads the query with `Host::request_query` | buslan07 |
 | 1.2.16 Data parts | `Host::rest` (ValidUser, ValidReply, NewGuildSettings); `Dispatch` `extra` payloads | Kennurken |
 | 1.2.17 Translate etc. | `Host::fetch` (translation backend, ReviewDB API); XSOverlay dropped (ruling, 2026-11-26) | matvee |
 | 1.2.18 Hidden things | `Dispatch` `READY` / `GUILD_CREATE` rewriting; experiment assignments | Kennurken |

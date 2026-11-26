@@ -39,7 +39,7 @@ At the end of Phase 2, PhoeCord v1.0 ships on Desktop Phoenix (Windows first) an
 
 ### Open Phase 1 tasks (running in parallel)
 
-1.1.9, 1.2.14 (USRBG/Decor wait for a Phase 2 UI hook), 1.2.15 (GifProviderSwitcher waits for the query string in plugin routes). 1.4.10 and 1.5.9 moved into Phase 2 as 2.4.8 and 2.2.11. These do not block Phase 2.
+1.1.9, 1.2.14 (USRBG/Decor wait for a Phase 2 UI hook), 1.2.15 (FixImagesQuality partial). 1.4.10 and 1.5.9 moved into Phase 2 as 2.4.8 and 2.2.11. These do not block Phase 2.
 
 ## 3. What Phase 2 adds
 

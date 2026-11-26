@@ -6,6 +6,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Added
 
+- 1.2.15: `gif_provider_switcher` (off by default): Tenor (default) or Giphy answer the GIF picker's search, suggestions, categories and trending calls instead of Discord's Klipy, with the keys Vencord ships; `provider = "klipy"` leaves the picker alone. If the provider fails, the call goes to Discord.
 - 1.2.14 / 1.2.15 (decisions, no code): USRBG and Decor wait for a Phase 2 UI hook; GifProviderSwitcher waits for the query string in plugin routes and may use the Tenor and Giphy keys Vencord ships.
 - 1.2.15 (API): `Host::request_query()` (WASM `request-query`, always allowed) gives a plugin the raw query string of the REST call it is handling, so it can read `GET /gifs/search?q=…`; `Event` routes stay the path alone, so `wants` matching is unchanged. `phoecord_core::route::split_query` and `query_pairs` (form decoding) help read it. Wired in the proxy and in the loader's REST bridge. Additive, Plugin API stays v1: plugins built before it load and run unchanged.
 - 2.2.6 (first part): `phoecord check <exe> [--signatures <dir>]` reads a client executable without running it, picks the signature table of its build and prints each signature as found, missed or ambiguous with its RVA; the exit code is 1 unless every one is found. Typed locators and the CI job on private dumps are still open.
