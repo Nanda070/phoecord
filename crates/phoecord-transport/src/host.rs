@@ -381,7 +381,44 @@ impl ChainHost for ProxyHost<'_> {
 
     fn set_fetch_hosts(&mut self, hosts: &[String]) {
         self.fetch_hosts = hosts.to_vec();
+        self.fetch_hosts
+            .extend(user_fetch_hosts(self.config, &self.plugin));
     }
+}
+
+/// Extra `fetch` hosts the user allowed for one plugin in `config.toml`
+/// (`[plugins.<id>] fetch_hosts = ["lb.example.org"]`, task 2.4.2 c: a self-hosted ListenBrainz).
+/// Only the user writes `config.toml`, never a plugin, so this widens nothing a plugin can choose.
+/// Exact host names only: a pattern, a scheme, a port or a path is skipped.
+pub fn user_fetch_hosts(config: &Config, plugin: &str) -> Vec<String> {
+    let Some(list) = config
+        .plugins
+        .get(plugin)
+        .and_then(|t| t.get("fetch_hosts"))
+        .and_then(|v| v.as_array())
+    else {
+        return Vec::new();
+    };
+    list.iter()
+        .filter_map(|v| v.as_str())
+        .map(|h| h.trim().to_ascii_lowercase())
+        .filter(|h| is_plain_host(h))
+        .collect()
+}
+
+/// `a.b` style DNS name: labels of `a-z`, `0-9` and `-`, at least two, none empty or starting or
+/// ending with `-`.
+fn is_plain_host(h: &str) -> bool {
+    h.len() <= 253
+        && h.contains('.')
+        && h.split('.').all(|l| {
+            !l.is_empty()
+                && l.len() <= 63
+                && !l.starts_with('-')
+                && !l.ends_with('-')
+                && l.bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+        })
 }
 
 impl Host for ProxyHost<'_> {
@@ -606,6 +643,24 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    #[test]
+    fn the_user_can_add_fetch_hosts_for_one_plugin_only() {
+        let cfg: Config = toml::from_str(
+            "[plugins.music_rich_presence]
+fetch_hosts = [\"LB.example.org \", \"*.evil.com\",              \"https://x.org\", \"x.org:443\", \"nodot\", 5]
+",
+        )
+        .unwrap();
+        let shared = Shared::new(temp("fetchhosts"));
+        let mut h = ProxyHost::new(&shared, &cfg);
+        h.begin_plugin("music_rich_presence");
+        h.set_fetch_hosts(&["api.listenbrainz.org".into()]);
+        assert_eq!(h.fetch_hosts, ["api.listenbrainz.org", "lb.example.org"]);
+        h.begin_plugin("other");
+        h.set_fetch_hosts(&[]);
+        assert!(h.fetch_hosts.is_empty());
     }
 
     #[test]

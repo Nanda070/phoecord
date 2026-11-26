@@ -24,8 +24,10 @@
 //! `song`, `album`), `useListeningStatus` (false), `missingArt` (`logo`, `placeholder`),
 //! `showLogo` (true), `showAlbumCover` (true).
 //!
-//! Not ported: `listenbrainz-compatible` (a self-hosted instance): `fetch` only reaches the hosts
-//! the manifest lists.
+//! A self-hosted ListenBrainz-compatible instance (Vencord's `listenbrainz-compatible`): set
+//! `listenbrainzHost = "lb.example.org"` and allow it with `fetch_hosts = ["lb.example.org"]` in
+//! the same `[plugins.music_rich_presence]` section; `fetch` only reaches the manifest's hosts and
+//! the ones the user lists there (task 2.4.2 c).
 
 use crate::presence::{self, LISTENING, Owned};
 use crate::state::{Shared, dispatch_data};
@@ -256,10 +258,22 @@ pub fn youtube_thumbnail(url: &str) -> Option<String> {
     (!id.is_empty()).then(|| format!("https://i.ytimg.com/vi/{id}/maxresdefault.jpg"))
 }
 
+/// The ListenBrainz API host: `listenbrainzHost` for a self-hosted instance (task 2.4.2 c), else
+/// `api.listenbrainz.org`. A self-hosted host is reached only when the user also lists it in
+/// `fetch_hosts` of this plugin's `config.toml` section; otherwise `fetch` refuses it and the
+/// error is logged like any failed check.
+fn listenbrainz_host(host: &dyn Host) -> String {
+    host.setting("listenbrainzHost")
+        .and_then(|v| v.as_str().map(|h| h.trim().to_ascii_lowercase()))
+        .filter(|h| !h.is_empty())
+        .unwrap_or_else(|| LISTENBRAINZ_HOST.into())
+}
+
 /// Vencord's `ListenBrainzScrobbler.fetchTrackData` and `getUrls`.
 fn listenbrainz(host: &mut dyn Host, st: &mut State, user: &str) -> Option<Track> {
     let url = format!(
-        "https://{LISTENBRAINZ_HOST}/1/user/{}/playing-now",
+        "https://{}/1/user/{}/playing-now",
+        listenbrainz_host(host),
         encode_component(user)
     );
     let json = get_json(host, &url, &[])?;
@@ -754,6 +768,24 @@ mod tests {
         assert_eq!(
             a.at(&["metadata", "button_urls"]),
             Some(&j(r#"["https://www.last.fm/user/ann"]"#))
+        );
+    }
+
+    #[test]
+    fn a_self_hosted_listenbrainz_host_is_asked_instead() {
+        let mut h = host()
+            .with("listenbrainzHost", str(" LB.example.org "))
+            .answer_fetch(
+                "GET",
+                "https://lb.example.org/1/user/ann/playing-now",
+                200,
+                r#"{"payload":{"listens":[]}}"#,
+            );
+        let mut st = State::default();
+        assert!(listenbrainz(&mut h, &mut st, "ann").is_none());
+        assert_eq!(
+            h.fetch_calls[0].0,
+            "GET https://lb.example.org/1/user/ann/playing-now"
         );
     }
 

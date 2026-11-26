@@ -109,7 +109,7 @@ The 30 🎨 plugins of v1.0: BetterFolders, ShowMeYourName, RoleColorEverywhere,
 | MessageLinkEmbeds | Previews of linked messages | 🌐 + 🎨 | v1.0 | done: data — a rich embed per linked message, `/phoecord linkembeds` / 2 (message component) |
 | MessageLogger | Keep deleted and edited messages | 🌐 + 🎨 | v1.0 | done: data / 2.3 |
 | MoreQuickReactions | More quick reactions | 🎨 UI | v1.0 | 2 |
-| MusicRichPresence | Last.fm and ListenBrainz Rich Presence | 🌐 Network | v1.0 | done (no self-hosted ListenBrainz) |
+| MusicRichPresence | Last.fm and ListenBrainz Rich Presence | 🌐 Network | v1.0 | done (a self-hosted ListenBrainz: `listenbrainzHost` + `fetch_hosts`) |
 | MutedServersActivityBadge | Activity badge on muted servers | 🎨 UI | 1.x | 2 |
 | MutualGroupDMs | Mutual group DMs on profiles | 🌐 + 🎨 | v1.0 | done: data — `/phoecord mutualgdms <user>` / 2 (profile tab) |
 | NewGuildSettings | Auto-mute and set up servers you join | 🌐 Network | v1.0 | done: new servers get your mute/suppress settings, `/phoecord newguildsettings` |

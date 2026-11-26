@@ -76,6 +76,7 @@ In Rust these are `phoecord::host::<name>` with `-` as `_` (`host::kv_get`, `hos
 | Rule | Detail |
 |:---|:---|
 | Allowed hosts | Exact bare host names, lower case, no scheme, port or path: `"api.example.com"`. A pattern `"*.example.com"` matches **exactly one more label** (`123.example.com`; not `example.com`, not `a.b.example.com`). At least two labels |
+| Hosts the user adds | `[plugins.<id>] fetch_hosts = ["lb.example.org"]` in `config.toml` adds exact host names for that one plugin (a self-hosted service the plugin supports). Only the user writes `config.toml`; a plugin cannot add hosts to its own list. Patterns, schemes, ports and paths there are skipped |
 | URL | `https://` only, port 443 only, no `user:pass@`, no spaces or control characters |
 | Redirects | **Not followed.** A 3xx comes back as the answer; the `location` header is available |
 | Credentials | No Discord credentials, no cookies. Refused request headers: `Host`, `Authorization`, `Cookie`, `Proxy-*`, `Connection`, `Content-Length`, `Transfer-Encoding`, `TE`, `Upgrade`, `Keep-Alive`, `Trailer`, and anything with CR or LF |
