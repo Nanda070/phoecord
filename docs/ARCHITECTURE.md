@@ -87,11 +87,11 @@ The plugin chain does not know where an event comes from, so the same `Chain`, n
 
 | | Proxy (today) | In-process (target on Phoenix) |
 |:---|:---|:---|
-| Where | `phoecord run`: a local proxy on `127.0.0.1` with a per-install CA | Inside `Discord.exe`: the plugin runtime is linked into the loader (`version.dll`) and hooks the client's own network read/write functions next to the UI hooks |
+| Where | `phoecord run`: a local proxy on `127.0.0.1` with a per-install CA | Inside `Discord.exe`: the plugin runtime is linked into the loader, which `phoecord launch` injects at start (2.1.7), and hooks the client's own network read/write functions next to the UI hooks |
 | Clients | Today's Electron client on Windows, macOS, Linux; Phoenix as a fallback | Phoenix on Windows first |
 | Needs | A trusted local CA, a port, a background process | No CA, no port, no extra process; VPNs and zapret see only `Discord.exe` |
 | Survives client updates | Yes: only Discord's wire protocol matters | No: network hooks need fresh signatures after an update, like UI hooks |
-| Install | CA trust + autostart | Put `version.dll` and the config next to the client; uninstall deletes them |
+| Install | CA trust + autostart | A "Discord Phoenix (PhoeCord)" shortcut that runs `phoecord launch --channel phoenix`; nothing is copied into the client's folder (2.2.8). The CA is trusted anyway, for the fallback |
 
 **The boundary between them** is `Engine` in `crates/phoecord-transport` (task 1.1.12). It owns the `Chain`, the host state (account facts, KV store, rate limits, timers, strings) and the live config, and knows nothing about sockets, TLS or HTTP. A transport calls its entry points and acts on what they return:
 
@@ -114,7 +114,7 @@ What each transport supplies:
 | Delivering `Effects` | `locals` to a broadcast the gateway tasks read, `frames` to the newest live gateway connection (`live.rs`) | `locals` queue until the dispatch detour takes them (dropped without that hook); `frames` need a send hook, which is not known yet, so they are dropped and logged (`transport::Delivery`) |
 | Not needed | | CA, port, TLS, extra process |
 
-Why not in-process on today's client: Electron's network stack is Chromium's (BoringSSL) and the Gateway lives in the sandboxed renderer process, so hooks there are fragile and plugins could not read their config or data. Why not proxy-only on Phoenix: the loader is needed there anyway for the UI, so moving the network hooks into the same DLL removes the CA, the port and the extra process. Once 2.1 shows what Phoenix's network stack is, in-process becomes Phoenix's main transport and the proxy stays as the fallback when signatures for a new build are missing.
+Why not in-process on today's client: Electron's network stack is Chromium's (BoringSSL) and the Gateway lives in the sandboxed renderer process, so hooks there are fragile and plugins could not read their config or data. Why not proxy-only on Phoenix: the loader is needed there anyway for the UI, so moving the network hooks into the same DLL removes the CA, the port and the extra process. Stage 2.1 showed what Phoenix's network stack is ([`research/phoenix-recon.md`](research/phoenix-recon.md), part 3): a `reqwest` transport with a hookable `send` and response `poll`, a gateway registry built per instance at run time (hooked through its build/insert path, not a static table) and an outgoing send path. So in-process becomes Phoenix's main transport once 2.2.2–2.2.4 land, and the proxy stays as the fallback when signatures for a new build are missing. Phoenix's error reports (Sentry) connect directly, so on the proxy transport NoTrack cannot block them.
 
 **Choosing the transport for Phoenix (rulings, 2026-11-26; task 2.2.8).** The choice is made by `phoecord launch` before the client starts, because `--proxy-server` is a command-line flag: it checks `Discord.exe` with the same locators and `phoecord_loader::plan` as `phoecord check`, caching the result by the client's `.text` hash together with a hash of the signature folder, so a Phoenix update or a signature hot-fix (2.2.10) both re-run the check. It is all or nothing per launch: every entry point found → in-process and no proxy process at all (the loader reads `config.toml` itself, no pipe); any one missing → the whole launch goes through the proxy and the loader does the UI only, so traffic never passes the chain twice. A hook that fails during a session is not switched to the proxy live: network plugins stay off until the client restarts, and the build is marked failed so the next launch uses the proxy until a signature hot-fix. The CA is installed up front anyway, since the fallback can be needed at any launch. `--transport auto|proxy|in-process` (or `[phoenix] transport` in `config.toml`) overrides the choice. On macOS and Linux Phoenix always uses the proxy.
 
@@ -250,8 +250,9 @@ Process: Ghidra/IDA + the open GPUI (Zed) sources → find the function → make
 ### Hooks and themes
 
 - **Hooks**: inline detours (`retour` or our own trampoline), installed with threads suspended, removed on unload.
-- **Themes**: GPUI draws from a palette (`Hsla` colours in the theme struct). A hook on fetching the active theme replaces palette values from the user's `theme.toml`. If Phoenix turns out to load themes as data (as Zed does with JSON), no hooks are needed: the theme is just a file.
-- **Settings tab**: a hook on building the tab list adds "PhoeCord" with GPUI elements; settings are read and written over IPC to the proxy.
+- **Themes**: GPUI draws from a palette (`Hsla` colours in the theme struct). A hook on fetching the active theme replaces palette values from the user's `theme.toml`. If Phoenix turns out to load themes as data (as Zed does with JSON), no hooks are needed: the theme is just a file. Stage 2.1 matched no `GlobalTheme` or `ThemeColors` symbol by name, so which of the two applies is still open (2.3.1).
+- **Settings tab**: a hook on building the tab list adds "PhoeCord" with GPUI elements; settings are read and written over IPC to the proxy on the proxy transport, and from `config.toml` directly when Phoenix runs in-process (2.2.8).
+- **Where UI hooks attach** (proposed from the GPUI notes, [`re/gpui-lifecycle.md`](re/gpui-lifecycle.md); nothing hooked yet): the exit of `DiscordApp::render` for overlays and toasts, `MenuView::render` for context menus, and the router and workspace regions for tabs and panels.
 - **Deleted messages**: `MessageLogger` in the proxy marks the event, the UI hook renders it struck through instead of rewriting the text.
 
 ### Degradation

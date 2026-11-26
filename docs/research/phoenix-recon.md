@@ -8,7 +8,7 @@ Findings about an official Phoenix build, and the steps that produce them. Part 
 
 **The account used for the signed-in runs is not accepted by this client.** It reaches `READY` and then shows "This app isn't available for your account". Signed-in results cover only what the client sends and receives up to and on that screen. Nothing in the traffic was changed and no way past the screen was tried. What the study of another loader says about Phoenix is in [`phoenix-desktop.md`](phoenix-desktop.md).
 
-# Part 1. The binary (2.1.2, 2.1.5, 2.1.6)
+# Part 1. The binary and the loading path (2.1.1, 2.1.2, 2.1.5–2.1.7)
 
 Facts in part 1 come from a local install, read with read-only tools (`phoecord dev inspect-pe`, PowerShell, `Get-AuthenticodeSignature`, resource APIs used only to read the manifest) and a static pass over the installed binary (headless Ghidra on a private project, never run against Phoenix). No sunbird code or binaries are reproduced (see [`phoenix-desktop.md`](phoenix-desktop.md) §0). **Exact addresses, byte signatures and structure offsets from this static pass are not published here**: they are reverse-engineering detail about a specific shipped build and live in the team's private recon notes instead (consistent with [`docs/AGENTS.md`](../AGENTS.md), "Never commit … disassembly" — the same rule that keeps `local_dumps/transport_dump.txt` gitignored). What follows is everything useful without them.
 
@@ -111,6 +111,19 @@ Two static passes were made over the installed binary (2026-11-25 sliced on gate
 
 **Open for 2.1.6, carried to the next pass:** the registry table's address and entry layout.
 **Open for 2.1.5, carried to 2.2.2:** the response layout, and everything at run time (Control Flow Guard enforcement on a real detour has not been tested).
+
+## Loading path (2.1.7)
+
+**Decision: launcher injection, not `version.dll` sideload** (ruling, 2026-11-26; `docs/DECISIONS.md`). `phoecord dev inject <exe>` (`crates/phoecord-loader/src/inject.rs`) starts the client with `CreateProcess` suspended, queues an APC on its main thread that calls `LoadLibraryW` on PhoeCord's DLL, then resumes it. The DLL is in before the client runs any of its own code, and nothing is placed in `app\`.
+
+**What was run.** First on a throwaway `cmd.exe`, then on the real Phoenix `0.1.0.2208`, with PhoeCord's own loader. `version.dll` stayed the real one from `System32`. `DllMain` and the worker thread ran, the worker detected the build without any RVA (a new `.text` SHA-256 for `0.1.0.2208`), found no signature table for it and left the UI layer off. The client kept running, no crash. Before that, a third-party tool already on the owner's machine had shown the same method on Phoenix in 858 ms (that figure is the tool's, not a bound for PhoeCord's loader).
+
+**What it means.**
+
+- The in-place update of `app\` (see 2.1.1) cannot remove PhoeCord: nothing of PhoeCord lives there. After an update only the check cache of 2.2.8 has to notice the new build.
+- Phoenix is PhoeCord-modded only when started through `phoecord launch --channel phoenix` (2.2.8: a separate shortcut). Started from its own shortcut, it runs without PhoeCord.
+- Hook timing: the DLL loads before the first instruction of the client, so the "too late from a worker thread" risk of the plan is answered for loading. Whether the worker installs hooks before the first registry read is a 2.2.2/2.2.3 question, since no hook exists yet.
+- Sideload itself was never tested: `version.dll` is in the import table (above), but no stub was ever placed next to `Discord.exe`. The comment at the top of `inject.rs` says Phoenix imports no DLL the loader could sideload; the import table says otherwise, so the honest state is "not tested", not "impossible".
 
 # Part 2. Proxy, gateway, degradation (2.1.3, 2.1.4, 2.3.7)
 
@@ -271,7 +284,7 @@ With a working setup, use the client for a few minutes (open channels, send a me
 
 ### What the answers mean for 2.1.8
 
-On Windows the first row applies, through `--proxy-server` or the system setting rather than `HTTPS_PROXY`: no hook is needed. `phoecord launch` already passes the flag; a client started any other way needs the flag in its shortcut or the system setting. The ruling is the owner's and is not recorded yet.
+On Windows the first row applies, through `--proxy-server` or the system setting rather than `HTTPS_PROXY`: no hook is needed. `phoecord launch` already passes the flag; a client started any other way needs the flag in its shortcut or the system setting. **Ruling (2026-11-26): option 1, no hook** (`docs/DECISIONS.md`). Still open for 2.1.8: the check on a fresh install with no manual setup.
 
 | Proxy setting | System CA | Option (`ARCHITECTURE.md`, "Phoenix and the proxy") |
 |:---|:---|:---|
@@ -382,16 +395,67 @@ missing_on_purpose = { aob = "DE AD BE EF DE AD BE EF DE AD BE EF" }
 
 In scenario 3 the loader today does not tell Electron from Phoenix: it finds no signatures and leaves everything off. Whether that is enough, or the loader must recognise Phoenix first, is decided once 2.1.2 shows what identifies it.
 
-## Open questions (carried to 2.1.5–2.1.7)
+# Part 3. Summary and decisions for 2.2–2.4 (2.1.9)
 
-- Does the observed `SetDefaultDllDirectories` call actually exclude the application directory before `version.dll` would be probed? Needs an empirical sideload test or a debugger breakpoint; this read-only PE pass cannot answer it.
-- Is Control Flow Guard (`GUARD_CF`, confirmed above) enforced strictly enough to break an inline detour that doesn't target a CFG-valid entry? Needs a prototype hook test (2.1.5/2.1.6).
-- How does `modules/state.json` get populated during a real update, and does the main `app\Discord.exe` itself update in place or move to a new path? Not observed on this fresh install; the setup log and the installer's strings point to in-place replacement of `app\` (see "Discovery and update scheme (2.1.1)"); revisit after an actual Phoenix auto-update.
-- `DiscordSystemHelperPhoenix` runs from `C:\Program Files\Common Files\Discord\DiscordPhoenix\`, outside `%LOCALAPPDATA%`. `discover` (2.1.1) does not look there: it is a service helper, not a client. The installer and uninstaller (2.2.6, 2.2.8) still have to account for this second location.
-- **HTTP transport response layout.** `send`, its vtable and the request layout were located on the second pass (see the summary above); the response layout (status, headers, body) that `on_response` needs is still open, and none of it is confirmed at run time.
-- **Gateway registry table.** Its address and entry layout (what 2.1.6's "done when" asks for) are still open after both passes.
-- **READY and the event registry.** The connection loop handles `READY` specially; whether its payload also still goes through the ordinary event registry is unverified.
-- **2.1.7 is not closed by this note.** The loading-path decision (sideload vs launcher) and the hook-timing prototype are a build-and-test task, not documentation; the CFG-enforcement and `SetDefaultDllDirectories` questions above still gate it.
+Status of stage 2.1 on 2026-11-26: 2.1.1, 2.1.2, 2.1.5, 2.1.6 and 2.1.7 are done; 2.1.3, 2.1.4 and 2.1.8 have their Windows answers and a decision, with the parts listed under "Open questions" still to run. All of it is one build (`0.1.0.2208`), one Windows machine and one account that the client stops at an access screen after `READY`.
+
+## What stage 2.1 found
+
+| Area | Finding | Where |
+|:---|:---|:---|
+| Binary | PE32+ native Rust client, 518 MB, signed by Discord Inc., CFG on, no .NET; 50 imported DLLs, none delay-loaded; no DLL search restriction in the header or manifest | 2.1.2 |
+| Install and update | One fixed folder `%LOCALAPPDATA%\DiscordPhoenix\app`, version from the executable; updates replace `app\` in place (inferred, not observed); modules update apart; a system helper service lives in Program Files | 2.1.1 |
+| Loading path | Launcher injection works with PhoeCord's own loader: the DLL is in before the client runs, the build is detected, the loader degrades cleanly with no signatures | 2.1.7 |
+| Proxy reach | `--proxy-server` and the system proxy are honoured, `HTTPS_PROXY` is not; certificates are verified by `rustls-platform-verifier` against the system store; a trusted PhoeCord CA is accepted; no pin seen; HTTP/1.1 is enough; Sentry goes around the proxy | 2.1.3 |
+| Gateway wire format | JSON with `zstd-stream`, decoded by today's codec without changes | 2.1.4 |
+| HTTP transport | `reqwest`-based; `send`, its vtable, the response future's `poll` slot and the request layout located; allocator shims located | 2.1.5 |
+| Gateway | One ABI for the per-event handlers; the registry is a per-instance tree reached through the context, built at run time, not a static table; an outgoing send path exists (not for heartbeat, identify, resume); `READY` is handled specially in the connection loop | 2.1.6 |
+| UI | The root view chain (`Root` → `Frame` → `Splash` → `DiscordApp` → router / `Workspace`) and candidate hook points (`DiscordApp::render`, `MenuView::render`, workspace regions); see [`re/gpui-lifecycle.md`](../re/gpui-lifecycle.md) | 2.2.1 notes |
+
+Addresses, byte signatures and offsets for the binary rows are in the private recon notes, not here.
+
+## Decisions for 2.2–2.4
+
+What the reconnaissance confirmed, and what each later task takes from it:
+
+| Decision | Status | Tasks it feeds |
+|:---|:---|:---|
+| Phoenix is reached by launcher injection on every launch; nothing is copied into `app\` | **changed** from the plan (sideload `version.dll`); ruling 2026-11-26 | 2.2.8 (shortcut, no reconcile of files after an update), 2.4.5 |
+| The proxy fallback is option 1: `--proxy-server` plus the CA in the system store, no hook | **confirmed**; ruling 2026-11-26 | 2.1.8, 2.2.8 |
+| In-process is the main transport on Windows Phoenix; the choice is made per launch, all or nothing, from a cached `phoecord check` of `Discord.exe` | **new**; rulings 2026-11-26 | 2.2.7 (no per-entry-point handoff), 2.2.8, 2.2.10 |
+| REST in-process: inline entry on `send`, vtable swap for `poll` | **confirmed**: both located | 2.2.2 |
+| Body replacement waits for pinned allocator shims; until then a local reply is the safe default | **confirmed** | 2.2.2 |
+| Gateway in-process hooks the registry's build/insert path or the context, not a static table | **changed**: the plan expected per-domain tables at fixed addresses | 2.2.3, 2.2.5 (a locator returns a function, not a table address) |
+| `Engine::on_send` gets a hook | **confirmed** for the ordinary send path; heartbeat, identify and resume are sent elsewhere | 2.2.4 |
+| The proxy codec needs no change for Phoenix | **confirmed** for one connection | 2.1.4, 2.2.7 |
+| Locators work on string anchors, call fan-in and the `.pdata` function table, never on a fixed address | **confirmed**: the allocator shims have no string anchor, so "called by many, calls nothing back" is the rule | 2.2.5, 2.2.6, 2.2.9 |
+| UI hooks attach at the exit of `DiscordApp::render`, at `MenuView::render` and at the workspace regions | **proposed** by the GPUI notes, nothing hooked yet | 2.3.3, 2.3.4, 2.3.5 |
+| Themes: no `GlobalTheme` / `ThemeColors` symbol was matched by name; whether Phoenix keeps its palette in code or reads it as data is not known | **open** | 2.3.1 part 2, 2.3.2 |
+| NoTrack cannot block Phoenix's error reports through the proxy: Sentry connects directly | **new** | 2.4.1 (NoTrack on Phoenix needs an in-process answer or stays partial) |
+
+## Open questions and risks
+
+Questions that are still open, by the task that has to answer them:
+
+- **2.1.3:** endpoints beyond the account screen (uploads, voice, CDN), and Linux.
+- **2.1.4:** the gateway version and other URL parameters, the event comparison with the Electron client, and fixtures (`tests/fixtures/phoenix/`). All of these need an account the client accepts.
+- **2.1.8:** the check on a fresh install with no manual setup.
+- **2.2.2:** the response layout (status, headers, body) for `on_response`; whether Control Flow Guard breaks an inline detour.
+- **2.2.3:** the registry entry layout; whether `READY` also goes through the ordinary registry or only through the connection loop's special path.
+- **2.2.4:** where heartbeat, identify and resume are sent, if a plugin ever needs them.
+- **2.2.8:** a real Phoenix update was never observed: what `app\` and the `updates` folder look like before and after, and whether a running client is swapped or waits. The installer must also know about the system helper in `%ProgramFiles%\Common Files\Discord\DiscordPhoenix\`.
+- **2.3.1:** where the palette lives (see the decisions table).
+- **Sideload:** never tested (see "Loading path"). Not needed now; worth one test if injection ever stops working.
+- **Linux and macOS:** no Phoenix location or layout is known; the proxy with a plain launch is the plan there.
+
+Risks:
+
+- **One build.** Every finding is from `0.1.0.2208`. No signature is in `signatures/` until 2.2.9 checks it on two adjacent builds, so until then in-process cannot be the default for anyone.
+- **The test account.** The client stops at "This app isn't available for your account" after `READY`. Everything past that screen (messages, uploads, settings, the UI hook points in a live client) is unobserved, and 2.1.4's fixtures and 1.1.9 wait for an accepted account.
+- **The access gate.** `DiscordApp::render` checks an access gate and can show a "Build expired" banner; a build the gate rejects is unusable whatever PhoeCord does.
+- **Detection time.** On Discord Canary (224 MiB) the loader took about 130 ms to detect the build, over the 20 ms target (2.2.11). Phoenix's executable is more than twice as large, so hashing `.text` will take longer; this is measured on Phoenix by nobody yet.
+- **Two `Found<T>` types.** `hooks::found::Found<T>` (2.2.2/2.2.3) and `locators::Found<T>` (2.2.5) are separate; they should become one before part 2 of 2.2.5 adds the target locators.
+- **Terms.** Client modification and traffic interception break Discord's Terms ([`TERMS.md`](../../TERMS.md)); every live run uses an account that can be lost.
 
 # GPUI symbol import and reference-build comparison (2.2.1)
 
