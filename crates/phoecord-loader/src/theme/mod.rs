@@ -29,6 +29,7 @@
 //! Phoenix). Until the field names are known, they stay free-form (`lower_case`, digits, `_`,
 //! `.`, `-`).
 
+pub mod import;
 mod parse;
 
 pub use parse::{ColorError, parse_color};
@@ -254,6 +255,32 @@ mod tests {
         assert_eq!(theme.name, "Discord (default)");
         assert!(problems.is_empty(), "{problems:?}");
         assert_eq!(theme.colors.len(), 12);
+    }
+
+    /// The two other built-in themes (2.3.2) parse cleanly and set the same fields as the default.
+    #[test]
+    fn the_shipped_light_and_high_contrast_themes_parse() {
+        let (default, _) =
+            Theme::from_toml(include_str!("../../../../themes/default.toml"), "d").unwrap();
+        for (text, name) in [
+            (
+                include_str!("../../../../themes/light.toml"),
+                "Discord Light",
+            ),
+            (
+                include_str!("../../../../themes/high-contrast.toml"),
+                "High Contrast",
+            ),
+        ] {
+            let (theme, problems) = Theme::from_toml(text, "x").unwrap();
+            assert_eq!(theme.name, name);
+            assert!(problems.is_empty(), "{name}: {problems:?}");
+            assert_eq!(
+                theme.colors.keys().collect::<Vec<_>>(),
+                default.colors.keys().collect::<Vec<_>>(),
+                "{name}"
+            );
+        }
     }
 
     #[test]

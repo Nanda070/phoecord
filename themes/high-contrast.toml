@@ -1,0 +1,21 @@
+# Built-in high-contrast theme (task 2.3.2).
+#
+# Black surfaces, white text, saturated status colours; every text colour is at least 7:1 on
+# `background` (WCAG AAA). Field names are PhoeCord's placeholders until Phoenix's palette is known (2.3.1); see
+# `themes/default.toml` and `docs/plugins/themes.md`.
+
+name = "High Contrast"
+
+[colors]
+background = "#000000"
+"background.secondary" = "#0a0a0a"
+"background.tertiary" = "#141414"
+"background.floating" = "#000000"
+text = "#ffffff"
+"text.muted" = "#d0d0d0"
+"text.link" = "#66ccff"
+brand = "#8c9eff"
+online = "#3ddc84"
+idle = "#ffd400"
+dnd = "#ff6b6b"
+offline = "#b0b0b0"

@@ -99,7 +99,7 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | Task | What | Who | Status |
 |:--|:--|:--|:--|
 | **2.3.1** 🔴 | Theme engine: `theme.toml` → GPUI palette, live switching | matvee | ⏳ part 1 merged, PR #102; `themes/default.toml` ships (PR #122) with Discord's published surface colours under placeholder field names — still not a true no-op default, and no live hook: `phoecord-recon` has no `GlobalTheme` anchor for Phoenix (only Zed/GPUI's general pattern in `docs/research/gpui.md`); blocked on that, not on access |
-| **2.3.2** 🟡 | 3 built-in themes + import of Vencord themes where they translate to a palette | — | ⏳ |
+| **2.3.2** 🟡 | 3 built-in themes + import of Vencord themes where they translate to a palette | Nanda | 🚧 `themes/default.toml` (dark), `light.toml`, `high-contrast.toml`; `phoecord theme import`; `docs/plugins/themes.md`. Open: the field names follow Phoenix's palette once 2.3.1 finds it |
 | **2.3.3** 🔴 | PhoeCord settings tab in Phoenix: plugins, settings, install / remove packages with rights shown, en + ru | ken | ⏳ moved from matvee (ruling, 2026-11-26) |
 | **2.3.4** 🔴 | MessageLogger UI: deleted messages struck through, edit history on hover | matvee | ⏳ `phoecord_loader::ui::message_logger` (PR #122): pure `Accessory::for_message` (deleted / edited-with-history), tested; not wired to a real message row — `MessageRow::render`'s address is not in `phoecord-recon`, only the app-level render chain (`docs/re/gpui-lifecycle.md`) is mapped |
 | **2.3.5** 🟡 | Message context menu: plugin action entries in right-click and `...` menus | — | ⏳ |

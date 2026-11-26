@@ -9,6 +9,7 @@ mod help;
 mod log;
 mod selftest;
 mod signatures;
+mod theme;
 mod upgrade;
 
 use anyhow::{Context, Result};
@@ -164,6 +165,10 @@ enum Cmd {
         #[command(subcommand)]
         cmd: signatures::SignaturesCmd,
     },
+    Theme {
+        #[command(subcommand)]
+        cmd: theme::ThemeCmd,
+    },
     Dev {
         #[command(subcommand)]
         cmd: dev::DevCmd,
@@ -311,6 +316,7 @@ fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Re
         Cmd::ImportVencord { path } => import_vencord(&paths, path, l10n),
         Cmd::Dev { cmd } => dev::run(cmd, &paths, l10n),
         Cmd::Signatures { cmd } => signatures::run(cmd, l10n),
+        Cmd::Theme { cmd } => theme::run(cmd, l10n),
         Cmd::Selftest => runtime()?.block_on(selftest::run(paths, l10n)),
         Cmd::Check { exe, signatures } => check::run(&exe, &signatures, l10n),
         Cmd::Paths => {
