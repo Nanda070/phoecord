@@ -4,6 +4,10 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Fixed
+
+- Installer window: on a short window the onboarding text no longer runs under the bottom bar (its line crossed the text); the column is clipped at the bar and scrolls.
+
 ## [0.6.0] - 2026-11-26
 
 A test release for the signed update path (2.4.6, A1): the first release signed with the owner's minisign key. An installed copy built from `main` after PR #136 updates to it automatically.

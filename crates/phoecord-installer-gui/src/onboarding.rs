@@ -132,6 +132,17 @@ impl App {
         (body, bar)
     }
 
+    /// The text column of a screen: clipped at the bottom bar's line and scrolled when the window
+    /// is shorter than the screen, so nothing is drawn under the bar.
+    fn body_column(ui: &mut egui::Ui, body: Rect, id: &str, add: impl FnOnce(&mut egui::Ui)) {
+        let mut outer = ui.new_child(egui::UiBuilder::new().max_rect(body));
+        outer.set_clip_rect(body.intersect(ui.clip_rect()));
+        egui::ScrollArea::vertical()
+            .id_salt(id)
+            .auto_shrink([false, true])
+            .max_height(body.height())
+            .show(&mut outer, add);
+    }
     /// The bottom bar: an optional Back on the left, the main action on the right.
     fn bottom_bar(
         &self,
@@ -172,49 +183,50 @@ impl App {
     fn welcome(&mut self, ui: &mut egui::Ui, full: Rect) {
         let ctx = ui.ctx().clone();
         let (body, bar) = Self::column(full);
-        let mut c = ui.new_child(egui::UiBuilder::new().max_rect(body));
-        let (mark, _) = c.allocate_exact_size(vec2(56.0, 56.0), Sense::hover());
-        theme::paint_mark(c.painter(), mark);
-        c.add_space(theme::S4);
-        widgets::h1(&mut c, self.tr.t("gui-onboard-welcome-title"));
-        c.add_space(theme::S1);
-        widgets::muted(&mut c, self.tr.t("gui-onboard-welcome-sub"));
-        c.add_space(theme::S6);
-        let points = [
-            (icon::SHIELD_CHECK, "gui-onboard-point-proxy"),
-            (icon::PUZZLE_PIECE, "gui-onboard-point-plugins"),
-            (icon::ARROW_COUNTER_CLOCKWISE, "gui-onboard-point-undo"),
-        ];
-        for (i, (glyph, key)) in points.into_iter().enumerate() {
-            // The points arrive one after another, 60 ms apart.
-            let age = motion::age(&ctx, Id::new("onboard-welcome"));
-            let a = motion::out_quint(((age - 0.06 * i as f32) / dur::ROW).clamp(0.0, 1.0));
-            if a < 1.0 {
-                ctx.request_repaint();
-            }
-            c.scope(|ui| {
-                ui.set_opacity(a);
-                ui.horizontal_top(|ui| {
-                    let (r, _) = ui.allocate_exact_size(vec2(36.0, 36.0), Sense::hover());
-                    ui.painter()
-                        .rect_filled(r, theme::radius(theme::R_CONTROL), color::RAISED);
-                    ui.painter().text(
-                        r.center(),
-                        egui::Align2::CENTER_CENTER,
-                        glyph,
-                        theme::icon(18.0),
-                        color::ROSE,
-                    );
-                    ui.add_space(theme::S3);
-                    ui.vertical(|ui| {
-                        ui.set_max_width(520.0f32.min(ui.available_width()));
-                        widgets::body(ui, self.tr.t(&format!("{key}-title")));
-                        widgets::muted(ui, self.tr.t(key));
+        Self::body_column(ui, body, "onboard-welcome-body", |c| {
+            let (mark, _) = c.allocate_exact_size(vec2(56.0, 56.0), Sense::hover());
+            theme::paint_mark(c.painter(), mark);
+            c.add_space(theme::S4);
+            widgets::h1(c, self.tr.t("gui-onboard-welcome-title"));
+            c.add_space(theme::S1);
+            widgets::muted(c, self.tr.t("gui-onboard-welcome-sub"));
+            c.add_space(theme::S6);
+            let points = [
+                (icon::SHIELD_CHECK, "gui-onboard-point-proxy"),
+                (icon::PUZZLE_PIECE, "gui-onboard-point-plugins"),
+                (icon::ARROW_COUNTER_CLOCKWISE, "gui-onboard-point-undo"),
+            ];
+            for (i, (glyph, key)) in points.into_iter().enumerate() {
+                // The points arrive one after another, 60 ms apart.
+                let age = motion::age(&ctx, Id::new("onboard-welcome"));
+                let a = motion::out_quint(((age - 0.06 * i as f32) / dur::ROW).clamp(0.0, 1.0));
+                if a < 1.0 {
+                    ctx.request_repaint();
+                }
+                c.scope(|ui| {
+                    ui.set_opacity(a);
+                    ui.horizontal_top(|ui| {
+                        let (r, _) = ui.allocate_exact_size(vec2(36.0, 36.0), Sense::hover());
+                        ui.painter()
+                            .rect_filled(r, theme::radius(theme::R_CONTROL), color::RAISED);
+                        ui.painter().text(
+                            r.center(),
+                            egui::Align2::CENTER_CENTER,
+                            glyph,
+                            theme::icon(18.0),
+                            color::ROSE,
+                        );
+                        ui.add_space(theme::S3);
+                        ui.vertical(|ui| {
+                            ui.set_max_width(520.0f32.min(ui.available_width()));
+                            widgets::body(ui, self.tr.t(&format!("{key}-title")));
+                            widgets::muted(ui, self.tr.t(key));
+                        });
                     });
                 });
-            });
-            c.add_space(theme::S4);
-        }
+                c.add_space(theme::S4);
+            }
+        });
         let start = self.tr.t("gui-onboard-start");
         let lang = if self.tr.lang() == "ru" {
             "English"
@@ -241,6 +253,7 @@ impl App {
         let ctx = ui.ctx().clone();
         let (body, bar) = Self::column(full);
         let mut c = ui.new_child(egui::UiBuilder::new().max_rect(body));
+        c.set_clip_rect(body.intersect(ui.clip_rect()));
         widgets::h1(&mut c, self.tr.t("gui-install-title"));
         c.add_space(theme::S1);
         widgets::muted(&mut c, self.tr.t("gui-onboard-pick-sub"));
@@ -283,66 +296,67 @@ impl App {
     fn done(&mut self, ui: &mut egui::Ui, full: Rect) {
         let ctx = ui.ctx().clone();
         let (body, bar) = Self::column(full);
-        let mut c = ui.new_child(egui::UiBuilder::new().max_rect(body));
-        // A check that draws itself once, then the words.
-        let (r, _) = c.allocate_exact_size(vec2(56.0, 56.0), Sense::hover());
-        let age = motion::age(&ctx, Id::new("onboard-done"));
-        let ring = motion::out_quint((age / 0.3).clamp(0.0, 1.0));
-        c.painter().circle_filled(
-            r.center(),
-            28.0 * (0.9 + 0.1 * ring),
-            theme::fade(color::OK_BG, ring),
-        );
-        let check = motion::out_cubic(((age - 0.12) / dur::CHECK).clamp(0.0, 1.0));
-        widgets::check_mark(c.painter(), r.shrink(17.0), check, color::OK, 3.0);
-        if age < 0.5 {
-            ctx.request_repaint();
-        }
-        c.add_space(theme::S4);
-        let name = self
-            .selected
-            .map(|ch| self.channel_name(ch))
-            .unwrap_or_default();
-        widgets::h1(&mut c, self.tr.t("gui-onboard-done-title"));
-        c.add_space(theme::S1);
-        c.scope(|ui| {
-            ui.set_max_width(560.0f32.min(ui.available_width()));
-            widgets::muted(ui, self.tr.f("gui-onboard-done-sub", &[("name", &name)]));
-        });
-        c.add_space(theme::S5);
-        // What the install will do, in the words the progress screen uses.
-        egui::Frame::new()
-            .fill(color::SURFACE)
-            .stroke(theme::stroke(1.0, color::LINE))
-            .corner_radius(theme::radius(theme::R_TILE))
-            .inner_margin(egui::Margin::symmetric(20, 16))
-            .show(&mut c, |ui| {
-                ui.set_width(ui.available_width());
-                widgets::caption(ui, self.tr.t("gui-onboard-done-what"));
-                ui.add_space(theme::S2);
-                let mac = Os::current() == Os::MacOs;
-                for (ph, glyph) in [
-                    (Phase::Certificate, icon::CERTIFICATE),
-                    (Phase::Autostart, icon::POWER),
-                    (Phase::Shortcut, icon::ROCKET_LAUNCH),
-                ] {
-                    let (title, sub) =
-                        self.phase_text(ph, mac && ph == Phase::Shortcut, self.selected);
-                    ui.horizontal_top(|ui| {
-                        ui.label(
-                            egui::RichText::new(glyph)
-                                .font(theme::icon(18.0))
-                                .color(color::ROSE),
-                        );
-                        ui.add_space(theme::S2);
-                        ui.vertical(|ui| {
-                            widgets::body(ui, title);
-                            widgets::caption(ui, sub);
-                        });
-                    });
-                    ui.add_space(theme::S2);
-                }
+        Self::body_column(ui, body, "onboard-done-body", |c| {
+            // A check that draws itself once, then the words.
+            let (r, _) = c.allocate_exact_size(vec2(56.0, 56.0), Sense::hover());
+            let age = motion::age(&ctx, Id::new("onboard-done"));
+            let ring = motion::out_quint((age / 0.3).clamp(0.0, 1.0));
+            c.painter().circle_filled(
+                r.center(),
+                28.0 * (0.9 + 0.1 * ring),
+                theme::fade(color::OK_BG, ring),
+            );
+            let check = motion::out_cubic(((age - 0.12) / dur::CHECK).clamp(0.0, 1.0));
+            widgets::check_mark(c.painter(), r.shrink(17.0), check, color::OK, 3.0);
+            if age < 0.5 {
+                ctx.request_repaint();
+            }
+            c.add_space(theme::S4);
+            let name = self
+                .selected
+                .map(|ch| self.channel_name(ch))
+                .unwrap_or_default();
+            widgets::h1(c, self.tr.t("gui-onboard-done-title"));
+            c.add_space(theme::S1);
+            c.scope(|ui| {
+                ui.set_max_width(560.0f32.min(ui.available_width()));
+                widgets::muted(ui, self.tr.f("gui-onboard-done-sub", &[("name", &name)]));
             });
+            c.add_space(theme::S5);
+            // What the install will do, in the words the progress screen uses.
+            egui::Frame::new()
+                .fill(color::SURFACE)
+                .stroke(theme::stroke(1.0, color::LINE))
+                .corner_radius(theme::radius(theme::R_TILE))
+                .inner_margin(egui::Margin::symmetric(20, 16))
+                .show(c, |ui| {
+                    ui.set_width(ui.available_width());
+                    widgets::caption(ui, self.tr.t("gui-onboard-done-what"));
+                    ui.add_space(theme::S2);
+                    let mac = Os::current() == Os::MacOs;
+                    for (ph, glyph) in [
+                        (Phase::Certificate, icon::CERTIFICATE),
+                        (Phase::Autostart, icon::POWER),
+                        (Phase::Shortcut, icon::ROCKET_LAUNCH),
+                    ] {
+                        let (title, sub) =
+                            self.phase_text(ph, mac && ph == Phase::Shortcut, self.selected);
+                        ui.horizontal_top(|ui| {
+                            ui.label(
+                                egui::RichText::new(glyph)
+                                    .font(theme::icon(18.0))
+                                    .color(color::ROSE),
+                            );
+                            ui.add_space(theme::S2);
+                            ui.vertical(|ui| {
+                                widgets::body(ui, title);
+                                widgets::caption(ui, sub);
+                            });
+                        });
+                        ui.add_space(theme::S2);
+                    }
+                });
+        });
         let install = self.tr.t("gui-install-action");
         let later = self.tr.t("gui-onboard-later");
         let (back, go, later_hit) = self.bottom_bar(
