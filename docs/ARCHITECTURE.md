@@ -124,6 +124,8 @@ For VPN and zapret users on the proxy transport, the proxy can send its upstream
 
 ## Plugin API v1
 
+Developer documentation for third-party plugin authors (quick start, every event, every right, publishing, localization) is in [`docs/plugins/`](plugins/README.md); this section is the design.
+
 The v0 proxy gave each plugin a trait with eight hooks and direct access to `Config` and `Account`. That cannot cross a sandbox boundary. PhoeCord reduces the contract to three types (`crates/phoecord-core/src/plugin.rs`):
 
 ```rust
@@ -159,27 +161,24 @@ The WIT boundary (`wit/phoecord.wit`) is stricter, because wasmtime type-checks 
 ### The `plugin.toml` manifest
 
 ```toml
-id = "clear_urls"
-name = "ClearURLs"
+id = "clear_urls_wasm"
+name = "ClearURLs (WASM example)"
 version = "0.1.0"
-api = 1
+description = "Strips tracking parameters from links you send"
+authors = ["someone"]
 vencord = "ClearURLs"
 layers = ["network"]
-events = ["rest_request:POST:/channels/*/messages"]   # what the host lets into the plugin
-
-[settings.extra_rules]
-type = "list"
-default = []
-
-[i18n]                                                 # optional, see "Localization"
-name.ru = "ClearURLs"
+api = 1
+events = ["rest_request:POST /channels/*/messages"]   # what the host lets into the plugin: kind or kind:glob
+rights = []                                            # kv, notify, emit_send, emit_dispatch, guilds, fetch, rest, plugins, data
+fetch = []                                             # outside hosts for the `fetch` right
 
 [[menu]]                                               # optional: message context menu entries (Phoenix)
 id = "copy_clean_link"                                 # comes back as `ui:menu_action`'s `entry`
 label = "menu-copy-clean-link"                         # a key of the plugin's i18n/<lang>.ftl
 ```
 
-A plugin with menu entries lists `"ui:menu_action"` in `events` to receive the clicks.
+Unknown fields are refused. There is no `[settings]` and no `[i18n]` table: a user's settings are `[plugins.<id>]` in `config.toml`, and a package's strings are `i18n/<lang>.ftl` files. A REST filter matches `"METHOD route"` with a space (`rest_request:POST /channels/*/messages`). A plugin with menu entries lists `"ui:menu_action"` in `events` to receive the clicks. The full field list, the event filters, the rights and the packaging are in [`docs/plugins/`](plugins/README.md) (developer docs for third-party plugin authors).
 
 ---
 

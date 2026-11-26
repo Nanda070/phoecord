@@ -4,7 +4,7 @@ Checked against code: `a965f75`, 23.11.2026. Whoever re-checks this guide agains
 
 A step-by-step guide to moving any plugin (a Vencord built-in, a Vencord userplugin, or your own idea) onto PhoeCord. Follow the steps in order; every step ends with something you can check.
 
-Related: [`PLUGINS.md`](PLUGINS.md) (which plugin goes where), [`ARCHITECTURE.md`](ARCHITECTURE.md) "Plugin API v1", the templates [`_template/code/plugin.rs`](_template/code/plugin.rs) and [`_template/code/plugin.toml`](_template/code/plugin.toml).
+Related: [`plugins/`](plugins/README.md) (the developer docs for third-party WASM plugins: events, rights, publishing), [`PLUGINS.md`](PLUGINS.md) (which plugin goes where), [`ARCHITECTURE.md`](ARCHITECTURE.md) "Plugin API v1", the templates [`_template/code/plugin.rs`](_template/code/plugin.rs) and [`_template/code/plugin.toml`](_template/code/plugin.toml).
 
 > **Status.** Native and WASM plugins work today. `Host::rest` calls Discord's API as the user's own client session and `Host::fetch` calls outside hosts listed in the manifest; on-screen parts wait for Phase 2 UI hooks *(2)*. Write the plugin against the API that exists and leave a `// needs: …` note for the rest.
 

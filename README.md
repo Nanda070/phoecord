@@ -60,7 +60,7 @@ cargo run                       # Rust 1.88+
 bash scripts/check.sh           # all checks (Windows: powershell -File scripts/check.ps1)
 ```
 
-Branches, commits and PRs: [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for people and AI agents: [`AGENTS.md`](docs/AGENTS.md). Where every file lives: [`docs/CODE_MAP.md`](docs/CODE_MAP.md). Porting a plugin: [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md).
+Branches, commits and PRs: [`CONTRIBUTING.md`](CONTRIBUTING.md). Rules for people and AI agents: [`AGENTS.md`](docs/AGENTS.md). Where every file lives: [`docs/CODE_MAP.md`](docs/CODE_MAP.md). Porting a plugin into PhoeCord: [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md). Writing your own WASM plugin (Rust or TypeScript): [`docs/plugins/`](docs/plugins/README.md).
 
 ## Contributors
 

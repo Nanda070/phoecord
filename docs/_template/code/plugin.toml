@@ -1,4 +1,5 @@
-# Template for a WASM plugin manifest (milestone 1.3). Copy next to your plugin.wasm.
+# Template for a WASM plugin manifest. Copy next to your plugin.wasm; the full reference is docs/plugins/.
+# Unknown fields are an error: only the fields below exist.
 
 id = "my_plugin"                 # snake_case, unique; also the [plugins.<id>] config section
 name = "MyPlugin"
@@ -9,21 +10,25 @@ authors = ["Your Name"]
 vencord = "VencordName"          # optional: the Vencord plugin this mirrors
 layers = ["network"]             # network | theme | ui
 
-# Only these events reach the plugin. Format: <kind>:<method>:<route glob> or dispatch:<EVENT_NAME>.
+# Only these events reach the plugin: `kind` or `kind:glob` (`*` any text, `?` one character).
+#   rest_request / rest_response: "METHOD route" with one space, e.g. "rest_request:POST /channels/*/messages"
+#   dispatch: the event name, e.g. "dispatch:MESSAGE_*"; send: the op number, e.g. "send:3"
+#   ui: the UI event name, e.g. "ui:menu_action"
 events = [
-    "rest_request:POST:/channels/*/messages",
+    "rest_request:POST /channels/*/messages",
     "dispatch:MESSAGE_CREATE",
 ]
 
 # Rights beyond events. Anything not listed is denied.
 rights = ["kv", "notify"]
 
-[settings.example_option]
-type = "bool"                    # bool | int | string | list
-default = true
-description = "Shown in the settings tab"
+# Outside hosts for the `fetch` right ("*.example.com" matches exactly one more label).
+# fetch = ["api.example.com"]
 
-# Optional translations (milestone 1.7). English strings above are the source.
-[i18n.ru]
-name = "MyPlugin"
-description = "<Russian translation goes in i18n/ru.ftl>"
+# Message context menu entries (Phoenix). List "ui:menu_action" in `events` to receive the clicks.
+# [[menu]]
+# id = "example_action"          # snake_case, unique in the plugin
+# label = "menu-example-action"  # a key of i18n/<lang>.ftl, shown through Host::t
+
+# Settings are not declared here: the user sets them under [plugins.<id>] in config.toml and the plugin
+# reads them with Host::setting. Strings are i18n/en.ftl and i18n/ru.ftl next to this file.

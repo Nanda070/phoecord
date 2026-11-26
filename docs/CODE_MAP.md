@@ -323,11 +323,12 @@ The installer window (stage 1.4.3). Every change to the machine goes through `ph
 
 ## 5. Docs
 
-See [`README.md`](README.md) in this folder. Project-level documents live here too: [`ARCHITECTURE.md`](ARCHITECTURE.md), [`ROADMAP.md`](ROADMAP.md), [`AGENTS.md`](AGENTS.md) + [`CLAUDE.md`](CLAUDE.md) (rules for people and AI agents). [`PORTING_PLUGINS.md`](PORTING_PLUGINS.md) is the porting guide; [`PLUGINS.md`](PLUGINS.md) is the plugin catalogue (every Vencord plugin and userplugin mapped to a layer and a task).
+See [`README.md`](README.md) in this folder. Project-level documents live here too: [`ARCHITECTURE.md`](ARCHITECTURE.md), [`ROADMAP.md`](ROADMAP.md), [`AGENTS.md`](AGENTS.md) + [`CLAUDE.md`](CLAUDE.md) (rules for people and AI agents). [`PORTING_PLUGINS.md`](PORTING_PLUGINS.md) is the porting guide; [`plugins/`](plugins/README.md) is the developer documentation for third-party WASM plugins; [`PLUGINS.md`](PLUGINS.md) is the plugin catalogue (every Vencord plugin and userplugin mapped to a layer and a task).
 
 | Path | What |
 |:---|:---|
 | `docs/phase-1/` | Phase 1 plan, task table, agent rules, spec, implementation plan and ledger (closed 26.11.2026, kept as history) |
+| `docs/plugins/` | Developer docs for third-party WASM plugin authors (2.4.4): `README.md` (index), `quick-start.md` (Rust and TypeScript), `events.md` (events, verdicts, `events` filters, `PHOECORD_TIMER`, `PHOECORD_LOCAL_DELETE`), `rights.md` (rights, limits, what the user sees), `publishing.md` (package layout, `plugin.toml` fields, versioning and the v1 freeze, catalog, licensing), `localization.md` (`i18n/<lang>.ftl`, `Host::t`) |
 | `docs/phase-2/` | Phase 2 plan (Phoenix Canary → v1.0): `README.md` (task table), `AGENTS.md`, `ai/spec.md`, `ai/plan.md`, `ai/ledger.md` |
 | `docs/re/` | Reverse-engineering notes on the Phoenix client: `gpui-lifecycle.md` (GPUI init chain, main window, injection points) |
 | `docs/research/` | Research documents: `phoenix-desktop.md` (sunbird study), `gpui.md` (GPUI map), `phoenix-recon.md` (findings for 2.1.2, 2.1.5, 2.1.6; method and findings for 2.1.3, 2.1.4, 2.3.7; 2.1.9 completes it) |

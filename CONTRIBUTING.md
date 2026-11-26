@@ -53,7 +53,7 @@ It runs `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and check
 ## Code rules
 
 - **Crate boundaries.** `phoecord-core` depends on none of our crates and does no I/O. Plugins never open sockets or files, only through `Host`. The loader (`phoecord-loader`) is not needed by network plugins and must never become their dependency.
-- **Plugin API.** A change to `Event`, `Verdict`, `Host` or `Manifest` is its own PR, labelled `api`, with an entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). A new variant is a minor change; changing an existing one bumps `API_VERSION`.
+- **Plugin API.** A change to `Event`, `Verdict`, `Host` or `Manifest` is its own PR, labelled `api`, with an entry in [`docs/CHANGELOG.md`](docs/CHANGELOG.md). A new variant of a `#[non_exhaustive]` Rust enum is a minor change, but the WIT is stricter (a new case or field breaks built `.wasm` files; only new host functions, UI event names and dispatch names are minor, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) "Plugin API v1"); changing an existing item bumps `API_VERSION`.
 - **`unsafe`.** Allowed only in `phoecord-loader`, with a `// SAFETY:` comment above every block.
 - **Tests without network.** Tests never call Discord and never need a token. Gateway tests use recorded payloads with personal data removed.
 - **Plugins.** Port or write them by [`docs/PORTING_PLUGINS.md`](docs/PORTING_PLUGINS.md); adapted Vencord code is fine with its attribution header. Every plugin has a unique `snake_case` id, tests next to its code, and a row in the plugin table of [`ROADMAP.md`](docs/ROADMAP.md).

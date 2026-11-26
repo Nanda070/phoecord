@@ -10,7 +10,7 @@ One index page for `docs/`. The working rules are in [`AGENTS.md`](AGENTS.md) (t
 | Changing code | [`CODE_MAP.md`](CODE_MAP.md) (which file does what), [`ARCHITECTURE.md`](ARCHITECTURE.md) (how the layers fit) |
 | Which plugins we build, and which are done | [`PLUGINS.md`](PLUGINS.md): every Vencord plugin and userplugin, its layer and its task |
 | Porting a plugin (Vencord, userplugin, new) | [`PORTING_PLUGINS.md`](PORTING_PLUGINS.md): step by step, with a worked example |
-| Writing a plugin | [`ARCHITECTURE.md`](ARCHITECTURE.md) "Plugin API v1", the template in [`_template/code/`](_template/code/) |
+| Writing a third-party WASM plugin (Rust or TypeScript) | [`plugins/`](plugins/README.md): quick start, events, rights, publishing, localization; the contract is in [`ARCHITECTURE.md`](ARCHITECTURE.md) "Plugin API v1", the templates in [`_template/code/`](_template/code/) |
 | Phase 1 (closed 26.11.2026, history) | [`phase-1/README.md`](phase-1/README.md) (tasks and where the open ones went), [`phase-1/ai/`](phase-1/ai/) (spec, plan, ledger) |
 | What is planned overall | [`ROADMAP.md`](ROADMAP.md) (stages; task status lives in the plan's README) |
 | Something broke | [`RUNBOOK.md`](RUNBOOK.md) |
