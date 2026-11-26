@@ -40,4 +40,5 @@ pub mod signatures;
 pub mod system;
 pub mod terms;
 pub mod uninstall;
+pub mod update;
 pub mod vencord;

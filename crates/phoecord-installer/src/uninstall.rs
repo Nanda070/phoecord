@@ -104,6 +104,14 @@ fn undo(step: &Step, entries: &[Entry], sys: &dyn System) -> Result<Outcome> {
     }
 }
 
+/// Stop the running PhoeCord proxies (`phoecord stop`): those of this binary and of every binary
+/// the install log names. The Windows setup runs this before it replaces files (ruling 2.4.5 Q7);
+/// the autostart entry or the window starts the new one.
+pub fn stop_proxies(env: &Env, sys: &dyn System) -> Result<Vec<u32>> {
+    let entries = InstallLog::in_dir(&env.data_dir).read()?;
+    sys.stop_proxies(&proxy_exes(env, &entries))
+}
+
 /// Undo everything the installer logged, newest step first.
 pub fn uninstall_all(env: &Env, sys: &dyn System) -> Result<UninstallReport> {
     let log = InstallLog::in_dir(&env.data_dir);
@@ -456,5 +464,22 @@ mod tests {
             sys.calls(),
             vec![format!("stop_proxies {}", e.proxy_exe.display())]
         );
+    }
+
+    #[test]
+    fn stop_only_stops_the_proxies_of_logged_binaries() {
+        let t = tempfile::tempdir().unwrap();
+        let e = env(Os::Windows, t.path());
+        let sys = FakeSystem::default();
+        assert!(!crate::autostart::is_installed(&e));
+        install(&e, &sys).unwrap();
+        assert!(crate::autostart::is_installed(&e));
+        let before = sys.calls().len();
+        stop_proxies(&e, &sys).unwrap();
+        let calls = sys.calls();
+        assert_eq!(calls.len(), before + 1, "{calls:?}");
+        assert!(calls[before].starts_with("stop_proxies"));
+        assert!(calls[before].contains(&e.proxy_exe.display().to_string()));
+        assert!(InstallLog::in_dir(&e.data_dir).path().exists());
     }
 }

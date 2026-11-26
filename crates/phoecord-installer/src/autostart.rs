@@ -55,6 +55,21 @@ pub(crate) fn unit_text(exe: &Path) -> String {
     )
 }
 
+/// Does the install log hold an autostart entry (Run key, LaunchAgent or systemd unit)? The
+/// updater starts the proxy again after an update only then.
+pub fn is_installed(env: &Env) -> bool {
+    InstallLog::in_dir(&env.data_dir)
+        .read()
+        .is_ok_and(|entries| {
+            entries.iter().any(|e| {
+                matches!(
+                    e.step,
+                    Step::RunKey { .. } | Step::LaunchAgent { .. } | Step::SystemdUnit { .. }
+                )
+            })
+        })
+}
+
 /// Write `text` to `path` and log the file if it did not exist before.
 fn write_logged(log: &InstallLog, path: &Path, text: &str) -> Result<()> {
     let existed = path.exists();

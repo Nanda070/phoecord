@@ -52,12 +52,24 @@ pub struct Reconciled {
     pub outcome: Outcome,
 }
 
-/// Where the DLL to install is: `version.dll` next to the running `phoecord` binary.
+/// The folder of the Windows install that holds the DLL (ruling 2.4.5 Q3): a `version.dll` next
+/// to `phoecord.exe` would be loaded into PhoeCord's own programs by the DLL search order.
+pub const DLL_DIR: &str = "loader";
+
+/// Where the DLL to install is: `version.dll` next to the running `phoecord` binary (the release
+/// `.zip`, a build from source), else in its `loader` folder (the installed copy). When neither
+/// exists, the first, so the error names the place the archive uses.
 pub fn default_source(env: &Env) -> PathBuf {
-    env.proxy_exe
-        .parent()
-        .map(|d| d.join(DLL_NAME))
-        .unwrap_or_else(|| PathBuf::from(DLL_NAME))
+    let Some(dir) = env.proxy_exe.parent() else {
+        return PathBuf::from(DLL_NAME);
+    };
+    let beside = dir.join(DLL_NAME);
+    let installed = dir.join(DLL_DIR).join(DLL_NAME);
+    if !beside.is_file() && installed.is_file() {
+        installed
+    } else {
+        beside
+    }
 }
 
 /// The channel folder that holds a client's `app-x.y.z` builds: the parent of `client.root` when
@@ -532,5 +544,20 @@ mod tests {
         let mut c = w.client();
         c.root = w.channel_dir.clone();
         assert_eq!(client_dir(&c), w.channel_dir);
+    }
+
+    #[test]
+    fn the_installed_copy_finds_the_dll_in_its_loader_folder() {
+        let t = tempfile::tempdir().unwrap();
+        let env = env(Os::Windows, t.path());
+        let dir = env.proxy_exe.parent().unwrap().to_path_buf();
+        // Neither: the place the release archive uses, so the error names it.
+        assert_eq!(default_source(&env), dir.join(DLL_NAME));
+        std::fs::create_dir_all(dir.join(DLL_DIR)).unwrap();
+        std::fs::write(dir.join(DLL_DIR).join(DLL_NAME), b"installed").unwrap();
+        assert_eq!(default_source(&env), dir.join(DLL_DIR).join(DLL_NAME));
+        // Next to the binary wins (the archive, a build from source).
+        std::fs::write(dir.join(DLL_NAME), b"beside").unwrap();
+        assert_eq!(default_source(&env), dir.join(DLL_NAME));
     }
 }
