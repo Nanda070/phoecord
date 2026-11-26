@@ -1,0 +1,64 @@
+---
+import { t, DISCORD, type Lang } from "../i18n";
+import { loadPlugins } from "../lib/plugins";
+import { getRelease } from "../lib/release";
+import PluginCard from "./PluginCard.astro";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = t(lang);
+const plugins = loadPlugins();
+const ready = plugins.filter((p) => p.status === "done" || p.status === "partial").length;
+const planned = plugins.filter((p) => p.status === "planned").length;
+const release = await getRelease();
+const HIGHLIGHTS = ["FakeNitro", "MessageLogger", "NoTrack", "SilentTyping", "ClearURLs", "PlatformIndicators"];
+const highlights = HIGHLIGHTS.map((n) => plugins.find((p) => p.name === n)).filter((p) => p !== undefined);
+---
+<section class="hero">
+  <div class="wrap">
+    <img class="hero-logo" src="/favicon.svg" alt="PhoeCord" width="104" height="104" />
+    <span class="pill">{s.hero.tag}</span>
+    <h1>{s.hero.title1}<br /><span class="grad">{s.hero.title2}</span></h1>
+    <p class="lead">{s.hero.lead}</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href={s.prefix + "/download"}>{s.hero.download}</a>
+      <a class="btn btn-ghost" href={s.prefix + "/plugins"}>{s.hero.plugins}</a>
+    </div>
+    {release.tag && <p class="hero-version">{s.hero.version}: <a href={release.url}>{release.tag}</a></p>}
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><b class="grad">{ready}</b><span>{s.stats.ready}</span></div>
+    <div class="stat"><b class="grad">{planned}+</b><span>{s.stats.planned}</span></div>
+    <div class="stat"><b class="grad">3</b><span>{s.stats.systems}</span></div>
+  </div>
+
+  <section class="section">
+    <h2>{s.features.title}</h2>
+    <div class="cards">
+      {s.features.items.map((f) => (
+        <div class="card">
+          <div class="icon" aria-hidden="true">{f.icon}</div>
+          <h3>{f.title}</h3>
+          <p>{f.text}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>{s.highlights.title}</h2>
+    <div class="plugin-grid">
+      {highlights.map((p) => <PluginCard plugin={p} lang={lang} />)}
+    </div>
+    <p class="center"><a class="btn btn-ghost" href={s.prefix + "/plugins"}>{s.highlights.all} →</a></p>
+  </section>
+
+  <section class="community">
+    <h2>{s.community.title}</h2>
+    <p>{s.community.text}</p>
+    <a class="btn btn-discord" href={DISCORD} rel="noopener">{s.community.button}</a>
+  </section>
+</div>

@@ -1,0 +1,80 @@
+---
+import { t, DISCORD, type Lang } from "../i18n";
+import { REPO } from "../lib/release";
+import "../styles/global.css";
+
+interface Props {
+  lang: Lang;
+  /** Path without the language prefix, e.g. "/plugins". */
+  path: string;
+  title?: string;
+}
+const { lang, path, title } = Astro.props;
+const s = t(lang);
+const other = lang === "en" ? "ru" : "en";
+const otherHref = (other === "ru" ? "/ru" : "") + (path === "/" && other === "ru" ? "/" : path);
+const link = (p: string) => s.prefix + p;
+const fullTitle = title ? `${title} · PhoeCord` : s.title;
+const canonical = new URL(link(path), Astro.site).href;
+const active = (p: string) => (p === path ? "active" : undefined);
+---
+<!doctype html>
+<html lang={s.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={s.description} />
+    <meta name="theme-color" content="#ff5a1f" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="en" href={new URL(path, Astro.site).href} />
+    <link rel="alternate" hreflang="ru" href={new URL("/ru" + (path === "/" ? "/" : path), Astro.site).href} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={s.description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav-inner">
+        <a class="brand" href={link("/")}>
+          <img src="/favicon.svg" alt="" width="32" height="32" />
+          <span>PhoeCord</span>
+        </a>
+        <nav>
+          <a href={link("/plugins")} class={active("/plugins")}>{s.nav.plugins}</a>
+          <a href={link("/download")} class={active("/download")}>{s.nav.download}</a>
+          <a href={REPO} rel="noopener">{s.nav.source}</a>
+          <span class="lang" aria-label={s.switchLang}>
+            {lang === "en" ? <b aria-current="true">EN</b> : <a href={otherHref} hreflang="en">EN</a>}
+            <span class="lang-sep">/</span>
+            {lang === "ru" ? <b aria-current="true">RU</b> : <a href={otherHref} hreflang="ru">RU</a>}
+          </span>
+          <a href={DISCORD} class="btn btn-discord btn-sm" rel="noopener">{s.nav.discord}</a>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="wrap footer-inner">
+        <div>
+          <a class="brand" href={link("/")}>
+            <img src="/favicon.svg" alt="" width="28" height="28" />
+            <span>PhoeCord</span>
+          </a>
+          <p>{s.footer.license}</p>
+          <p class="muted">{s.footer.disclaimer}</p>
+        </div>
+        <div class="footer-links">
+          <a href={link("/plugins")}>{s.nav.plugins}</a>
+          <a href={link("/download")}>{s.nav.download}</a>
+          <a href={REPO} rel="noopener">GitHub</a>
+          <a href={DISCORD} rel="noopener">Discord</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

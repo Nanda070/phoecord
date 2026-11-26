@@ -1,0 +1,111 @@
+---
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { t, type Lang } from "../i18n";
+import { loadPlugins, type Section, type Status } from "../lib/plugins";
+import { REPO } from "../lib/release";
+import PluginCard from "./PluginCard.astro";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = t(lang).pluginsPage;
+const plugins = loadPlugins();
+const order: Record<Status, number> = { done: 0, partial: 1, planned: 2, replaced: 3, na: 4 };
+const sections: Section[] = ["vencord", "userplugin", "core"];
+const bySection = sections.map((sec) => ({
+  sec,
+  items: plugins
+    .filter((p) => p.section === sec)
+    .sort((a, b) => order[a.status] - order[b.status] || a.name.localeCompare(b.name)),
+}));
+const filters: (Status | "all")[] = ["all", "done", "partial", "planned", "na"];
+
+// Third-party WASM plugins from the catalog (empty until the first community plugin is listed).
+interface CatalogEntry { id: string; name?: string; description?: string; repository?: string }
+const catalog = JSON.parse(readFileSync(resolve(process.cwd(), "../catalog/plugins.json"), "utf8")) as { plugins: CatalogEntry[] };
+---
+<section class="page-head">
+  <div class="wrap">
+    <h1>{s.title}</h1>
+    <p>{s.lead}</p>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="toolbar">
+    <input id="q" class="search" type="search" placeholder={s.search} aria-label={s.search} autocomplete="off" />
+    <div class="chips" role="group">
+      {filters.map((f, i) => (
+        <button class="chip" type="button" data-filter={f} aria-pressed={i === 0 ? "true" : "false"}>
+          {f === "all" ? s.all : s.status[f]}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  {bySection.map(({ sec, items }) => (
+    <section class="plugin-section" data-section={sec}>
+      <h2>{s.sections[sec]} <span class="muted">({items.length})</span></h2>
+      <div class="plugin-grid">
+        {items.map((p) => <PluginCard plugin={p} lang={lang} />)}
+      </div>
+    </section>
+  ))}
+  <p class="empty" id="empty" hidden>{s.empty}</p>
+
+  <section class="plugin-section">
+    <h2>{s.community}</h2>
+    {catalog.plugins.length === 0 ? (
+      <p class="muted">{s.communityEmpty} <a href={`${REPO}/tree/main/docs/plugins`}>{s.writeOne} →</a></p>
+    ) : (
+      <div class="plugin-grid">
+        {catalog.plugins.map((c) => (
+          <article class="plugin">
+            <h3>{c.name ?? c.id}</h3>
+            {c.description && <p>{c.description}</p>}
+            {c.repository && <a href={c.repository} rel="noopener">{c.repository.replace(/^https?:\/\//, "")}</a>}
+          </article>
+        ))}
+      </div>
+    )}
+  </section>
+</div>
+
+<script>
+  const q = document.getElementById("q") as HTMLInputElement;
+  const empty = document.getElementById("empty")!;
+  const chips = Array.from(document.querySelectorAll<HTMLButtonElement>(".chip"));
+  let status = "all";
+
+  function apply() {
+    const term = q.value.trim().toLowerCase();
+    let shown = 0;
+    document.querySelectorAll<HTMLElement>(".plugin-section[data-section]").forEach((sec) => {
+      let inSec = 0;
+      sec.querySelectorAll<HTMLElement>(".plugin").forEach((el) => {
+        const st = el.dataset.status;
+        const okStatus = status === "all" || st === status || (status === "na" && st === "replaced");
+        const ok = okStatus && (!term || el.dataset.text!.includes(term));
+        el.hidden = !ok;
+        if (ok) inSec++;
+      });
+      sec.hidden = inSec === 0;
+      shown += inSec;
+    });
+    empty.hidden = shown !== 0;
+  }
+
+  q.addEventListener("input", apply);
+  chips.forEach((c) =>
+    c.addEventListener("click", () => {
+      status = c.dataset.filter!;
+      chips.forEach((x) => x.setAttribute("aria-pressed", String(x === c)));
+      apply();
+    }),
+  );
+  const initial = new URLSearchParams(location.search).get("q");
+  if (initial) {
+    q.value = initial;
+    apply();
+  }
+</script>

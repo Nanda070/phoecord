@@ -1,0 +1,17 @@
+---
+import type { Plugin } from "../lib/plugins";
+import { t, type Lang } from "../i18n";
+
+interface Props { plugin: Plugin; lang: Lang }
+const { plugin, lang } = Astro.props;
+const s = t(lang).pluginsPage;
+---
+<article class="plugin" data-text={(plugin.name + " " + plugin.description).toLowerCase()} data-status={plugin.status}>
+  <h3>{plugin.name}</h3>
+  <p>{plugin.description}</p>
+  <div class="tags">
+    <span class={`tag ${plugin.status}`}>{s.status[plugin.status]}</span>
+    {plugin.layer !== "na" && plugin.layer !== "replaced" && <span class="tag">{s.layer[plugin.layer]}</span>}
+    {plugin.target !== "—" && <span class="tag">{plugin.target}</span>}
+  </div>
+</article>
