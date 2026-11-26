@@ -641,3 +641,29 @@ cli-signatures-restart = Перезапустите Discord, чтобы новы
 cli-signatures-folder = Папка сигнатур: { $path }
 cli-signatures-none = Файлов сигнатур нет
 cli-signatures-broken = { $file }: загрузчик его пропустит: { $why }
+
+# phoecord upgrade / stop (задача 2.4.5)
+cmd-stop = Остановить запущенный прокси PhoeCord этой установки
+cmd-upgrade = Проверить новый релиз PhoeCord сейчас и скачать его (установится при следующем запуске)
+cli-stop-none = Прокси PhoeCord не запущен
+cli-upgrade-applied = PhoeCord обновлён с { $from } до { $to }
+cli-upgrade-installing = Устанавливается PhoeCord { $version }; прокси запустится снова, когда установка закончится
+cli-upgrade-failed = Обновление не установилось: { $why }
+cli-upgrade-use-window = PhoeCord { $version } скачан. Откройте окно PhoeCord, чтобы установить его (оно спросит пароль)
+cli-upgrade-up-to-date = PhoeCord { $version } — самая новая версия
+cli-upgrade-ready = PhoeCord { $version } скачан и сверен с SHA256SUMS. Он установится при следующем запуске окна PhoeCord или `phoecord run`
+cli-upgrade-auto-off = Автообновления выключены (`[update] auto = false` в config.toml), поэтому он подождёт, пока вы их не включите или не установите его сами
+cli-upgrade-manual = Вышел PhoeCord { $version }. Эта копия не обновляется сама; скачайте его на { $page }
+cli-upgrade-refused = обновление отклонено: { $why }
+cli-upgrade-check-failed = проверка обновлений не удалась: { $why }
+
+# Обновления самого PhoeCord (задача 2.4.5)
+gui-settings-update = Обновления
+gui-settings-update-hint = Раз в день PhoeCord проверяет новый релиз на GitHub, скачивает его, сверяет с SHA256SUMS релиза и устанавливает при следующем открытии этого окна. Проверка сообщает GitHub ваш IP-адрес.
+gui-settings-update-switch = Устанавливать обновления автоматически
+gui-settings-update-version = Это PhoeCord { $version }.
+gui-settings-update-manual = Вышел PhoeCord { $version }. Эта копия не обновляется сама: { $page }
+gui-update-applied = PhoeCord обновлён с { $from } до { $to }.
+gui-update-failed = Обновление не установилось: { $why }
+gui-update-ready = PhoeCord { $version } скачан. Он установится при следующем открытии этого окна.
+gui-update-manual = Вышел PhoeCord { $version }. Подробнее в настройках.

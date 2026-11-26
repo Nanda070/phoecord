@@ -9,6 +9,7 @@ mod help;
 mod log;
 mod selftest;
 mod signatures;
+mod upgrade;
 
 use anyhow::{Context, Result};
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
@@ -89,6 +90,8 @@ enum Cmd {
         loader: bool,
     },
     Uninstall,
+    Stop,
+    Upgrade,
     Trust,
     Untrust,
     Plugins,
@@ -257,6 +260,8 @@ fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Re
             loader,
         ),
         Cmd::Uninstall => uninstall(l10n),
+        Cmd::Stop => upgrade::stop(l10n),
+        Cmd::Upgrade => upgrade::run(&paths, l10n),
         Cmd::Trust => {
             let ca = ca::Authority::load_or_create(&paths.data)?;
             trust::install(&ca.ca_pem_path)
@@ -418,6 +423,11 @@ async fn run(
     l10n: &Localizer,
     lang_flag: Option<String>,
 ) -> Result<()> {
+    // Autostart's `run` is the moment to install a downloaded PhoeCord update (2.4.5): nothing is
+    // running through it yet. `launch` never updates, a client is about to start.
+    if launch.is_none() && upgrade::at_run_start(&paths, l10n) {
+        return Ok(());
+    }
     // `run` is what autostart starts and `launch` starts the client: both keep the loader in place,
     // before Discord can load the DLL.
     reconcile_loader(l10n);
