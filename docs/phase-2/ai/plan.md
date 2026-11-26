@@ -371,6 +371,160 @@ Was the open part of task 1.2.15 (moved when Phase 1 closed, ruling 2026-11-26).
 
 **Done when:** with the default mode on, images in chat load at original resolution on Phoenix; nothing changes with the plugin off, and the proxy-side behaviour on Electron stays as it is.
 
+### 2.3.10. Generic view-render wrap and message-row accessories (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/` (wrap, message row), `crates/phoecord-loader/src/locators/` (the render anchors)
+
+- Scope: the one wrap around a GPUI view's `render` that every on-screen part below builds on, then the message row: accessories under, beside and inside a message (MessageLogger's struck-through and history from 2.3.4's `Accessory`, Translate's result, ReplyTimestamp, ShowTimeoutDuration, UserMessagesPronouns, ShikiCodeblocks, MessageClickActions, AntiRickroll's warning).
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin adds an element to a message row through the frozen API, and a locator miss turns off only the wrap it guards on Phoenix.
+
+### 2.3.11. Every context menu (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/menu.rs`
+
+- Scope: plugin entries in all context menus, not only the message menu of 2.3.5: user, channel, server, role (BetterRoleContext), image, link, account panel (CopyUserURLs, ReverseImageSearch, ViewIcons).
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** each menu kind takes plugin entries, and a click reaches the plugin as a UI event on Phoenix.
+
+### 2.3.12. Modals (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/modal.rs`
+
+- Scope: plugin modals and the modal stack: a plugin opens a modal with text, buttons and fields (PermissionsViewer, ViewRaw, ReviewDB's list).
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin opens and closes a modal; Escape and a click outside close it on Phoenix.
+
+### 2.3.13. User names (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/name.rs`
+
+- Scope: how a user's name renders everywhere it appears: ShowMeYourName, RoleColorEverywhere, ForceOwnerCrown, PlatformIndicators' icons.
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin changes the text, colour and trailing icons of a name in chat, the member list and mentions on Phoenix.
+
+### 2.3.14. Profiles (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/profile.rs`
+
+- Scope: sections and buttons in profile popouts and full profiles: ShowConnections, ReviewDB, PermissionsViewer, ViewIcons.
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin adds a section to the profile popout and the full profile on Phoenix.
+
+### 2.3.15. Chat input (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/input.rs`
+
+- Scope: buttons, counters and text changes in the chat input: QuickReply, TypingTweaks, Translate's button, FavoriteEmojiFirst and MoreQuickReactions in the emoji picker, ExpressionManager.
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin adds a button to the chat bar and reads or changes the draft before send on Phoenix.
+
+### 2.3.16. Voice and audio (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/voice.rs`
+
+- Scope: the voice panel and per-user audio: CallTimer, VolumeBooster (gain above 200 %), VoiceDownload (save voice messages).
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin shows an element in the voice panel and sets a user's volume above the client's limit on Phoenix.
+
+### 2.3.17. Account panel (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/account.rs`
+
+- Scope: entries and elements on the account panel at the bottom left: SpotifyControls' player, plugin quick toggles.
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin adds an element above the account panel on Phoenix.
+
+### 2.3.18. Media (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/media.rs`
+
+- Scope: images, video and streams: ImageZoom, PictureInPicture, BlurNSFW, BiggerStreamPreview.
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin wraps an image or video element (blur, zoom lens, pop-out) and the stream preview size on Phoenix.
+
+### 2.3.19. Channel and server lists (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/lists.rs`
+
+- Scope: the server list and the channel list: BetterFolders, PinDMs, ShowHiddenChannels' locked channels.
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin adds, reorders and decorates entries in both lists on Phoenix.
+
+### 2.3.20. Client behaviour patches (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/hooks/behaviour.rs`
+
+- Scope: switches on the client's own logic rather than its views: AlwaysTrust (no untrusted-link and suspicious-file prompts), NoUnblockToJump, ShowAllMessageButtons.
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** each patch is one located function with its own on/off, and a miss turns off only that patch on Phoenix.
+
+### 2.3.21. Overlay (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/overlay.rs`
+
+- Scope: PhoeCord's own overlay drawn above the client (the global overlay injection point of `docs/re/gpui-lifecycle.md`): toasts and notices from plugins.
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a plugin notification shows as a toast inside Phoenix on Phoenix.
+
+### 2.3.22. Themes picker (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/themes.rs`
+
+- Scope: the themes page in the PhoeCord settings tab: list, preview, switch, import (2.3.1, 2.3.2).
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** a theme is picked and applied without a restart on Phoenix.
+
+### 2.3.23. Toolbox (owner open)
+
+Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task covered). Blocked on the detours (2.2.2/2.2.3) and on an account that gets past Phoenix's access gate.
+
+**Files:** `crates/phoecord-loader/src/ui/toolbox.rs`
+
+- Scope: the PhoeCord toolbox button in the title bar with plugin actions (Vencord's VencordToolbox).
+- Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
+
+**Done when:** plugins add actions to the toolbox, and it opens the settings tab on Phoenix.
+
 ## Stage 2.4. Release v1.0
 
 ### 2.4.1. Top 10 plugins on Phoenix (ken)
@@ -388,7 +542,7 @@ Was the open part of task 1.2.15 (moved when Phase 1 closed, ruling 2026-11-26).
 **Files:** `crates/phoecord-plugins/src/`
 
 - Complete every remaining 🌐 and 🌐 + 🎨 plugin.
-- Port the 30 most-used 🎨 plugins to Phoenix.
+- Port the 30 🎨 plugins of v1.0 (the list in `docs/PLUGINS.md`, ruling 2026-11-26) to Phoenix.
 - Implement all panels: settings, plugin list, plugin settings, modals.
 
 **Done when:** the plugin table in `docs/PLUGINS.md` shows all v1.0 plugins complete on Phoenix.

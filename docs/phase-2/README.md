@@ -107,13 +107,27 @@ Details, files and "done when" in [`ai/plan.md`](ai/plan.md). **This table is th
 | **2.3.7** 🔴 | Degradation verified: unknown build → network only, no crashes; missing signature → that feature off only | ken | ⏳ preparation merged, PR #104: scenarios 1 and 2 covered for the plan with fake locator results; nothing verified inside a client |
 | **2.3.8** 🟡 | CDN picture hook for USRBG and Decor (was 1.2.14's blocker): native avatar/banner loading by hash, not a REST route | buslan | ⏳ |
 | **2.3.9** 🟡 | FixImagesQuality's default mode on Phoenix (was 1.2.15's open part): images in chat at original resolution through the picture-loading path of 2.3.8 | buslan | ⏳ |
+| **2.3.10** 🔴 | Generic view-render wrap and message-row accessories | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.11** 🔴 | Every context menu | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.12** 🔴 | Modals | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.13** 🔴 | User names | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.14** 🔴 | Profiles | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.15** 🔴 | Chat input | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.16** 🔴 | Voice and audio | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.17** 🔴 | Account panel | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.18** 🔴 | Media | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.19** 🔴 | Channel and server lists | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.20** 🔴 | Client behaviour patches | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.21** 🔴 | Overlay | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.22** 🔴 | Themes picker | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
+| **2.3.23** 🔴 | Toolbox | — | ⏳ added by ruling, 2026-11-26; blocked on 2.2.2/2.2.3 |
 
 ### Stage 2.4. Release v1.0 · `1.0`
 
 | Task | What | Who | Status |
 |:--|:--|:--|:--|
 | **2.4.1** 🔴 | Top 10 plugins on Phoenix (network + UI parts): MessageLogger, FakeNitro, NoTrack, ClearURLs, SilentTyping, ShowHiddenChannels, Translate, PlatformIndicators, PermissionsViewer, ViewIcons | ken | ⏳ |
-| **2.4.2** 🔴 | Remaining v1.0 scope: every 🌐 and 🌐 + 🎨 plugin complete, the 30 most-used 🎨 plugins, all panels | Nanda | ⏳ |
+| **2.4.2** 🔴 | Remaining v1.0 scope: every 🌐 and 🌐 + 🎨 plugin complete, the 30 most-used 🎨 plugins, all panels | Nanda | 🚧 scope ruled (Q1–Q6, 2026-11-26): `v1.0` column in PLUGINS.md, UI surfaces as 2.3.10–2.3.23; unblocked items (a)–(e) in progress |
 | **2.4.3** 🔴 | Plugin API stabilization: `API_VERSION = 1` frozen, changes minor-only; additive UI events | Nanda | ✅ merged, PR #114: v1 frozen with the owner's rulings (Q1–Q8, 2026-11-26): `#[non_exhaustive]` types with `new` constructors, `ChainHost`, `Event::Ui(UiEvent::MenuAction)` + `Manifest.menu` / `[[menu]]`, `LOCAL_DELETE_EVENT`, WIT `ui(ui-event { name, payload })`; `wit/frozen/` and `tests/frozen_wit.rs` guard the WIT. WASM packages built for 0.5 must be rebuilt |
 | **2.4.4** 🔴 | Developer docs `docs/plugins/`: quick start (Rust + TS), events, rights, publishing, localization | Nanda | ✅ PR #119: six pages (index, quick start, events, rights, publishing, localization) checked against `main` (`24e0362`); the quick starts were run from empty folders outside the repository; stale `plugin.toml` examples in `ARCHITECTURE.md` and the template fixed |
 | **2.4.5** 🔴 | Installer 1.0 for Windows; macOS and Linux with the network layer | Nanda | 🚧 merged, PR #121: NSIS setup with the loader in `loader\`, `.dmg`, `.deb` and `.rpm` (Linux packages test-installed in CI); automatic updates from GitHub Releases checked against `SHA256SUMS` (rulings Q1–Q8, 2026-11-26); not yet run on a real machine; open: TERMS.md §4 and the update check |
