@@ -93,6 +93,8 @@ const en = {
     projects: "Other Cheterin Group projects",
     projectsLead: "A little more from the same workshop.",
     open: "Open",
+    openGitHub: "Open on GitHub",
+    openSite: "Open site",
   },
 };
 
@@ -184,6 +186,8 @@ const ru: typeof en = {
     projects: "Другие проекты Cheterin Group",
     projectsLead: "Ещё немного из той же мастерской.",
     open: "Открыть",
+    openGitHub: "Открыть на GitHub",
+    openSite: "Открыть сайт",
   },
 };
 

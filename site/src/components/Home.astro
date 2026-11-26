@@ -15,16 +15,20 @@ const HIGHLIGHTS = ["FakeNitro", "MessageLogger", "NoTrack", "SilentTyping", "Cl
 const highlights = HIGHLIGHTS.map((n) => plugins.find((p) => p.name === n)).filter((p) => p !== undefined);
 ---
 <section class="hero">
-  <div class="wrap">
-    <img class="hero-logo" src="/favicon.svg" alt="PhoeCord" width="104" height="104" />
-    <span class="pill">{s.hero.tag}</span>
-    <h1>{s.hero.title1}<br /><span class="grad">{s.hero.title2}</span></h1>
-    <p class="lead">{s.hero.lead}</p>
-    <div class="hero-actions">
-      <a class="btn btn-primary" href={s.prefix + "/download"}>{s.hero.download}</a>
-      <a class="btn btn-ghost" href={s.prefix + "/plugins"}>{s.hero.plugins}</a>
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <span class="pill">{s.hero.tag}</span>
+      <h1>{s.hero.title1}<br /><span class="grad">{s.hero.title2}</span></h1>
+      <p class="lead">{s.hero.lead}</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href={s.prefix + "/download"}>{s.hero.download}</a>
+        <a class="btn btn-ghost" href={s.prefix + "/plugins"}>{s.hero.plugins}</a>
+      </div>
+      {release.tag && <p class="hero-version">{s.hero.version}: <a href={release.url}>{release.tag}</a></p>}
     </div>
-    {release.tag && <p class="hero-version">{s.hero.version}: <a href={release.url}>{release.tag}</a></p>}
+    <div class="hero-art" aria-hidden="true">
+      <img class="hero-logo" src="/favicon.svg" alt="" width="200" height="200" />
+    </div>
   </div>
 </section>
 

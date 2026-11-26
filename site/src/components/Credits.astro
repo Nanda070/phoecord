@@ -1,6 +1,7 @@
 ---
 import { t, type Lang } from "../i18n";
 import { REPO } from "../lib/release";
+import Icon from "./Icon.astro";
 import {
   CONTRIBUTORS,
   GROUP_LINKS,
@@ -14,40 +15,43 @@ import {
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const s = t(lang).creditsPage;
+const isGitHub = (href: string) => href.startsWith("https://github.com/");
 ---
-<section class="page-head credits-head">
-  <div class="wrap">
-    <p class="eyebrow">{s.group}</p>
+<div class="wrap credits">
+  <header class="cr-hero">
+    <p class="cr-eyebrow"><Icon name="spark" size={16} /> {s.group}</p>
     <h1>{s.title}</h1>
-    <p>{s.lead}</p>
-    <div class="hero-actions">
-      {GROUP_LINKS.map((l) => <a class="btn btn-ghost btn-sm" href={l.href} rel="noopener">{l.label}</a>)}
-    </div>
-  </div>
-</section>
-
-<div class="wrap">
-  <section class="section credits-section">
-    <h2>{s.team}</h2>
-    <div class="team-grid">
-      {TEAM.map((m) => (
-        <div class="card member">
-          <p class="eyebrow">{m.role[lang]}</p>
-          <h3>{m.name}</h3>
-          {m.handle && <p class="handle">{m.handle}</p>}
-          <p>{m.area[lang]}</p>
-          {m.links.length > 0 && (
-            <div class="member-links">
-              {m.links.map((l) => <a href={l.href} rel="noopener">{l.label}</a>)}
-            </div>
-          )}
-        </div>
+    <p class="cr-lead">{s.lead}</p>
+    <div class="cr-actions">
+      {GROUP_LINKS.map((l) => (
+        <a class="cr-btn" href={l.href} rel="noopener"><Icon name="github" size={16} /> {l.label}</a>
       ))}
     </div>
-    <p class="others"><a href={CONTRIBUTORS} rel="noopener">{OTHERS[lang]}</a></p>
+  </header>
 
-    <div class="helped">
-      <p class="eyebrow">{s.helped}</p>
+  <section class="cr-section">
+    <h2>{s.team}</h2>
+    <ul class="cr-team">
+      {TEAM.map((m) => (
+        <li>
+          <div>
+            <p class="cr-role">{m.role[lang]}</p>
+            <p class="cr-name">{m.name}</p>
+            <p class="cr-area">{m.area[lang]}</p>
+          </div>
+          <div class="cr-handles">
+            {m.handle && <span><Icon name={m.name === "Nanda" || m.name === "Mark" ? "discord" : "github"} size={16} /> {m.handle}</span>}
+            {m.links.filter((l) => !(l.label === "GitHub" && m.handle && l.href.endsWith("/" + m.handle))).map((l) => (
+              <a href={l.href} rel="noopener"><Icon name={l.label === "Telegram" ? "telegram" : "github"} size={16} /> {l.label}</a>
+            ))}
+          </div>
+        </li>
+      ))}
+    </ul>
+    <p class="cr-others"><a href={CONTRIBUTORS} rel="noopener">{OTHERS[lang]} →</a></p>
+
+    <div class="cr-helped">
+      <p class="cr-role">{s.helped}</p>
       <ul>
         {HELPED[lang].map((h) => <li>{h}</li>)}
         <li>…</li>
@@ -55,47 +59,54 @@ const s = t(lang).creditsPage;
     </div>
   </section>
 
-  <section class="section credits-section">
+  <section class="cr-section">
     <h2>{s.thanks}</h2>
-    <p class="section-lead">{s.thanksLead}</p>
-    <div class="cards">
+    <p class="cr-sub">{s.thanksLead}</p>
+    <ul class="cr-list">
       {THANKS.map((x) => (
-        <a class="card project" href={x.href} rel="noopener">
-          <h3>{x.name}</h3>
-          <p>{x.text[lang]}</p>
-        </a>
+        <li>
+          <span class="cr-ico"><Icon name="heart" size={18} /></span>
+          <div>
+            <p class="cr-item">{x.name}</p>
+            <p class="cr-text">{x.text[lang]}</p>
+            <a class="cr-open" href={x.href} rel="noopener">{s.open} →</a>
+          </div>
+        </li>
       ))}
-    </div>
+    </ul>
   </section>
 
-  <section class="section credits-section">
+  <section class="cr-section">
     <h2>{s.contact}</h2>
-    <div class="card contact">
-      <p>{s.contactLead}</p>
-      <dl>
-        <dt>Discord</dt><dd>nandak070</dd>
-        <dt>Telegram</dt><dd><a href="https://t.me/nanda070" rel="noopener">nanda070</a></dd>
-        <dt>GitHub</dt><dd><a href={REPO} rel="noopener">Nanda070/phoecord</a></dd>
-      </dl>
-      <p class="muted"><a href={`${REPO}/blob/main/SECURITY.md`} rel="noopener">{s.security}</a></p>
+    <p class="cr-sub">{s.contactLead}</p>
+    <div class="cr-contact">
+      <p class="cr-item">Nanda</p>
+      <p><Icon name="discord" size={16} /> <span class="cr-k">Discord:</span> nandak070</p>
+      <p><Icon name="telegram" size={16} /> <span class="cr-k">Telegram:</span> <a href="https://t.me/nanda070" rel="noopener">nanda070</a></p>
+      <p><Icon name="github" size={16} /> <span class="cr-k">GitHub:</span> <a href={REPO} rel="noopener">Nanda070/phoecord</a></p>
     </div>
+    <p class="cr-note"><a href={`${REPO}/blob/main/SECURITY.md`} rel="noopener">{s.security}</a></p>
   </section>
 
-  <section class="section credits-section">
+  <section class="cr-section">
+    <p class="cr-eyebrow">{s.group}</p>
     <h2>{s.projects}</h2>
-    <p class="section-lead">{s.projectsLead}</p>
+    <p class="cr-sub">{s.projectsLead}</p>
     {PROJECTS.map((g) => (
-      <div class="project-group">
-        <p class="eyebrow">{g.title[lang]}</p>
-        <div class="plugin-grid">
+      <div class="cr-group">
+        <p class="cr-group-title">{g.title[lang]}</p>
+        <ul class="cr-list">
           {g.projects.map((p) => (
-            <a class="plugin project" href={p.href} rel="noopener">
-              <h3>{p.name}</h3>
-              <p>{p.text[lang]}</p>
-              <span class="open">{s.open} →</span>
-            </a>
+            <li>
+              <span class="cr-ico"><Icon name={isGitHub(p.href) ? "github" : "globe"} size={18} /></span>
+              <div>
+                <p class="cr-item">{p.name}</p>
+                <p class="cr-text">{p.text[lang]}</p>
+                <a class="cr-open" href={p.href} rel="noopener">{isGitHub(p.href) ? s.openGitHub : s.openSite}</a>
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     ))}
   </section>
