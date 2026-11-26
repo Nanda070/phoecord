@@ -87,6 +87,7 @@ cli-launcher-exited = launcher exited ({ $status }); still serving, Ctrl+C to st
 cli-client-exited = Discord exited ({ $status })
 cli-err-listen = listening on { $listen }
 cli-err-start-discord = starting Discord
+cli-err-also-inject-missing = { $path } (from --also-inject or [phoenix] also_inject in config.toml) does not exist; Discord Phoenix was not started
 cli-err-no-discord-linux = no Discord found on PATH; pass the command: phoecord launch -- /path/to/discord
 cli-err-no-discord-windows = no Discord found in %LOCALAPPDATA%; pass the command: phoecord launch -- C:\path\to\Discord.exe
 cli-err-no-discord-macos = no Discord found in /Applications; pass the command: phoecord launch -- /path/to/Discord

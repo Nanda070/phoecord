@@ -86,6 +86,8 @@ struct Launch {
     channel: Option<phoecord_installer::Channel>,
     /// `--transport`; `None`: `[phoenix] transport` from the config.
     transport: Option<PhoenixTransport>,
+    /// `--also-inject`; empty: `[phoenix] also_inject` from the config.
+    also_inject: Vec<std::path::PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -106,6 +108,10 @@ enum Cmd {
             hide_possible_values = true
         )]
         transport: Option<TransportArg>,
+        /// Another DLL to load into Discord Phoenix after PhoeCord's loader (repeat for more), for
+        /// a mod you run alongside, such as Sunbird's phoenix.dll. Replaces `[phoenix] also_inject`.
+        #[arg(long, value_name = "DLL", conflicts_with = "command")]
+        also_inject: Vec<std::path::PathBuf>,
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         command: Vec<String>,
     },
@@ -276,11 +282,13 @@ fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Re
             command,
             channel,
             transport,
+            also_inject,
         } => {
             let launch = Launch {
                 command,
                 channel: channel.map(Into::into),
                 transport: transport.map(Into::into),
+                also_inject,
             };
             runtime()?.block_on(run(paths, Some(launch), l10n, lang_flag(resolved)))
         }
@@ -478,7 +486,7 @@ async fn run(
             let start = client_start(l, &cfg, &paths, &listen, l10n)?;
             // In-process: no proxy process at all, not even an idle one (2.2.8).
             if let ClientStart::InProcess(s) = &start {
-                return start_injected(s, l10n);
+                return start_injected(s, l10n).map(drop);
             }
             Some(start)
         }
@@ -529,11 +537,34 @@ async fn run(
             ]
         )
     );
-    let server = tokio::spawn(server::serve(proxy.clone(), listener));
+    let mut server = tokio::spawn(server::serve(proxy.clone(), listener));
 
     if let Some(ClientStart::Injected(s)) = &client_start {
-        start_injected(s, l10n)?;
-        // Nothing to wait on: serve until Ctrl+C, as after a launcher that hands off.
+        let pid = start_injected(s, l10n)?;
+        let started = Instant::now();
+        // This proxy serves the Phoenix it started: it stops when that Phoenix ends, however it
+        // ends (closed, crashed, killed in Task Manager), like a launch of an Electron client.
+        let exited =
+            tokio::task::spawn_blocking(move || phoecord_installer::phoenix::wait_exit(pid));
+        tokio::select! {
+            r = &mut server => return r?,
+            _ = interrupted() => return Ok(()),
+            w = exited => match w.map_err(anyhow::Error::from).and_then(|r| r) {
+                Ok(code) if started.elapsed() >= Duration::from_secs(15) => {
+                    tracing::info!(
+                        "{}",
+                        tf(l10n, "cli-client-exited", &[("status", &format!("exit code: {code}"))])
+                    );
+                    return Ok(());
+                }
+                // Exited at once: handed over to a Phoenix that was already running.
+                Ok(code) => tracing::info!(
+                    "{}",
+                    tf(l10n, "cli-launcher-exited", &[("status", &format!("exit code: {code}"))])
+                ),
+                Err(e) => tracing::warn!("cannot follow Discord Phoenix: {e:#}"),
+            },
+        }
         tokio::select! {
             r = server => r??,
             _ = interrupted() => {}
@@ -603,7 +634,7 @@ fn reuse_proxy(start: ClientStart, listen: &str, version: &str, l10n: &Localizer
                 .with_context(|| l10n.t("cli-err-start-discord"))?;
             Ok(())
         }
-        ClientStart::Injected(s) | ClientStart::InProcess(s) => start_injected(&s, l10n),
+        ClientStart::Injected(s) | ClientStart::InProcess(s) => start_injected(&s, l10n).map(drop),
     }
 }
 /// How `launch` starts the client.
@@ -659,9 +690,22 @@ fn client_start(
     }
     let in_process = choice.mode == phoecord_loader::choice::Mode::InProcess;
     let proxy = (!in_process).then_some(listen);
+    let also = if l.also_inject.is_empty() {
+        &cfg.phoenix.also_inject
+    } else {
+        &l.also_inject
+    };
+    // A wrong path must stop the launch, not start Phoenix without the mod the user counts on.
+    if let Some(missing) = also.iter().find(|p| !p.is_file()) {
+        anyhow::bail!(tf(
+            l10n,
+            "cli-err-also-inject-missing",
+            &[("path", &missing.display().to_string())]
+        ));
+    }
     Ok(
         match (
-            phoenix::injected(&client, &choice, proxy, &cache),
+            phoenix::injected(&client, &choice, proxy, &cache, also),
             in_process,
         ) {
             (Some(s), true) => ClientStart::InProcess(s),
@@ -719,7 +763,8 @@ fn unavailable_line(l10n: &Localizer, e: &phoecord_installer::phoenix::Unavailab
 }
 
 /// Start Phoenix with the loader injected (`phoecord_loader::inject`, 2.1.7).
-fn start_injected(s: &phoecord_installer::phoenix::Injected, l10n: &Localizer) -> Result<()> {
+/// Starts Phoenix with the loader injected; returns its process id.
+fn start_injected(s: &phoecord_installer::phoenix::Injected, l10n: &Localizer) -> Result<u32> {
     let pid =
         phoecord_installer::phoenix::spawn(s).with_context(|| l10n.t("cli-err-start-discord"))?;
     println!(
@@ -733,7 +778,7 @@ fn start_injected(s: &phoecord_installer::phoenix::Injected, l10n: &Localizer) -
             ]
         )
     );
-    Ok(())
+    Ok(pid)
 }
 
 fn config_line(l10n: &Localizer, paths: &Paths) -> String {
@@ -1187,6 +1232,7 @@ mod tests {
             command: Vec::new(),
             channel: Some(phoecord_installer::Channel::Stable),
             transport: Some(PhoenixTransport::InProcess),
+            also_inject: Vec::new(),
         };
         let e = match client_start(&launch, &Config::default(), &paths, "127.0.0.1:1", &l10n) {
             Err(e) => e,

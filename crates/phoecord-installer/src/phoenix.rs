@@ -275,23 +275,27 @@ pub fn choose(i: &Inputs<'_>, probe: &mut dyn Probe) -> Result<Choice, Unavailab
 }
 
 /// How an injected Phoenix is started: its exe, arguments, the variables set over this process's
-/// environment, and the loader DLL.
+/// environment, the loader DLL and the user's other DLLs (`[phoenix] also_inject`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Injected {
     pub exe: PathBuf,
     pub args: Vec<String>,
     pub env: Vec<(String, String)>,
     pub dll: PathBuf,
+    /// Loaded after [`Injected::dll`], in this order.
+    pub also: Vec<PathBuf>,
 }
 
 /// The injected start for `choice`, or `None` when it has no loader (then `launch` starts the
 /// client plainly, as [`crate::launch::client_command`] does). `proxy` is the proxy's address in
-/// proxy mode; `cache` is where the loader writes the "failed" mark.
+/// proxy mode; `cache` is where the loader writes the "failed" mark; `also` are the user's other
+/// DLLs, loaded after PhoeCord's.
 pub fn injected(
     client: &Client,
     choice: &Choice,
     proxy: Option<&str>,
     cache: &Path,
+    also: &[PathBuf],
 ) -> Option<Injected> {
     let dll = choice.loader.clone()?;
     let mut args = Vec::new();
@@ -318,6 +322,7 @@ pub fn injected(
         args,
         env,
         dll,
+        also: also.to_vec(),
     })
 }
 
@@ -335,9 +340,26 @@ pub fn spawn(start: &Injected) -> Result<u32> {
         .collect();
     let p = inject::spawn_suspended_with_env(&start.exe, &args, &env)
         .with_context(|| format!("starting {}", start.exe.display()))?;
-    inject::queue_load_library(&p, &start.dll)
-        .with_context(|| format!("injecting {}", start.dll.display()))?;
+    // Queued APCs run in order on the main thread before any of Phoenix's code: PhoeCord's
+    // loader first, then the user's other DLLs.
+    for dll in std::iter::once(&start.dll).chain(&start.also) {
+        inject::queue_load_library(&p, dll)
+            .with_context(|| format!("injecting {}", dll.display()))?;
+    }
     Ok(inject::resume(p)?)
+}
+
+/// Blocks until the Phoenix started by [`spawn`] as `pid` exits, however it ends (closed, crashed,
+/// killed in Task Manager); returns its exit code.
+#[cfg(windows)]
+pub fn wait_exit(pid: u32) -> Result<u32> {
+    phoecord_loader::inject::wait_exit(pid).with_context(|| format!("waiting for process {pid}"))
+}
+
+/// Nothing is ever injected elsewhere, so there is nothing to wait for.
+#[cfg(not(windows))]
+pub fn wait_exit(_pid: u32) -> Result<u32> {
+    anyhow::bail!("Windows only")
 }
 
 /// Injection is Windows-only; [`choose`] never sets a loader elsewhere.
@@ -640,7 +662,8 @@ mod tests {
     fn in_process_starts_without_proxy_flags_and_tells_the_loader() {
         let m = Machine::new();
         let c = m.auto(&mut Fake::new("t1", plan_without(&[])));
-        let s = injected(&phoenix(&m.exe), &c, None, &m.cache).unwrap();
+        let s = injected(&phoenix(&m.exe), &c, None, &m.cache, &[]).unwrap();
+        assert!(s.also.is_empty());
         assert_eq!(s.exe, m.exe);
         assert_eq!(s.dll, m.loader);
         assert!(s.args.is_empty());
@@ -655,7 +678,16 @@ mod tests {
     fn proxy_mode_injects_with_the_proxy_flags() {
         let m = Machine::new();
         let c = m.auto(&mut Fake::new("t1", Plan::unknown_build()));
-        let s = injected(&phoenix(&m.exe), &c, Some("127.0.0.1:18463"), &m.cache).unwrap();
+        let sunbird = PathBuf::from("C:/Sunbird/phoenix.dll");
+        let s = injected(
+            &phoenix(&m.exe),
+            &c,
+            Some("127.0.0.1:18463"),
+            &m.cache,
+            std::slice::from_ref(&sunbird),
+        )
+        .unwrap();
+        assert_eq!(s.also, [sunbird]);
         assert_eq!(s.args, ["--proxy-server=http://127.0.0.1:18463"]);
         let env = |k: &str| s.env.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str());
         assert_eq!(env(ENV_MODE), Some("proxy"));
@@ -664,7 +696,7 @@ mod tests {
         assert_eq!(env(ENV_CACHE), None);
         // Without a loader there is nothing to inject: `launch` starts it plainly.
         let plain = Choice { loader: None, ..c };
-        assert!(injected(&phoenix(&m.exe), &plain, Some("127.0.0.1:1"), &m.cache).is_none());
+        assert!(injected(&phoenix(&m.exe), &plain, Some("127.0.0.1:1"), &m.cache, &[]).is_none());
     }
 
     #[test]

@@ -71,6 +71,11 @@ impl Default for Config {
 pub struct Phoenix {
     /// Which transport a Phoenix launch uses; `phoecord launch --transport` overrides it.
     pub transport: PhoenixTransport,
+    /// Other DLLs `phoecord launch` loads into Phoenix after PhoeCord's loader, in this order (for
+    /// example another mod the user runs alongside, such as Sunbird's `phoenix.dll`).
+    /// `phoecord launch --also-inject` replaces the list for one launch. Empty by default.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub also_inject: Vec<PathBuf>,
 }
 
 /// `[phoenix] transport` (rulings, 2026-11-26): `auto` picks per launch from the cached signature
@@ -292,6 +297,13 @@ mod tests {
             assert_eq!(c.phoenix.transport, want);
             assert_eq!(want.name(), value);
         }
+        let c: Config =
+            toml::from_str("[phoenix]\nalso_inject = ['C:\\Sunbird\\phoenix.dll']\n").unwrap();
+        assert_eq!(
+            c.phoenix.also_inject,
+            [PathBuf::from("C:\\Sunbird\\phoenix.dll")]
+        );
+        assert_eq!(c.phoenix.transport, PhoenixTransport::Auto);
         // An old config without the table, or an empty one, is `auto`.
         let old: Config = toml::from_str("listen = \"127.0.0.1:1\"\n[phoenix]\n").unwrap();
         assert_eq!(old.phoenix.transport, PhoenixTransport::Auto);

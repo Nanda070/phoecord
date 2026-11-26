@@ -6,6 +6,8 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Added
 
+- 2.2.8: `phoecord launch --channel phoenix` can load another mod's DLL next to PhoeCord's loader: `--also-inject <DLL>` (repeatable) or `[phoenix] also_inject = [...]` in `config.toml`, for example Sunbird's `phoenix.dll`, so both run in one Phoenix through PhoeCord's proxy. A missing file stops the launch. And the proxy a Phoenix launch started now stops when that Phoenix exits, however it ends (closed, crashed, killed in Task Manager).
+
 - 2.3.2: two more built-in themes, `themes/light.toml` and `themes/high-contrast.toml` (every text colour at least 7:1), and `phoecord theme import <vencord-theme.css>`, which turns a Vencord theme's colour variables into a `theme.toml` and lists what does not carry over. Theme authoring: `docs/plugins/themes.md`. The palette field names are still PhoeCord's own until Phoenix's are known.
 - 2.4.2 (a): message sends and edits with files (`multipart/form-data`) reach plugins: they see `payload_json` as the body, and a change is written back with the same boundary, file names following `attachments[].filename`; file bytes are passed as they are. So ClearURLs, FakeNitro, TextReplace and the other send plugins now also work on messages with attachments. Bodies over 64 MiB stream through unread.
 - 2.4.2 (b): `/phoecord serverinfo` also lists your friends, blocked and ignored users who are in that server, like Vencord's tabs: one gateway op 8 per lookup with the ids from `READY` / `RELATIONSHIP_*` (at most 100), answered by a local message when the last `GUILD_MEMBERS_CHUNK` with PhoeCord's nonce is in; those chunks never reach the client.

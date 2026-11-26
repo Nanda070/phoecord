@@ -92,6 +92,7 @@ cli-launcher-exited = лаунчер завершился ({ $status }); про�
 cli-client-exited = Discord завершился ({ $status })
 cli-err-listen = не удалось слушать на { $listen }
 cli-err-start-discord = не удалось запустить Discord
+cli-err-also-inject-missing = { $path } (из --also-inject или [phoenix] also_inject в config.toml) не существует; Discord Phoenix не запущен
 cli-err-no-discord-linux = Discord не найден в PATH; укажите команду: phoecord launch -- /путь/к/discord
 cli-err-no-discord-windows = Discord не найден в %LOCALAPPDATA%; укажите команду: phoecord launch -- C:\путь\к\Discord.exe
 cli-err-no-discord-macos = Discord не найден в /Applications; укажите команду: phoecord launch -- /путь/к/Discord

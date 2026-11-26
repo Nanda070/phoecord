@@ -35,8 +35,9 @@ mod imp {
             LibraryLoader::{GetModuleHandleW, GetProcAddress},
             Memory::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE, VirtualAllocEx},
             Threading::{
-                CREATE_SUSPENDED, CREATE_UNICODE_ENVIRONMENT, CreateProcessW, PROCESS_INFORMATION,
-                QueueUserAPC, ResumeThread, STARTUPINFOW,
+                CREATE_SUSPENDED, CREATE_UNICODE_ENVIRONMENT, CreateProcessW, GetExitCodeProcess,
+                INFINITE, OpenProcess, PROCESS_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION,
+                PROCESS_SYNCHRONIZE, QueueUserAPC, ResumeThread, STARTUPINFOW, WaitForSingleObject,
             },
         },
     };
@@ -296,9 +297,59 @@ mod imp {
         }
     }
 
+    /// Blocks until process `pid` exits and returns its exit code. Only waits: it never ends the
+    /// process. Call it right after [`resume`], while `pid` can only name the process started
+    /// there (Windows reuses an id only after every handle to the old process is closed).
+    pub fn wait_exit(pid: u32) -> io::Result<u32> {
+        // SAFETY: plain call; a null handle is checked before any use.
+        let h = unsafe {
+            OpenProcess(
+                PROCESS_SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION,
+                0,
+                pid,
+            )
+        };
+        if h.is_null() {
+            return Err(io::Error::last_os_error());
+        }
+        let mut code = 0u32;
+        // SAFETY: `h` is the valid process handle opened above, closed exactly once below and
+        // not used after that.
+        let r = unsafe {
+            WaitForSingleObject(h, INFINITE);
+            let ok = GetExitCodeProcess(h, &mut code);
+            CloseHandle(h);
+            ok
+        };
+        if r == 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(code)
+    }
+
     #[cfg(test)]
     mod tests {
         use super::*;
+
+        #[test]
+        fn wait_exit_returns_when_the_started_process_ends() {
+            // cmd.exe is on every Windows machine; `exit 7` makes the code observable.
+            let cmd = std::path::PathBuf::from(std::env::var_os("ComSpec").unwrap());
+            let p = spawn_suspended(&cmd, &["/c", "exit 7"]).unwrap();
+            let pid = resume(p).unwrap();
+            assert_eq!(wait_exit(pid).unwrap(), 7);
+        }
+
+        #[test]
+        fn wait_exit_on_a_process_that_is_gone_is_an_error() {
+            let cmd = std::path::PathBuf::from(std::env::var_os("ComSpec").unwrap());
+            let pid = resume(spawn_suspended(&cmd, &["/c", "exit 0"]).unwrap()).unwrap();
+            wait_exit(pid).unwrap();
+            // Every handle is closed now, so the id names nothing (or, rarely, a reused id).
+            if let Ok(code) = wait_exit(pid) {
+                assert_ne!(code, 259, "STILL_ACTIVE is never returned after a wait");
+            }
+        }
 
         #[test]
         fn plain_argument_is_not_quoted() {
@@ -389,4 +440,6 @@ mod imp {
 }
 
 #[cfg(windows)]
-pub use imp::{Suspended, queue_load_library, resume, spawn_suspended, spawn_suspended_with_env};
+pub use imp::{
+    Suspended, queue_load_library, resume, spawn_suspended, spawn_suspended_with_env, wait_exit,
+};
