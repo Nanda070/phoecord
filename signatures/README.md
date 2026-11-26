@@ -17,7 +17,7 @@ The loader reads the folder at every client start, so a new table needs no new D
 3. Give users the file. Where real tables are published is not decided yet.
 4. Users run `phoecord signatures install <file or folder>` and restart Discord.
 
-`signatures install` checks every file first and writes nothing if one does not load, holds no signature or is not `*.toml`. It replaces a file of the same name and warns when a file that is read later defines the same build. `phoecord signatures list` shows what is installed. `phoecord uninstall` removes the files it added; a file you had put there yourself stays, even after it was replaced.
+`signatures install` checks every file first and writes nothing if one does not load, holds no signature, has an empty build table or is not `*.toml`; all files are written under temporary names first and only then renamed into place. It replaces a file of the same name and warns when a file that is read later defines the same build. `phoecord signatures list` shows what is installed. `phoecord uninstall` removes the files it added; a file you had put there yourself stays, even after it was replaced.
 
 ## Format
 

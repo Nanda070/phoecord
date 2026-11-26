@@ -54,14 +54,17 @@ fn sources(source: &Path) -> Result<Vec<PathBuf>> {
     Ok(vec![source.to_path_buf()])
 }
 
-/// The build keys of a signature file's text; an error when it does not load or holds nothing.
+/// The build keys of a signature file's text; an error when it does not load, holds nothing, or
+/// has an empty build table (the loader would let it replace a real table of an earlier file).
 fn builds_of(path: &Path, text: &str) -> Result<Vec<String>> {
     let set = SignatureSet::parse(text).with_context(|| path.display().to_string())?;
-    let builds: Vec<String> = set
-        .builds()
-        .filter(|(_, count)| *count > 0)
-        .map(|(key, _)| key.to_string())
-        .collect();
+    let mut builds = Vec::new();
+    for (key, count) in set.builds() {
+        if count == 0 {
+            bail!("{}: build {key:?} has no signature", path.display());
+        }
+        builds.push(key.to_string());
+    }
     if builds.is_empty() {
         bail!("{} holds no signature", path.display());
     }
@@ -69,7 +72,8 @@ fn builds_of(path: &Path, text: &str) -> Result<Vec<String>> {
 }
 
 /// Copy the signature files of `source` into `target` (the loader's folder). Nothing is written
-/// unless every file loads.
+/// unless every file loads, and nothing is replaced unless every file was written: all files go to
+/// temporary names first, then each is renamed into place.
 pub fn install(log: &InstallLog, source: &Path, target: &Path) -> Result<Vec<Installed>> {
     let mut checked = Vec::new();
     for path in sources(source)? {
@@ -86,20 +90,39 @@ pub fn install(log: &InstallLog, source: &Path, target: &Path) -> Result<Vec<Ins
         create_dir_logged(log, data)?;
     }
     create_dir_logged(log, target)?;
-    let mut done = Vec::new();
+    // Stage every file under a name that is not `*.toml`, so a client starting now never reads
+    // half a file, and a failed write leaves the folder as it was.
+    let mut staged: Vec<(PathBuf, PathBuf, Vec<String>)> = Vec::new();
     for (name, text, builds) in checked {
         let path = target.join(&name);
-        let replaced = path.exists();
-        // Not `*.toml`, so a client starting now never reads half a file.
-        let mut tmp_name = name.clone();
+        let mut tmp_name = name;
         tmp_name.push(".phoecord-new");
         let tmp = target.join(tmp_name);
-        let written = std::fs::write(&tmp, text)
-            .and_then(|()| std::fs::rename(&tmp, &path))
-            .with_context(|| format!("writing {}", path.display()));
-        if let Err(e) = written {
+        if let Err(e) = std::fs::write(&tmp, text) {
             let _ = std::fs::remove_file(&tmp);
-            return Err(e);
+            for (t, ..) in &staged {
+                let _ = std::fs::remove_file(t);
+            }
+            return Err(e).with_context(|| format!("writing {}", path.display()));
+        }
+        staged.push((tmp, path, builds));
+    }
+    let mut done: Vec<Installed> = Vec::new();
+    let mut staged = staged.into_iter();
+    while let Some((tmp, path, builds)) = staged.next() {
+        let replaced = path.exists();
+        if let Err(e) = std::fs::rename(&tmp, &path) {
+            let _ = std::fs::remove_file(&tmp);
+            for (t, ..) in staged {
+                let _ = std::fs::remove_file(t);
+            }
+            let already: Vec<String> = done.iter().map(|f| f.path.display().to_string()).collect();
+            let already = if already.is_empty() {
+                "nothing was replaced".to_string()
+            } else {
+                format!("already in place: {}", already.join(", "))
+            };
+            return Err(e).with_context(|| format!("writing {} ({already})", path.display()));
         }
         if !replaced {
             log.record(Step::File { path: path.clone() })?;
@@ -233,7 +256,14 @@ mod tests {
     fn one_bad_file_means_nothing_is_written() {
         let w = world();
         w.put("a.toml", OLD);
-        for bad in ["garbage [", "[build.\"1\"]", ""] {
+        for bad in [
+            "garbage [",
+            "[build.\"1\"]",
+            "",
+            "[build.\"1.0.0.2\"]
+f = { aob = \"55\" }
+[build.\"1.0.0.1\"]",
+        ] {
             w.put("b.toml", bad);
             assert!(install(&w.log, &w.source, &w.target).is_err(), "{bad:?}");
             assert!(!w.target.exists());

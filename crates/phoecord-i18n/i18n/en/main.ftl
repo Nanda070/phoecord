@@ -635,4 +635,4 @@ cli-signatures-overridden = Warning: { $file } is read later and also has build 
 cli-signatures-restart = Restart Discord for the new signatures to take effect
 cli-signatures-folder = Signature folder: { $path }
 cli-signatures-none = No signature files
-cli-signatures-broken =   { $file }: skipped by the loader: { $why }
+cli-signatures-broken = { $file }: skipped by the loader: { $why }

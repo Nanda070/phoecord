@@ -640,4 +640,4 @@ cli-signatures-overridden = Внимание: { $file } читается поз�
 cli-signatures-restart = Перезапустите Discord, чтобы новые сигнатуры начали действовать
 cli-signatures-folder = Папка сигнатур: { $path }
 cli-signatures-none = Файлов сигнатур нет
-cli-signatures-broken =   { $file }: загрузчик его пропустит: { $why }
+cli-signatures-broken = { $file }: загрузчик его пропустит: { $why }

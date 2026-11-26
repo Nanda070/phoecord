@@ -82,10 +82,14 @@ fn listed_lines(files: &[Present], l10n: &Localizer) -> Vec<String> {
         .iter()
         .map(|f| match &f.builds {
             Ok(builds) => format!("  {}: {}", f.name(), builds.join(", ")),
-            Err(why) => tf(
-                l10n,
-                "cli-signatures-broken",
-                &[("file", &f.name()), ("why", why)],
+            // Fluent drops leading spaces of a value, so the indent is added here.
+            Err(why) => format!(
+                "  {}",
+                tf(
+                    l10n,
+                    "cli-signatures-broken",
+                    &[("file", &f.name()), ("why", why)],
+                )
             ),
         })
         .collect()
@@ -109,5 +113,11 @@ mod tests {
             assert!(text.contains(part), "{part} not in {text}");
         }
         assert_eq!(listed_lines(&[], &l10n), [l10n.t("cli-signatures-none")]);
+        let broken = Present {
+            path: "b.toml".into(),
+            builds: Err("bad".into()),
+        };
+        let line = &listed_lines(&[broken], &l10n)[0];
+        assert!(line.starts_with("  b.toml"), "{line:?}");
     }
 }
