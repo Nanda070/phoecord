@@ -627,6 +627,7 @@ cli-check-ambiguous = неоднозначна (совпадений: { $count }
 cli-check-bad-rip = неверное смещение rip
 cli-check-summary = Найдено { $found } из { $total }
 cli-check-failed = проверка сигнатур не пройдена
+cli-check-locators = Типизированные локаторы целей хуков:
 
 # phoecord signatures (задача 2.2.10)
 cmd-signatures = Обновить файлы сигнатур, которые читает загрузчик (быстрое исправление, Windows)

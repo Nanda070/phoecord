@@ -622,6 +622,7 @@ cli-check-ambiguous = ambiguous ({ $count } matches)
 cli-check-bad-rip = bad rip offset
 cli-check-summary = Found { $found } of { $total }
 cli-check-failed = the signature check failed
+cli-check-locators = Typed locators of the hook targets:
 
 # phoecord signatures (task 2.2.10)
 cmd-signatures = Update the signature files the loader reads (hot-fix, Windows)
