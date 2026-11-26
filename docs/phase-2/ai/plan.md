@@ -476,7 +476,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Files:** `crates/phoecord-loader/src/ui/lists.rs`
 
-- Scope: the server list and the channel list: BetterFolders, PinDMs, ShowHiddenChannels' locked channels.
+- Scope: the server list and the channel list: BetterFolders, PinDMs.
 - Every anchor is a typed locator (2.2.5), with the panic guard; a miss turns off only this surface.
 
 **Done when:** a plugin adds, reorders and decorates entries in both lists on Phoenix.
@@ -531,7 +531,7 @@ Added by the owner's ruling of 2026-11-26 (UI surfaces v1.0 needs that no task c
 
 **Files:** `crates/phoecord-plugins/src/`
 
-- For each of the top 10 plugins (MessageLogger, FakeNitro, NoTrack, ClearURLs, SilentTyping, ShowHiddenChannels, Translate, PlatformIndicators, PermissionsViewer, ViewIcons): add Phoenix UI parts where the plugin has visual elements.
+- For each of the top plugins (MessageLogger, FakeNitro, NoTrack, ClearURLs, SilentTyping, Translate, PlatformIndicators, PermissionsViewer, ViewIcons; ShowHiddenChannels was removed by the owner's ruling of 2026-11-26): add Phoenix UI parts where the plugin has visual elements.
 - Network parts already work from Phase 1; this task adds the Phoenix-specific rendering using the UI hooks from 2.3.
 - Each plugin follows `docs/PORTING_PLUGINS.md` with Vencord attribution.
 

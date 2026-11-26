@@ -152,7 +152,6 @@ plugin-desc-override_forum_defaults = Your own default forum layout and sort ord
 plugin-desc-pause_invites_forever = Pause invites to a server indefinitely
 plugin-desc-platform_indicators = See whether people are on desktop, mobile or web
 plugin-desc-read_all_notifications_button = Mark all server notifications as read at once
-plugin-desc-show_hidden_channels = List channels you cannot open
 plugin-desc-show_hidden_things = Show timeouts, paused invites and other hidden things
 plugin-desc-typing_indicator = See who is typing in each channel
 plugin-desc-user_voice_show = See who is in voice channels

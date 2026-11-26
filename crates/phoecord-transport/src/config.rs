@@ -66,7 +66,7 @@ impl Default for Config {
 }
 
 /// `[phoenix]` in `config.toml`.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Phoenix {
     /// Which transport a Phoenix launch uses; `phoecord launch --transport` overrides it.
@@ -76,6 +76,21 @@ pub struct Phoenix {
     /// `phoecord launch --also-inject` replaces the list for one launch. Empty by default.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub also_inject: Vec<PathBuf>,
+    /// Ask the gateway for a full `READY` (every guild with its channels, roles and emojis) by
+    /// emptying the guild versions a client sends in `IDENTIFY` (`crate::full_ready`). Phoenix
+    /// otherwise gets every guild partial. On by default (owner's ruling, 2026-11-26); `false`
+    /// gives a smaller `READY` that plugins cannot read guilds from.
+    pub full_ready: bool,
+}
+
+impl Default for Phoenix {
+    fn default() -> Self {
+        Phoenix {
+            transport: PhoenixTransport::default(),
+            also_inject: Vec::new(),
+            full_ready: true,
+        }
+    }
 }
 
 /// `[phoenix] transport` (rulings, 2026-11-26): `auto` picks per launch from the cached signature
@@ -304,6 +319,14 @@ mod tests {
             [PathBuf::from("C:\\Sunbird\\phoenix.dll")]
         );
         assert_eq!(c.phoenix.transport, PhoenixTransport::Auto);
+        assert!(c.phoenix.full_ready, "on unless set");
+        let off: Config = toml::from_str(
+            "[phoenix]
+full_ready = false
+",
+        )
+        .unwrap();
+        assert!(!off.phoenix.full_ready);
         // An old config without the table, or an empty one, is `auto`.
         let old: Config = toml::from_str("listen = \"127.0.0.1:1\"\n[phoenix]\n").unwrap();
         assert_eq!(old.phoenix.transport, PhoenixTransport::Auto);

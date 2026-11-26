@@ -157,7 +157,6 @@ plugin-desc-override_forum_defaults = Свой вид и сортировка ф
 plugin-desc-pause_invites_forever = Приостанавливает приглашения на сервер бессрочно
 plugin-desc-platform_indicators = Показывает, с компьютера, телефона или из браузера сидит человек
 plugin-desc-read_all_notifications_button = Отмечает все уведомления серверов прочитанными разом
-plugin-desc-show_hidden_channels = Список каналов, которые вам нельзя открыть
 plugin-desc-show_hidden_things = Показывает тайм-ауты, приостановленные приглашения и другое скрытое
 plugin-desc-typing_indicator = Показывает, кто печатает в каждом канале
 plugin-desc-user_voice_show = Показывает, кто сидит в голосовых каналах

@@ -22,7 +22,6 @@ fn engine() -> Engine {
     ));
     let chain = Chain::new(vec![
         Box::new(phoecord_plugins::message_logger::MessageLogger::new()),
-        Box::new(phoecord_plugins::show_hidden_channels::ShowHiddenChannels::new()),
         Box::new(phoecord_plugins::platform_indicators::PlatformIndicators::new()),
     ]);
     Engine::new(chain, Shared::new(dir), Config::default())

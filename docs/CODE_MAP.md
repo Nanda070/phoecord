@@ -78,7 +78,7 @@ The transport boundary (task 1.1.12): everything between "an event arrived" and 
 | `src/config.rs`, `src/account.rs` | Live plugin configuration and account state available to plugins | Config reload must re-enable the chain and preserve the last live state |
 | `src/dev.rs` | `DevBus` (1.3.9): log lines and per-plugin run records for an attached console, and the last event of each kind for `replay` (nothing copied while nobody is attached); `impl Engine`: `plugin_list`, `toggle_plugin`, `reload_plugin`, `plugin_settings`, `plugin_kv`, `replay` (dry run) | Payloads are cloned only when `DevBus::active()`; replay discards queued sends and locals |
 | `src/timers.rs` | `Timers`: the store of plugin timers from `Host::schedule` (50 ms min, 24 h max, 64 per plugin, memory only), `timer_payload` | The clock is the transport's: it calls `next_due` / `take_due` and `Engine::fire_timer` |
-| `tests/phoenix_fixtures.rs` | Loads `tests/fixtures/phoenix/*.json`, checks the shapes recorded in 2.1.4 (partial `READY`) and runs each through `Engine::on_dispatch` with MessageLogger, ShowHiddenChannels and PlatformIndicators | Reads the files by path from the crate folder; a re-recorded fixture must keep `data_mode: "partial"` |
+| `tests/phoenix_fixtures.rs` | Loads `tests/fixtures/phoenix/*.json`, checks the shapes recorded in 2.1.4 (partial `READY`) and runs each through `Engine::on_dispatch` with MessageLogger and PlatformIndicators | Reads the files by path from the crate folder; a re-recorded fixture must keep `data_mode: "partial"` |
 
 ### `phoecord-proxy`
 
@@ -179,7 +179,6 @@ The transport boundary (task 1.1.12): everything between "an event arrived" and 
 | `src/mutual_group_dms.rs` | MutualGroupDMs: group DMs (type 3) and recipients from READY and CHANNEL_*; `/phoecord mutualgdms` | Read-only: always returns `Pass` |
 | `src/who_reacted.rs` | WhoReacted: `/phoecord reactions` lists reactions or up to 100 reactors via REST | Read-only: always returns `Pass` |
 | `src/message_latency.rs` | MessageLatency: nonce vs id snowflake delay per MESSAGE_CREATE (Vencord's rules); `/phoecord latency` | Read-only: always returns `Pass` |
-| `src/show_hidden_channels.rs` | ShowHiddenChannels: computes VIEW_CHANNEL from roles and overwrites; `/phoecord hidden`; optional READY rewrite | `rewrite_payload` and its READY rewrite stay off by default (ban-prone) |
 | `src/show_hidden_things.rs` | ShowHiddenThings: member timeouts, paused invites and DMs, community features; `/phoecord hiddenthings` | Read-only: always returns `Pass` |
 | `src/experiments.rs` | Experiments: experiment assignments from READY and `GET /experiments`; `/phoecord experiments`; optional STAFF flag | `enableIsStaff` stays off by default (ban-prone) |
 | `src/fake_deafen.rs` | FakeDeafen (owner's userplugin): sets `self_mute`/`self_deaf` on outbound op 4 while `/phoecord fakedeafen` is on; the toggle re-sends your voice state at once | Rewrites outbound op 4 only |
@@ -374,6 +373,7 @@ Planned in 1.1; the table is filled as each item lands.
 | `clients` | `config.toml` | empty | extra folders with a Discord client installed outside the default places, added by "Choose folder…" in the installer window; `launch`, `setup` and the window look in them too (`discover_with`) |
 | `--lang <code>` | CLI flag | unset | overrides `language` for one command |
 | `[phoenix] transport` | `config.toml` | `auto` | `phoecord launch --channel phoenix` (2.2.8): `auto` picks per launch from the cached check, `proxy` / `in-process` force one (debugging) |
+| `[phoenix] full_ready` | `config.toml` | `true` | the proxy empties `client_state.guild_versions` in `IDENTIFY` so the gateway sends a full `READY` (`phoecord-transport::full_ready`) |
 | `[phoenix] also_inject` | `config.toml` | empty | DLLs `phoecord launch --channel phoenix` loads after PhoeCord's loader, in order (a mod run alongside, such as Sunbird's `phoenix.dll`); a missing file stops the launch |
 | `--also-inject <DLL>` | CLI flag of `launch` (repeatable) | unset | replaces `[phoenix] also_inject` for one launch |
 | `--transport auto\|proxy\|in-process` | CLI flag of `launch` | unset | overrides `[phoenix] transport` for one launch; `in-process` is refused for any client but Phoenix |

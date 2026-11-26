@@ -4,6 +4,14 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Removed
+
+- ShowHiddenChannels (`/phoecord hidden`, its `rewrite_payload` setting): it no longer works on any Discord client (owner's ruling, 2026-11-26). A `[plugins.show_hidden_channels]` table left in `config.toml` is ignored.
+
+### Added
+
+- A full `READY` on Desktop Phoenix: the proxy empties the guild versions Phoenix sends in `IDENTIFY`, so the gateway sends every guild with its channels, roles and emojis instead of `data_mode: "partial"` and plugins can read them again (`[phoenix] full_ready`, on by default; owner's ruling, 2026-11-26). The proxy log says how many cached versions were dropped and how many guilds still arrived partial.
+
 ### Added
 
 - 2.3.7: the three degradation scenarios pass live on Windows (unknown build, one signature missing, loader beside an Electron client). Recon notes for 2.2.2 (response and body layouts), 2.2.3 (dispatch path), 2.2.4 (outgoing encoder) and 2.3.3 (settings render and builders) in `docs/research/phoenix-recon.md`.
