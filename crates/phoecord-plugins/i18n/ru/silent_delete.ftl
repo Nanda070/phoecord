@@ -7,3 +7,10 @@ silent_delete-bad-message = Это не id сообщения. Укажите т
 silent_delete-bad-count = `count` должно быть числом, не меньше 1.
 silent_delete-not-signed-in = Вход ещё не выполнен: дождитесь подключения к шлюзу и повторите.
 silent_delete-no-timer = Не удалось поставить таймер для следующего шага.
+
+# Settings tab labels (2.4.2)
+setting-replacement-text = Текст замены
+setting-delete-original = Удалять после замены
+setting-suppress-notifications = Отправлять без уведомления
+setting-delete-delay = Задержка перед удалением, мс
+setting-purge-interval = Задержка между сообщениями, мс

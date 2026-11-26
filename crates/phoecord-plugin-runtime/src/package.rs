@@ -24,6 +24,15 @@
 //! [[menu]]
 //! id = "copy_raw"              # snake_case, unique in the plugin
 //! label = "menu-copy-raw"      # a key of the plugin's own i18n/<lang>.ftl
+//!
+//! # Settings shown in the PhoeCord settings tab, in this order. Values are still read with
+//! # `Host::setting(key)` from the plugin's `config.toml` section; this only describes them.
+//! [[setting]]
+//! key = "mode"                 # the config key, unique in the plugin
+//! kind = "choice"              # bool, number, text, choice (needs `options`, strings or numbers) or list
+//! default = "fast"             # must fit the kind (a choice: one of `options`)
+//! options = ["fast", "exact"]
+//! label = "setting-mode"       # a key of the plugin's own i18n/<lang>.ftl
 //! ```
 //!
 //! Rights (`rights = [...]`): a call without its right is an error for the guest and one log line
@@ -52,7 +61,10 @@
 
 use crate::wasm::{Setup, WasmPlugin, WasmRuntime};
 use phoecord_core::plugin::API_VERSION;
-use phoecord_core::{Event, EventKind, Host, Layer, Manifest, MenuEntry, Plugin, Verdict};
+use phoecord_core::{
+    Event, EventKind, Host, Layer, Manifest, MenuEntry, Plugin, SettingKind, SettingSpec, Val,
+    Verdict,
+};
 use phoecord_i18n::PluginStrings;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -88,6 +100,35 @@ struct RawManifest {
     /// `[[menu]]` tables: message context menu entries.
     #[serde(default)]
     menu: Vec<RawMenuEntry>,
+    /// `[[setting]]` tables: what the settings tab shows.
+    #[serde(default)]
+    setting: Vec<RawSetting>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawSetting {
+    key: String,
+    kind: String,
+    default: toml::Value,
+    #[serde(default)]
+    options: Vec<toml::Value>,
+    label: String,
+}
+
+/// A `plugin.toml` value as the [`Val`] `Host::setting` would hand back; `None` for a table or
+/// a date, which no setting kind takes.
+fn toml_to_val(v: &toml::Value) -> Option<Val> {
+    Some(match v {
+        toml::Value::String(s) => Val::Str(s.clone()),
+        toml::Value::Integer(n) => Val::Int(*n),
+        toml::Value::Float(f) => Val::Float(*f),
+        toml::Value::Boolean(b) => Val::Bool(*b),
+        toml::Value::Array(items) => {
+            Val::List(items.iter().map(toml_to_val).collect::<Option<_>>()?)
+        }
+        toml::Value::Table(_) | toml::Value::Datetime(_) => return None,
+    })
 }
 
 #[derive(Deserialize)]
@@ -157,6 +198,32 @@ impl PackageManifest {
             }
             menu.push(MenuEntry::new(entry.id, entry.label));
         }
+        let mut settings: Vec<SettingSpec> = Vec::new();
+        for raw in raw.setting {
+            let kind = SettingKind::from_name(&raw.kind).ok_or_else(|| {
+                format!(
+                    "setting {:?}: unknown kind {:?} (bool, number, text, choice, list)",
+                    raw.key, raw.kind
+                )
+            })?;
+            let default = toml_to_val(&raw.default).ok_or_else(|| {
+                format!("setting {:?}: the default is a table or a date", raw.key)
+            })?;
+            let mut spec = SettingSpec::new(raw.key, kind, default, raw.label);
+            spec.options = raw
+                .options
+                .iter()
+                .map(toml_to_val)
+                .collect::<Option<_>>()
+                .ok_or_else(|| format!("setting {:?}: an option is a table or a date", spec.key))?;
+            if let Some(why) = spec.problem() {
+                return Err(why);
+            }
+            if settings.iter().any(|s| s.key == spec.key) {
+                return Err(format!("setting {:?} is listed twice", spec.key));
+            }
+            settings.push(spec);
+        }
         Ok(PackageManifest {
             manifest: {
                 let mut m = Manifest::new(raw.id, raw.name, raw.version, raw.description);
@@ -166,6 +233,7 @@ impl PackageManifest {
                 m.api = raw.api;
                 m.fetch = fetch;
                 m.menu = menu;
+                m.settings = settings;
                 m
             },
             events,
@@ -792,6 +860,108 @@ mod tests {
         let toml = "id = \"p\"\nname = \"p\"\nversion = \"0.1.0\"\napi = 1\nfetch = [\"*.discordsays.com\"]\n";
         let p = PackageManifest::parse(toml).unwrap();
         assert_eq!(p.manifest.fetch, vec!["*.discordsays.com".to_string()]);
+    }
+
+    #[test]
+    fn settings_come_from_plugin_toml_in_order() {
+        let base = "id = \"p\"
+name = \"p\"
+version = \"0.1.0\"
+api = 1
+";
+        let toml = format!(
+            "{base}[[setting]]
+key = \"mode\"
+kind = \"choice\"
+default = \"fast\"
+             options = [\"fast\", \"exact\"]
+label = \"setting-mode\"
+             [[setting]]
+key = \"autoTranslate\"
+kind = \"bool\"
+default = false
+label = \"s-auto\"
+             [[setting]]
+key = \"ids\"
+kind = \"list\"
+default = [\"1\"]
+label = \"s-ids\"
+"
+        );
+        let s = PackageManifest::parse(&toml).unwrap().manifest.settings;
+        assert_eq!(
+            s,
+            vec![
+                SettingSpec::choice(
+                    "mode",
+                    vec![Val::Str("fast".into()), Val::Str("exact".into())],
+                    Val::Str("fast".into()),
+                    "setting-mode"
+                ),
+                SettingSpec::new(
+                    "autoTranslate",
+                    SettingKind::Bool,
+                    Val::Bool(false),
+                    "s-auto"
+                ),
+                SettingSpec::new(
+                    "ids",
+                    SettingKind::List,
+                    Val::List(vec![Val::Str("1".into())]),
+                    "s-ids"
+                ),
+            ]
+        );
+        for bad in [
+            "[[setting]]
+key = \"a\"
+kind = \"slider\"
+default = 1
+label = \"x\"
+",
+            "[[setting]]
+key = \"a\"
+kind = \"bool\"
+default = 1
+label = \"x\"
+",
+            "[[setting]]
+key = \"a\"
+kind = \"choice\"
+default = \"z\"
+options = [\"y\"]
+label = \"x\"
+",
+            "[[setting]]
+key = \"a\"
+kind = \"text\"
+default = {}
+label = \"x\"
+",
+            "[[setting]]
+key = \"a\"
+kind = \"bool\"
+default = true
+label = \"x\"
+             [[setting]]
+key = \"a\"
+kind = \"bool\"
+default = true
+label = \"y\"
+",
+            "[[setting]]
+key = \"a\"
+kind = \"bool\"
+default = true
+label = \"x\"
+hint = \"h\"
+",
+        ] {
+            assert!(
+                PackageManifest::parse(&format!("{base}{bad}")).is_err(),
+                "{bad}"
+            );
+        }
     }
 
     #[test]

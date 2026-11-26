@@ -144,7 +144,7 @@ pub trait Host       { setting, kv_get, kv_set, self_id, notify, log, emit_send,
 pub trait ChainHost: Host { begin_plugin, set_fetch_hosts }   // host side, only the chain calls it
 ```
 
-`Event`, `EventKind`, `UiEvent`, `Verdict` and `Layer` are `#[non_exhaustive]`; `Manifest`, `MenuEntry` and `HostResponse` too, built with `Manifest::new(id, name, version, description)`, `MenuEntry::new(id, label)` and `HostResponse::new(status)` and then filled through their public fields. A host treats a verdict it does not know as `Pass`. Fallible `Host` methods return `Result<_, String>`; the text is for logs and people, not a contract to match on.
+`Event`, `EventKind`, `UiEvent`, `Verdict` and `Layer` are `#[non_exhaustive]`; `Manifest`, `MenuEntry`, `SettingSpec` and `HostResponse` too, built with `Manifest::new(id, name, version, description)`, `MenuEntry::new(id, label)` and `HostResponse::new(status)` and then filled through their public fields. A host treats a verdict it does not know as `Pass`. Fallible `Host` methods return `Result<_, String>`; the text is for logs and people, not a contract to match on.
 
 UI events come from the Phoenix loader's UI hooks (Phase 2.3). `UiEvent::MenuAction` is a click on one of the plugin's `Manifest.menu` entries (`MenuEntry { id, label }`, `label` a key of the plugin's `.ftl`; `[[menu]]` in a package's `plugin.toml`) in a message's context menu, sent to that plugin only (`Chain::ui_to`). Every UI event has a stable `snake_case` name (`UiEvent::name`) and a `Val` form (`to_val` / `from_val`, ids as strings): that is what the loader's `ui.event` IPC message and WASM plugins carry, and what `plugin.toml` filters on (`events = ["ui:menu_action"]`). The client's optimistic delete (2.3.6) is not a UI event but a dispatch named `LOCAL_DELETE_EVENT` (`PHOECORD_LOCAL_DELETE`, `d` shaped like `MESSAGE_DELETE`), like `TIMER_EVENT`.
 
@@ -176,6 +176,12 @@ fetch = []                                             # outside hosts for the `
 [[menu]]                                               # optional: message context menu entries (Phoenix)
 id = "copy_clean_link"                                 # comes back as `ui:menu_action`'s `entry`
 label = "menu-copy-clean-link"                         # a key of the plugin's i18n/<lang>.ftl
+
+[[setting]]                                            # optional: what the settings tab shows
+key = "keep_utm"                                       # the config key Host::setting reads
+kind = "bool"                                          # bool, number, text, choice (+ options) or list
+default = false                                        # must fit the kind
+label = "setting-keep-utm"                             # a key of the plugin's i18n/<lang>.ftl
 ```
 
 Unknown fields are refused. There is no `[settings]` and no `[i18n]` table: a user's settings are `[plugins.<id>]` in `config.toml`, and a package's strings are `i18n/<lang>.ftl` files. A REST filter matches `"METHOD route"` with a space (`rest_request:POST /channels/*/messages`). A plugin with menu entries lists `"ui:menu_action"` in `events` to receive the clicks. The full field list, the event filters, the rights and the packaging are in [`docs/plugins/`](plugins/README.md) (developer docs for third-party plugin authors).

@@ -10,6 +10,6 @@ mod val;
 
 pub use plugin::{
     ChainHost, Event, EventKind, FilePart, Host, HostResponse, LOCAL_DELETE_EVENT, Layer, Manifest,
-    MenuEntry, Plugin, TIMER_EVENT, UiEvent, Verdict,
+    MenuEntry, Plugin, SettingKind, SettingSpec, TIMER_EVENT, UiEvent, Verdict,
 };
 pub use val::Val;

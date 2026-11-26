@@ -29,7 +29,7 @@ my_plugin/
 
 ## `plugin.toml`
 
-The parser refuses **unknown fields** (at the top level and inside `[[menu]]`), so a typo is an error, not a silent no-op. The format is documented at the top of [`package.rs`](../../crates/phoecord-plugin-runtime/src/package.rs); this is the full list.
+The parser refuses **unknown fields** (at the top level and inside `[[menu]]` and `[[setting]]`), so a typo is an error, not a silent no-op. The format is documented at the top of [`package.rs`](../../crates/phoecord-plugin-runtime/src/package.rs); this is the full list.
 
 ```toml
 id = "clear_urls_wasm"

@@ -5,7 +5,7 @@
 //! `unindent` and the new `clear_urls` are done. Once the WASM runtime is stable, each one moves
 //! to its own WASM package and this crate shrinks to the few plugins that must stay native.
 
-use phoecord_core::Plugin;
+use phoecord_core::{Event, EventKind, Host, Manifest, Plugin, Verdict};
 
 pub mod anonymise_file_names;
 pub mod anti_rickroll;
@@ -54,6 +54,7 @@ pub mod review_db;
 pub mod rmcord;
 pub mod send_timestamps;
 pub mod server_info;
+pub mod settings;
 pub mod show_hidden_channels;
 pub mod show_hidden_things;
 pub mod silent_delete;
@@ -254,6 +255,278 @@ pub const I18N: &[(&str, &str, &str)] = &[
         "ru",
         include_str!("../i18n/ru/voice_messages.ftl"),
     ),
+    (
+        "anonymise_file_names",
+        "en",
+        include_str!("../i18n/en/anonymise_file_names.ftl"),
+    ),
+    (
+        "anonymise_file_names",
+        "ru",
+        include_str!("../i18n/ru/anonymise_file_names.ftl"),
+    ),
+    (
+        "anti_rickroll",
+        "en",
+        include_str!("../i18n/en/anti_rickroll.ftl"),
+    ),
+    (
+        "anti_rickroll",
+        "ru",
+        include_str!("../i18n/ru/anti_rickroll.ftl"),
+    ),
+    (
+        "auto_dnd_while_playing",
+        "en",
+        include_str!("../i18n/en/auto_dnd_while_playing.ftl"),
+    ),
+    (
+        "auto_dnd_while_playing",
+        "ru",
+        include_str!("../i18n/ru/auto_dnd_while_playing.ftl"),
+    ),
+    (
+        "clear_urls",
+        "en",
+        include_str!("../i18n/en/clear_urls.ftl"),
+    ),
+    (
+        "clear_urls",
+        "ru",
+        include_str!("../i18n/ru/clear_urls.ftl"),
+    ),
+    ("dearrow", "en", include_str!("../i18n/en/dearrow.ftl")),
+    ("dearrow", "ru", include_str!("../i18n/ru/dearrow.ftl")),
+    (
+        "experiments",
+        "en",
+        include_str!("../i18n/en/experiments.ftl"),
+    ),
+    (
+        "experiments",
+        "ru",
+        include_str!("../i18n/ru/experiments.ftl"),
+    ),
+    (
+        "fake_deafen",
+        "en",
+        include_str!("../i18n/en/fake_deafen.ftl"),
+    ),
+    (
+        "fake_deafen",
+        "ru",
+        include_str!("../i18n/ru/fake_deafen.ftl"),
+    ),
+    (
+        "fake_deafen_detector",
+        "en",
+        include_str!("../i18n/en/fake_deafen_detector.ftl"),
+    ),
+    (
+        "fake_deafen_detector",
+        "ru",
+        include_str!("../i18n/ru/fake_deafen_detector.ftl"),
+    ),
+    (
+        "fake_nitro",
+        "en",
+        include_str!("../i18n/en/fake_nitro.ftl"),
+    ),
+    (
+        "fake_nitro",
+        "ru",
+        include_str!("../i18n/ru/fake_nitro.ftl"),
+    ),
+    (
+        "fake_profile_themes",
+        "en",
+        include_str!("../i18n/en/fake_profile_themes.ftl"),
+    ),
+    (
+        "fake_profile_themes",
+        "ru",
+        include_str!("../i18n/ru/fake_profile_themes.ftl"),
+    ),
+    (
+        "fix_images_quality",
+        "en",
+        include_str!("../i18n/en/fix_images_quality.ftl"),
+    ),
+    (
+        "fix_images_quality",
+        "ru",
+        include_str!("../i18n/ru/fix_images_quality.ftl"),
+    ),
+    (
+        "gif_provider_switcher",
+        "en",
+        include_str!("../i18n/en/gif_provider_switcher.ftl"),
+    ),
+    (
+        "gif_provider_switcher",
+        "ru",
+        include_str!("../i18n/ru/gif_provider_switcher.ftl"),
+    ),
+    (
+        "implicit_relationships",
+        "en",
+        include_str!("../i18n/en/implicit_relationships.ftl"),
+    ),
+    (
+        "implicit_relationships",
+        "ru",
+        include_str!("../i18n/ru/implicit_relationships.ftl"),
+    ),
+    (
+        "local_dev_badges",
+        "en",
+        include_str!("../i18n/en/local_dev_badges.ftl"),
+    ),
+    (
+        "local_dev_badges",
+        "ru",
+        include_str!("../i18n/ru/local_dev_badges.ftl"),
+    ),
+    (
+        "message_latency",
+        "en",
+        include_str!("../i18n/en/message_latency.ftl"),
+    ),
+    (
+        "message_latency",
+        "ru",
+        include_str!("../i18n/ru/message_latency.ftl"),
+    ),
+    (
+        "message_link_embeds",
+        "en",
+        include_str!("../i18n/en/message_link_embeds.ftl"),
+    ),
+    (
+        "message_link_embeds",
+        "ru",
+        include_str!("../i18n/ru/message_link_embeds.ftl"),
+    ),
+    (
+        "message_logger",
+        "en",
+        include_str!("../i18n/en/message_logger.ftl"),
+    ),
+    (
+        "message_logger",
+        "ru",
+        include_str!("../i18n/ru/message_logger.ftl"),
+    ),
+    (
+        "music_rich_presence",
+        "en",
+        include_str!("../i18n/en/music_rich_presence.ftl"),
+    ),
+    (
+        "music_rich_presence",
+        "ru",
+        include_str!("../i18n/ru/music_rich_presence.ftl"),
+    ),
+    (
+        "new_guild_settings",
+        "en",
+        include_str!("../i18n/en/new_guild_settings.ftl"),
+    ),
+    (
+        "new_guild_settings",
+        "ru",
+        include_str!("../i18n/ru/new_guild_settings.ftl"),
+    ),
+    (
+        "no_blocked_messages",
+        "en",
+        include_str!("../i18n/en/no_blocked_messages.ftl"),
+    ),
+    (
+        "no_blocked_messages",
+        "ru",
+        include_str!("../i18n/ru/no_blocked_messages.ftl"),
+    ),
+    (
+        "no_reply_mention",
+        "en",
+        include_str!("../i18n/en/no_reply_mention.ftl"),
+    ),
+    (
+        "no_reply_mention",
+        "ru",
+        include_str!("../i18n/ru/no_reply_mention.ftl"),
+    ),
+    (
+        "override_forum_defaults",
+        "en",
+        include_str!("../i18n/en/override_forum_defaults.ftl"),
+    ),
+    (
+        "override_forum_defaults",
+        "ru",
+        include_str!("../i18n/ru/override_forum_defaults.ftl"),
+    ),
+    (
+        "read_all_notifications_button",
+        "en",
+        include_str!("../i18n/en/read_all_notifications_button.ftl"),
+    ),
+    (
+        "read_all_notifications_button",
+        "ru",
+        include_str!("../i18n/ru/read_all_notifications_button.ftl"),
+    ),
+    (
+        "send_timestamps",
+        "en",
+        include_str!("../i18n/en/send_timestamps.ftl"),
+    ),
+    (
+        "send_timestamps",
+        "ru",
+        include_str!("../i18n/ru/send_timestamps.ftl"),
+    ),
+    (
+        "silent_message_toggle",
+        "en",
+        include_str!("../i18n/en/silent_message_toggle.ftl"),
+    ),
+    (
+        "silent_message_toggle",
+        "ru",
+        include_str!("../i18n/ru/silent_message_toggle.ftl"),
+    ),
+    (
+        "show_hidden_channels",
+        "en",
+        include_str!("../i18n/en/show_hidden_channels.ftl"),
+    ),
+    (
+        "show_hidden_channels",
+        "ru",
+        include_str!("../i18n/ru/show_hidden_channels.ftl"),
+    ),
+    (
+        "valid_reply",
+        "en",
+        include_str!("../i18n/en/valid_reply.ftl"),
+    ),
+    (
+        "valid_reply",
+        "ru",
+        include_str!("../i18n/ru/valid_reply.ftl"),
+    ),
+    (
+        "valid_user",
+        "en",
+        include_str!("../i18n/en/valid_user.ftl"),
+    ),
+    (
+        "valid_user",
+        "ru",
+        include_str!("../i18n/ru/valid_user.ftl"),
+    ),
 ];
 
 /// Hand [`I18N`] to the host's plugin strings, which answer `Host::t`.
@@ -348,7 +621,7 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let review_db_command = review_db.command();
     let translate = translate::Translate::new();
     let translate_commands = translate.commands();
-    let mut plugins: Vec<Box<dyn Plugin>> = vec![
+    let plugins: Vec<Box<dyn Plugin>> = vec![
         Box::new(no_track::NoTrack::new()),
         Box::new(dearrow::Dearrow::new()),
         Box::new(fix_images_quality::FixImagesQuality::new()),
@@ -410,6 +683,8 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(custom_idle),
         Box::new(ignore_activities),
     ];
+    // The settings tab's description of each plugin's settings (2.4.2, item e).
+    let mut plugins: Vec<Box<dyn Plugin>> = plugins.into_iter().map(with_settings).collect();
     // `/phoecord plugins` lists everything above and the commands plugin itself. Register more
     // `/phoecord` subcommands here with `Commands::with`.
     let commands = commands::Commands::empty();
@@ -475,6 +750,41 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     plugins
 }
 
+/// `plugin` with [`settings::specs`] in its manifest; a plugin with none is returned as it is.
+fn with_settings(plugin: Box<dyn Plugin>) -> Box<dyn Plugin> {
+    let specs = settings::specs(&plugin.manifest().id);
+    if specs.is_empty() {
+        return plugin;
+    }
+    let mut manifest = plugin.manifest().clone();
+    manifest.settings = specs;
+    Box::new(WithSettings {
+        inner: plugin,
+        manifest,
+    })
+}
+
+/// A built-in plugin whose manifest carries its settings specs; everything else is the plugin's.
+struct WithSettings {
+    inner: Box<dyn Plugin>,
+    manifest: Manifest,
+}
+
+impl Plugin for WithSettings {
+    fn manifest(&self) -> &Manifest {
+        &self.manifest
+    }
+    fn wants(&self, event: &EventKind) -> bool {
+        self.inner.wants(event)
+    }
+    fn wants_gateway(&self) -> bool {
+        self.inner.wants_gateway()
+    }
+    fn on_event(&self, host: &mut dyn Host, event: Event<'_>) -> Verdict {
+        self.inner.on_event(host, event)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -487,5 +797,50 @@ mod tests {
         ids.sort();
         ids.dedup();
         assert_eq!(ids.len(), n);
+    }
+
+    /// Every spec is well-formed, names a key its plugin's code reads, and has its label in both
+    /// languages; every plugin `settings::specs` knows is a built-in one.
+    #[test]
+    fn settings_specs_are_sound() {
+        let plugins = super::builtin();
+        let ids: Vec<String> = plugins.iter().map(|p| p.manifest().id.clone()).collect();
+        let mut seen = 0;
+        for p in &plugins {
+            let m = p.manifest();
+            for spec in &m.settings {
+                seen += 1;
+                assert_eq!(spec.problem(), None, "{}: {spec:?}", m.id);
+                for lang in ["en", "ru"] {
+                    let ftl = super::I18N
+                        .iter()
+                        .find(|(id, l, _)| *id == m.id && *l == lang)
+                        .map(|(_, _, t)| *t)
+                        .unwrap_or_else(|| panic!("{} has no {lang} bundle", m.id));
+                    assert!(
+                        ftl.lines()
+                            .any(|l| l.starts_with(&format!("{} =", spec.label))),
+                        "{}: {lang} lacks {}",
+                        m.id,
+                        spec.label
+                    );
+                }
+            }
+            let keys: Vec<&str> = m.settings.iter().map(|s| s.key.as_str()).collect();
+            let mut dedup = keys.clone();
+            dedup.sort_unstable();
+            dedup.dedup();
+            assert_eq!(dedup.len(), keys.len(), "{}: a key twice", m.id);
+        }
+        assert!(seen > 100, "only {seen} settings");
+        for id in &ids {
+            let _ = super::settings::specs(id);
+        }
+        for known in super::settings::KNOWN {
+            assert!(
+                ids.iter().any(|i| i == known),
+                "{known} is not a built-in plugin"
+            );
+        }
     }
 }

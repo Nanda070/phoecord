@@ -14,7 +14,7 @@
 //! [`API_VERSION`] `1` is frozen (task 2.4.3). From here on only additive changes are made
 //! without a major bump: a new [`Event`], [`EventKind`], [`UiEvent`], [`Verdict`] or [`Layer`]
 //! variant (all `#[non_exhaustive]`, so code outside this crate matches them with a `_` arm), a new
-//! field of [`Manifest`], [`MenuEntry`] or [`HostResponse`] (`#[non_exhaustive]`, built through
+//! field of [`Manifest`], [`MenuEntry`], [`SettingSpec`] or [`HostResponse`] (`#[non_exhaustive]`, built through
 //! their `new` constructors), a new [`Host`] method with a default, and a new dispatch name such
 //! as [`TIMER_EVENT`]. Renaming, removing or changing any of them is a major bump.
 //!
@@ -85,6 +85,10 @@ pub struct Manifest {
     /// delivers [`UiEvent::MenuAction`] with its [`MenuEntry::id`]. WASM packages declare them as
     /// `[[menu]]` in `plugin.toml`.
     pub menu: Vec<MenuEntry>,
+    /// The plugin's settings, in the order the PhoeCord settings tab shows them (task 2.3.3).
+    /// Only a description: values still come from [`Host::setting`], and a key missing here is
+    /// still read. WASM packages declare them as `[[setting]]` in `plugin.toml`.
+    pub settings: Vec<SettingSpec>,
 }
 
 impl Manifest {
@@ -107,6 +111,7 @@ impl Manifest {
             api: API_VERSION,
             fetch: Vec::new(),
             menu: Vec::new(),
+            settings: Vec::new(),
         }
     }
 }
@@ -128,6 +133,146 @@ impl MenuEntry {
             id: id.into(),
             label: label.into(),
         }
+    }
+}
+
+/// What kind of control a [`SettingSpec`] gets in the settings tab.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum SettingKind {
+    /// A switch; the value is a JSON boolean.
+    Bool,
+    /// A number field; the value is a JSON number.
+    Number,
+    /// A text field; the value is a JSON string.
+    Text,
+    /// One of [`SettingSpec::options`] (strings or numbers, as Vencord's select settings).
+    Choice,
+    /// A list of strings (ids, words, links), one per line; the value is a JSON array of strings.
+    List,
+}
+
+impl SettingKind {
+    /// The name used in `plugin.toml` (`kind = "bool"`).
+    pub fn name(self) -> &'static str {
+        match self {
+            SettingKind::Bool => "bool",
+            SettingKind::Number => "number",
+            SettingKind::Text => "text",
+            SettingKind::Choice => "choice",
+            SettingKind::List => "list",
+        }
+    }
+
+    /// The kind a `plugin.toml` name stands for.
+    pub fn from_name(name: &str) -> Option<SettingKind> {
+        Some(match name {
+            "bool" => SettingKind::Bool,
+            "number" => SettingKind::Number,
+            "text" => SettingKind::Text,
+            "choice" => SettingKind::Choice,
+            "list" => SettingKind::List,
+            _ => return None,
+        })
+    }
+
+    /// Whether `value` has this kind's JSON shape (for [`SettingKind::Choice`], also whether it
+    /// is one of `options`).
+    pub fn accepts(self, value: &Val, options: &[Val]) -> bool {
+        match self {
+            SettingKind::Bool => matches!(value, Val::Bool(_)),
+            SettingKind::Number => matches!(value, Val::Int(_) | Val::Big(_) | Val::Float(_)),
+            SettingKind::Text => matches!(value, Val::Str(_)),
+            SettingKind::Choice => options.contains(value),
+            SettingKind::List => {
+                matches!(value, Val::List(items) if items.iter().all(|i| matches!(i, Val::Str(_))))
+            }
+        }
+    }
+}
+
+/// One setting of a plugin, declared in [`Manifest::settings`] (task 2.4.2, item e).
+#[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
+pub struct SettingSpec {
+    /// The key [`Host::setting`] reads (the name in the plugin's `config.toml` section).
+    pub key: String,
+    pub kind: SettingKind,
+    /// The value the plugin uses when the user has set nothing.
+    pub default: Val,
+    /// The allowed values of a [`SettingKind::Choice`]; empty for the other kinds.
+    pub options: Vec<Val>,
+    /// A key of the plugin's own `i18n/<lang>.ftl`, shown through [`Host::t`] (the key itself
+    /// when the bundle lacks it).
+    pub label: String,
+}
+
+impl SettingSpec {
+    pub fn new(
+        key: impl Into<String>,
+        kind: SettingKind,
+        default: Val,
+        label: impl Into<String>,
+    ) -> SettingSpec {
+        SettingSpec {
+            key: key.into(),
+            kind,
+            default,
+            options: Vec::new(),
+            label: label.into(),
+        }
+    }
+
+    /// A [`SettingKind::Choice`] setting.
+    pub fn choice(
+        key: impl Into<String>,
+        options: Vec<Val>,
+        default: Val,
+        label: impl Into<String>,
+    ) -> SettingSpec {
+        SettingSpec {
+            options,
+            ..SettingSpec::new(key, SettingKind::Choice, default, label)
+        }
+    }
+
+    /// Why this spec is broken (`None` when it is fine): the default must fit the kind, and only
+    /// a choice has options (at least one, no duplicates).
+    pub fn problem(&self) -> Option<String> {
+        if self.key.trim().is_empty() {
+            return Some("setting key is empty".into());
+        }
+        if self.label.trim().is_empty() {
+            return Some(format!("setting {:?} has an empty label", self.key));
+        }
+        match self.kind {
+            SettingKind::Choice => {
+                if self.options.is_empty() {
+                    return Some(format!("choice setting {:?} has no options", self.key));
+                }
+                for (i, o) in self.options.iter().enumerate() {
+                    if self.options[..i].contains(o) {
+                        return Some(format!("setting {:?} lists option {o:?} twice", self.key));
+                    }
+                }
+            }
+            _ if !self.options.is_empty() => {
+                return Some(format!(
+                    "setting {:?} has options but is not a choice",
+                    self.key
+                ));
+            }
+            _ => {}
+        }
+        if !self.kind.accepts(&self.default, &self.options) {
+            return Some(format!(
+                "setting {:?}: the default {:?} is not a {}",
+                self.key,
+                self.default,
+                self.kind.name()
+            ));
+        }
+        None
     }
 }
 
@@ -656,5 +801,44 @@ mod tests {
         assert_eq!(h.set_plugin_enabled("p", true), msg("set_plugin_enabled"));
         assert_eq!(h.request_query(), None);
         assert_eq!(h.t("key", &[]), "key");
+    }
+
+    #[test]
+    fn setting_specs_check_their_default_against_the_kind() {
+        let ok = [
+            SettingSpec::new("on", SettingKind::Bool, Val::Bool(true), "s-on"),
+            SettingSpec::new("n", SettingKind::Number, Val::Int(3), "s-n"),
+            SettingSpec::new("t", SettingKind::Text, Val::Str(String::new()), "s-t"),
+            SettingSpec::new("l", SettingKind::List, Val::List(vec![]), "s-l"),
+            SettingSpec::choice(
+                "c",
+                vec![Val::Str("a".into()), Val::Int(2)],
+                Val::Int(2),
+                "s-c",
+            ),
+        ];
+        for spec in &ok {
+            assert_eq!(spec.problem(), None, "{spec:?}");
+            assert_eq!(SettingKind::from_name(spec.kind.name()), Some(spec.kind));
+        }
+        let bad = [
+            SettingSpec::new("on", SettingKind::Bool, Val::Str("yes".into()), "s-on"),
+            SettingSpec::new("n", SettingKind::Number, Val::Bool(true), "s-n"),
+            SettingSpec::new("l", SettingKind::List, Val::List(vec![Val::Int(1)]), "s-l"),
+            SettingSpec::new("", SettingKind::Bool, Val::Bool(true), "s"),
+            SettingSpec::new("k", SettingKind::Bool, Val::Bool(true), " "),
+            SettingSpec::choice("c", vec![Val::Int(1), Val::Int(2)], Val::Int(3), "s-c"),
+            SettingSpec::choice("c", vec![], Val::Int(1), "s-c"),
+            SettingSpec::choice("c", vec![Val::Int(1), Val::Int(1)], Val::Int(1), "s-c"),
+            SettingSpec {
+                options: vec![Val::Str("x".into())],
+                ..SettingSpec::new("t", SettingKind::Text, Val::Str("x".into()), "s-t")
+            },
+        ];
+        for spec in &bad {
+            assert!(spec.problem().is_some(), "{spec:?}");
+        }
+        assert_eq!(SettingKind::from_name("slider"), None);
+        assert!(Manifest::new("p", "P", "0", "").settings.is_empty());
     }
 }

@@ -26,7 +26,7 @@ If you are porting a Vencord plugin into PhoeCord itself as a native, built-in p
 
 ```
 my_plugin/
-├── plugin.toml        # id, api = 1, events, rights, fetch hosts, [[menu]]
+├── plugin.toml        # id, api = 1, events, rights, fetch hosts, [[menu]], [[setting]]
 ├── plugin.wasm        # the component
 └── i18n/              # optional
     ├── en.ftl

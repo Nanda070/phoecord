@@ -6,3 +6,7 @@ sessions-first-run = первая проверка: все записаны ка
 sessions-line = { $session }, последний вход: { $time }
 sessions-new-tag = НОВЫЙ
 sessions-error = Не удалось прочитать ваши сеансы: { $error }
+
+# Settings tab labels (2.4.2)
+setting-background-check = Проверять новые сеансы в фоне
+setting-check-interval = Интервал проверки, минуты

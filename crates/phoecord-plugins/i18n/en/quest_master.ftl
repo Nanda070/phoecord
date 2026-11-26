@@ -75,3 +75,13 @@ qm-bypass-success = [Bypass] Success — "{ $name }" completed via Discord Says.
 qm-bypass-age-gated = [Bypass] "{ $name }" can't be launched (age-gated or delisted). Discord blocks the proxy ticket.
 qm-bypass-failed = [Bypass] Failed: { $error }
 qm-bypass-cleanup-failed = [Bypass] Deauthorize cleanup non-fatal: { $error }
+
+# Settings tab labels (2.4.2)
+setting-auto-enroll = Enroll in new quests
+setting-auto-start = Start enrolled quests
+setting-auto-claim = Claim rewards
+setting-random-delay = Random delays
+setting-concurrent-games = Game quests at once
+setting-concurrent-videos = Video quests at once
+setting-hide-activity = Hide the faked game
+setting-file-logging = Write a log file

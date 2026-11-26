@@ -10,3 +10,8 @@ review_db-too-fast = You are sending requests too fast. Wait a few seconds and t
 review_db-failed = An Error occured while fetching reviews. Please try again later.
 review_db-bad-user = Not a user id or mention.
 review_db-bad-page = `page` must be a number, 1 or more.
+
+# Settings tab labels (2.4.2)
+setting-show-warning = Show ReviewDB's notices
+setting-hide-blocked-users = Hide reviews by blocked users
+setting-hide-timestamps = Hide timestamps

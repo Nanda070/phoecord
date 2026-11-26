@@ -7,3 +7,10 @@ silent_delete-bad-message = Not a message id. Give digits only.
 silent_delete-bad-count = `count` must be a number, 1 or more.
 silent_delete-not-signed-in = Not signed in yet: wait for the gateway to connect, then try again.
 silent_delete-no-timer = Could not set the timer for the next step.
+
+# Settings tab labels (2.4.2)
+setting-replacement-text = Replacement text
+setting-delete-original = Delete after replacing
+setting-suppress-notifications = Send silently
+setting-delete-delay = Delay before deleting, ms
+setting-purge-interval = Delay between messages, ms

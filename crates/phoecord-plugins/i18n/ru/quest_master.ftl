@@ -75,3 +75,13 @@ qm-bypass-success = [Bypass] Успех: "{ $name }" выполнено чере
 qm-bypass-age-gated = [Bypass] "{ $name }" нельзя запустить (возрастное ограничение или снято с витрины). Discord блокирует proxy ticket.
 qm-bypass-failed = [Bypass] Не удалось: { $error }
 qm-bypass-cleanup-failed = [Bypass] Отзыв доступа не удался (не критично): { $error }
+
+# Settings tab labels (2.4.2)
+setting-auto-enroll = Записываться на новые задания
+setting-auto-start = Запускать записанные задания
+setting-auto-claim = Забирать награды
+setting-random-delay = Случайные задержки
+setting-concurrent-games = Игровых заданий одновременно
+setting-concurrent-videos = Видео-заданий одновременно
+setting-hide-activity = Скрывать подставную игру
+setting-file-logging = Писать файл журнала

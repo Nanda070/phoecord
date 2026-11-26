@@ -74,6 +74,12 @@ A context menu entry names a **key**, not a text:
 [[menu]]
 id = "copy_raw"
 label = "menu-copy-raw"
+
+[[setting]]
+key = "sortKeys"
+kind = "bool"
+default = true
+label = "setting-sort-keys"
 ```
 
 PhoeCord shows the entry with `Host::t("menu-copy-raw")` in the user's language, falling back to English and then to the key itself. So every `label` needs a message in `en.ftl` (and `ru.ftl`), and the click arrives as `ui:menu_action` with `entry = "copy_raw"` ([Events](events.md#menu_action)).

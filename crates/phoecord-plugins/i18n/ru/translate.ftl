@@ -9,3 +9,9 @@ translate-bad-message = Это не id или ссылка на сообщени
 translate-no-text = В этом сообщении нет текста для перевода.
 translate-need-text = Укажите `text` или `message`.
 translate-failed = Не удалось перевести: { $error }
+
+# Settings tab labels (2.4.2)
+setting-sent-input = Язык ваших сообщений
+setting-sent-output = Переводить ваши сообщения на
+setting-received-input = Язык входящих сообщений
+setting-received-output = Переводить входящие на

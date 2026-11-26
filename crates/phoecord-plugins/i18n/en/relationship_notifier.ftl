@@ -12,3 +12,9 @@ group-removed = You were removed from { $name }.
 unknown-user = user { $id }
 unknown-guild = server { $id }
 unknown-group = a group DM
+
+# Settings tab labels (2.4.2)
+setting-friends = Friend removals
+setting-friend-requests = Cancelled friend requests
+setting-servers = Server removals
+setting-groups = Group removals

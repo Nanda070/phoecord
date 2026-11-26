@@ -44,7 +44,7 @@ Ask: *"Could a program between the client and Discord do this by changing the tr
 | Vencord | PhoeCord | Notes |
 |:---|:---|:---|
 | `definePlugin({ name, description, authors })` | `Manifest::new(id, name, version, description)`, then set `authors`, `vencord`, `fetch`, `menu` | `id` is `snake_case` of the name; set `m.vencord = Some("OriginalName".into())` |
-| `definePluginSettings({ … })` | `[plugins.<id>]` in `config.toml`, read with `host.setting("key")` | defaults go in the manifest; native plugins read a missing key as its default |
+| `definePluginSettings({ … })` | `[plugins.<id>]` in `config.toml`, read with `host.setting("key")`; described for the settings tab in `Manifest.settings` (`SettingSpec::new(key, kind, default, ftl_key)`, `SettingSpec::choice`; `[[setting]]` in a WASM package's `plugin.toml`; built-ins in `crates/phoecord-plugins/src/settings.rs`) | the plugin still falls back to its own default for a missing key; keep the spec's `default` equal to it |
 | `patches: [{ find, replacement }]` | nothing in Phase 1; a UI hook in Phase 2 *(2)* | if the patch only changes data, find the request or event that carries that data instead |
 | message context menu entries (`addContextMenuPatch`) | `Manifest.menu` (`MenuEntry::new(id, ftl_key)`; `[[menu]]` in a WASM package's `plugin.toml`), clicks arrive as `Event::Ui(UiEvent::MenuAction { entry, channel_id, message_id })` | Phoenix only, once the context menu hook (2.3.5) lands |
 | `FluxDispatcher` events (`MESSAGE_CREATE`, …) | `Event::Dispatch { name, payload, extra }` | same event names as the Gateway; `payload` is the whole frame `{op, t, s, d}`, read the data with `state::dispatch_data(payload)` (or `_mut` to rewrite) |

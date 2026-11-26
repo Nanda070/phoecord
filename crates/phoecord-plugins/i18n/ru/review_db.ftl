@@ -10,3 +10,8 @@ review_db-too-fast = Слишком частые запросы. Подожди�
 review_db-failed = Не удалось загрузить отзывы. Попробуйте позже.
 review_db-bad-user = Это не id и не упоминание пользователя.
 review_db-bad-page = `page` должно быть числом от 1.
+
+# Settings tab labels (2.4.2)
+setting-show-warning = Показывать уведомления ReviewDB
+setting-hide-blocked-users = Скрывать отзывы заблокированных
+setting-hide-timestamps = Скрывать время

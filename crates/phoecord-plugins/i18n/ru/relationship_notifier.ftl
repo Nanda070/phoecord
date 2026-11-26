@@ -12,3 +12,9 @@ group-removed = Вас удалили из { $name }.
 unknown-user = пользователь { $id }
 unknown-guild = сервер { $id }
 unknown-group = групповой чат
+
+# Settings tab labels (2.4.2)
+setting-friends = Удаления из друзей
+setting-friend-requests = Отменённые заявки в друзья
+setting-servers = Удаления с серверов
+setting-groups = Удаления из групп

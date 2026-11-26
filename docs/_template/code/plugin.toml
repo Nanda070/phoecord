@@ -30,5 +30,12 @@ rights = ["kv", "notify"]
 # id = "example_action"          # snake_case, unique in the plugin
 # label = "menu-example-action"  # a key of i18n/<lang>.ftl, shown through Host::t
 
-# Settings are not declared here: the user sets them under [plugins.<id>] in config.toml and the plugin
-# reads them with Host::setting. Strings are i18n/en.ftl and i18n/ru.ftl next to this file.
+# Settings shown in the PhoeCord settings tab (task 2.3.3), in this order. The user's values still live
+# under [plugins.<id>] in config.toml and the plugin reads them with Host::setting; this only describes them.
+# [[setting]]
+# key = "example_mode"           # the config key, unique in the plugin
+# kind = "choice"                # bool, number, text, choice (needs `options`) or list (of strings)
+# default = "fast"               # must fit the kind; a choice's default is one of `options`
+# options = ["fast", "exact"]    # strings or numbers
+# label = "setting-example-mode" # a key of i18n/<lang>.ftl, shown through Host::t
+# Strings are i18n/en.ftl and i18n/ru.ftl next to this file.
