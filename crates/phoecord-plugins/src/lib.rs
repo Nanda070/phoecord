@@ -55,7 +55,6 @@ pub mod rmcord;
 pub mod send_timestamps;
 pub mod server_info;
 pub mod settings;
-pub mod show_hidden_channels;
 pub mod show_hidden_things;
 pub mod silent_delete;
 pub mod silent_message_toggle;
@@ -498,16 +497,6 @@ pub const I18N: &[(&str, &str, &str)] = &[
         include_str!("../i18n/ru/silent_message_toggle.ftl"),
     ),
     (
-        "show_hidden_channels",
-        "en",
-        include_str!("../i18n/en/show_hidden_channels.ftl"),
-    ),
-    (
-        "show_hidden_channels",
-        "ru",
-        include_str!("../i18n/ru/show_hidden_channels.ftl"),
-    ),
-    (
         "valid_reply",
         "en",
         include_str!("../i18n/en/valid_reply.ftl"),
@@ -568,8 +557,6 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
     let who_reacted_command = who_reacted.command();
     let message_latency = message_latency::MessageLatency::new();
     let message_latency_command = message_latency.command();
-    let show_hidden_channels = show_hidden_channels::ShowHiddenChannels::new();
-    let show_hidden_channels_command = show_hidden_channels.command();
     let show_hidden_things = show_hidden_things::ShowHiddenThings::new();
     let show_hidden_things_command = show_hidden_things.command();
     let experiments = experiments::Experiments::new();
@@ -661,7 +648,6 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         Box::new(mutual_group_dms),
         Box::new(who_reacted),
         Box::new(message_latency),
-        Box::new(show_hidden_channels),
         Box::new(show_hidden_things),
         Box::new(experiments),
         Box::new(fake_deafen),
@@ -715,7 +701,6 @@ pub fn builtin() -> Vec<Box<dyn Plugin>> {
         .with(mutual_group_dms_command)
         .with(who_reacted_command)
         .with(message_latency_command)
-        .with(show_hidden_channels_command)
         .with(show_hidden_things_command)
         .with(experiments_command)
         .with(fake_deafen_command)

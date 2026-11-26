@@ -25,6 +25,7 @@
 pub mod account;
 pub mod config;
 pub mod dev;
+pub mod full_ready;
 pub mod host;
 pub mod timers;
 
@@ -284,6 +285,14 @@ impl Engine {
             });
         if let Some(d) = payload.get("d") {
             self.shared.account.lock().unwrap().track(&name, d);
+            if name == "READY" {
+                let (partial, total) = full_ready::partial_guilds(d);
+                if partial > 0 {
+                    tracing::info!("READY: {partial} of {total} guilds arrived partial");
+                } else {
+                    tracing::debug!("READY: {total} guilds, all full");
+                }
+            }
         }
         let mut host = ProxyHost::new(&self.shared, &cfg);
         let outcome = self
@@ -321,10 +330,20 @@ impl Engine {
                 op,
                 payload: payload.clone(),
             });
+        // Before the plugins, so they see the IDENTIFY that is actually sent.
+        let full = cfg.phoenix.full_ready && {
+            let dropped = full_ready::ask_full_ready(payload);
+            if let Some(n) = dropped {
+                tracing::info!(
+                    "IDENTIFY: asked for a full READY ({n} cached guild versions dropped)"
+                );
+            }
+            dropped.is_some()
+        };
         let mut host = ProxyHost::new(&self.shared, &cfg);
         let outcome = self.chain.send(&mut host, op, payload);
         SendResult {
-            changed: outcome == Outcome::Changed,
+            changed: full || outcome == Outcome::Changed,
             drop: matches!(outcome, Outcome::Dropped { .. } | Outcome::Replied { .. }),
             sends: host.sends,
             locals: host.locals,

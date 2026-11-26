@@ -148,7 +148,7 @@ The goal is full Vencord parity on Phoenix, visual plugins and panels included: 
 | 3 | NoTrack | Network | ✅ |
 | 4 | ClearURLs | Network | ✅ native (1.2.7); WASM build is 1.3.8 |
 | 5 | SilentTyping | Network | ✅ |
-| 6 | ShowHiddenChannels | Network + UI | ⏳ |
+| 6 | ShowHiddenChannels | Network + UI | ⛔ removed (owner's ruling, 2026-11-26) |
 | 7 | Translate | Network | ⏳ |
 | 8 | PlatformIndicators | Network + UI | ⏳ |
 | 9 | PermissionsViewer | UI | ⏳ |
