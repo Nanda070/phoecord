@@ -1,7 +1,10 @@
 name: Package
 
-# Native installers for the installer window: setup .exe (NSIS) and .msi (WiX) on Windows,
-# PhoeCord.app in a .dmg on macOS. The macOS app is ad-hoc signed (no certificate), so Gatekeeper says "unidentified developer" instead of "damaged"; nothing else is signed. The files are kept as
+# Native installers for the installer window (task 2.4.5): the NSIS setup .exe on Windows (with the
+# loader in `loader\`), PhoeCord.app in a .dmg on macOS, a .deb and an .rpm on Linux. The macOS
+# app is ad-hoc signed (no certificate), so Gatekeeper says "unidentified developer" instead of
+# "damaged"; nothing else is signed. The Linux packages are installed in CI (Ubuntu runner, Fedora
+# container) to prove a user can install them. The files are kept as
 # workflow artifacts for 14 days. release.yml calls this workflow (workflow_call) on a `v*` tag and
 # attaches the installers to the GitHub release, so there is no tag trigger here.
 
@@ -27,6 +30,7 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   PACKAGER_VERSION: "0.11.8"
+  GENERATE_RPM_VERSION: "0.21.1"
 
 jobs:
   package:
@@ -37,7 +41,10 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            formats: nsis wix
+            formats: nsis
+          # 22.04, not latest: its glibc (2.35) is old enough for Debian 12 and Ubuntu 22.04.
+          - os: ubuntu-22.04
+            formats: deb
           - os: macos-latest
             formats: app dmg
           - os: macos-15-intel
@@ -49,6 +56,10 @@ jobs:
       - name: Install cargo-packager
         shell: bash
         run: cargo install cargo-packager --locked --version "$PACKAGER_VERSION"
+      - name: Install cargo-generate-rpm
+        if: runner.os == 'Linux'
+        shell: bash
+        run: cargo install cargo-generate-rpm --locked --version "$GENERATE_RPM_VERSION"
       - name: Build the installers
         shell: bash
         working-directory: crates/phoecord-installer-gui
@@ -56,6 +67,21 @@ jobs:
           args=()
           for f in ${{ matrix.formats }}; do args+=(-f "$f"); done
           cargo packager --release "${args[@]}"
+      - name: Build the .rpm
+        if: runner.os == 'Linux'
+        shell: bash
+        run: cargo generate-rpm -p crates/phoecord-installer-gui -o target/packages/
+      - name: Check the loader is in the setup
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          # NSIS setups are 7-Zip archives: the loader must be at loader/version.dll (ruling Q3).
+          exe=$(ls target/packages/*-setup.exe | head -n1)
+          7z l "$exe" | tee listing.txt
+          grep -E 'loader[\/]version\.dll' listing.txt
+          if grep -E '(^|[ \/])version\.dll$' listing.txt | grep -v loader; then
+            echo "::error::version.dll next to the binaries"; exit 1
+          fi
       - name: Sign the app (ad hoc) and refresh the .dmg
         if: runner.os == 'macOS'
         shell: bash
@@ -73,6 +99,26 @@ jobs:
       - name: Name the files
         shell: bash
         run: bash scripts/package/name-files.sh target/packages
+      - name: Install the .deb (Ubuntu) and the .rpm (Fedora)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          deb=$(ls target/packages/PhoeCord_*_amd64.deb)
+          rpm=$(ls target/packages/PhoeCord_*_x86_64.rpm)
+          sudo apt-get install -y "./$deb"
+          phoecord --version
+          test -x /usr/bin/phoecord-installer
+          test -f /usr/share/applications/phoecord-installer.desktop
+          # The updater tells a .deb install from an .rpm one by this file.
+          test -f /var/lib/dpkg/info/phoecord.list
+          sudo apt-get remove -y phoecord
+          docker run --rm -v "$PWD/target/packages:/p:ro" fedora:41 bash -euc "
+            dnf install -y /p/$(basename "$rpm") >/dev/null
+            phoecord --version
+            test -x /usr/bin/phoecord-installer
+            test -f /usr/share/applications/phoecord-installer.desktop
+            rpm -q --recommends phoecord | grep -q certutil
+          "
       - name: SHA256SUMS
         shell: bash
         working-directory: target/packages
@@ -80,15 +126,16 @@ jobs:
           rm -rf PhoeCord.app
           # Git Bash on Windows ships sha256sum but not shasum; macOS has shasum.
           if command -v sha256sum >/dev/null; then sum="sha256sum"; else sum="shasum -a 256"; fi
-          find . -maxdepth 1 -type f \( -name '*.exe' -o -name '*.msi' -o -name '*.dmg' \) \
+          find . -maxdepth 1 -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.deb' -o -name '*.rpm' \) \
             -exec $sum {} + | sed 's#\./##' | tee SHA256SUMS-${{ matrix.os }}.txt
       - uses: actions/upload-artifact@v7
         with:
           name: phoecord-installers-${{ matrix.os }}
           path: |
             target/packages/*.exe
-            target/packages/*.msi
             target/packages/*.dmg
+            target/packages/*.deb
+            target/packages/*.rpm
             target/packages/SHA256SUMS-*.txt
           if-no-files-found: error
           retention-days: 14

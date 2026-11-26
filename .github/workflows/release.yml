@@ -1,8 +1,8 @@
 name: Release
 
 # A `v*` tag builds the CLI (and the loader `version.dll` on Windows) for Linux, Windows and macOS,
-# calls package.yml for the native installers, writes SHA256SUMS over every file and publishes a
-# GitHub release. Everything is unsigned (no code signing at any stage) and uses only GITHUB_TOKEN.
+# calls package.yml for the native installers (.exe, .dmg, .deb, .rpm), writes SHA256SUMS over every
+# file and publishes a GitHub release, which installed copies pick up as an automatic update (2.4.5). Everything is unsigned (no code signing at any stage) and uses only GITHUB_TOKEN.
 # `workflow_dispatch` with dry_run builds and checksums but publishes nothing.
 # Tags are pushed by the owner only (docs/GOVERNANCE.md, "Releases"). A tag with `-` is a prerelease.
 
@@ -169,10 +169,16 @@ jobs:
             cat <<'NOTE'
           ## Which file do I download?
 
-          - **Windows:** `PhoeCord_<version>_x64-setup.exe` (or the `.msi`).
+          - **Windows:** `PhoeCord_<version>_x64-setup.exe`.
           - **Mac with Apple Silicon (M1 and newer):** `PhoeCord_<version>_aarch64.dmg`.
           - **Intel Mac:** `PhoeCord_<version>_x64.dmg`.
-          - `phoecord-*` archives: the command-line tool, for advanced users. Most people want the installer above.
+          - **Debian, Ubuntu, Mint:** `PhoeCord_<version>_amd64.deb` (`sudo apt install ./PhoeCord_<version>_amd64.deb`).
+          - **Fedora, openSUSE:** `PhoeCord_<version>_x86_64.rpm` (`sudo dnf install ./PhoeCord_<version>_x86_64.rpm`).
+          - `phoecord-*` archives: the command-line tool, for advanced users and other Linux distributions. Most people want the installer above.
+
+          ## Updating
+
+          An installed PhoeCord checks for a new release once a day, downloads it, checks it against `SHA256SUMS` and installs it the next time the PhoeCord window or its background proxy starts (on Linux, the window asks for your password). Turn this off in the window's Settings, or with `[update] auto = false` in `config.toml`. To update by hand, install the new file over the old one; the command-line archives are never updated automatically.
 
           ## Before you install
 
@@ -191,8 +197,12 @@ jobs:
           flags=()
           case "$GITHUB_REF_NAME" in *-*) flags+=(--prerelease) ;; esac
           if [ -n "$AUTO_NOTES" ]; then flags+=(--generate-notes); fi
+          # Created as a draft and published once every file is uploaded: installed copies look for
+          # updates in published releases and refuse one whose installer or SHA256SUMS is missing.
           gh release create "$GITHUB_REF_NAME" release/* \
             --title "$GITHUB_REF_NAME" \
             --notes-file notes.md \
             --verify-tag \
+            --draft \
             "${flags[@]}"
+          gh release edit "$GITHUB_REF_NAME" --draft=false
