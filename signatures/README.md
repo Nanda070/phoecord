@@ -8,6 +8,17 @@ AOB (array-of-bytes) signatures that let the PhoeCord loader find functions in a
 
 `%LOCALAPPDATA%\PhoeCord\signatures\*.toml`. Files are read in name order; a later file replaces a build table with the same key. A file that does not parse is skipped and logged; the rest still load.
 
+## Hot-fix: a new client build
+
+The loader reads the folder at every client start, so a new table needs no new DLL.
+
+1. Find the signatures in the new build and write them under its build key.
+2. Check them: `phoecord check <client exe> --signatures <folder>` must exit with code 0.
+3. Give users the file. Where real tables are published is not decided yet.
+4. Users run `phoecord signatures install <file or folder>` and restart Discord.
+
+`signatures install` checks every file first and writes nothing if one does not load, holds no signature or is not `*.toml`. It replaces a file of the same name and warns when a file that is read later defines the same build. `phoecord signatures list` shows what is installed. `phoecord uninstall` removes the files it added; a file you had put there yourself stays, even after it was replaced.
+
 ## Format
 
 ```toml

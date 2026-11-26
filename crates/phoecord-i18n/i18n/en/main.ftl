@@ -622,3 +622,17 @@ cli-check-ambiguous = ambiguous ({ $count } matches)
 cli-check-bad-rip = bad rip offset
 cli-check-summary = Found { $found } of { $total }
 cli-check-failed = the signature check failed
+
+# phoecord signatures (task 2.2.10)
+cmd-signatures = Update the signature files the loader reads (hot-fix, Windows)
+cmd-signatures-install = Check signature files (*.toml) and put them where the loader reads them
+cli-arg-signatures-install-source = A signature file, or a folder with *.toml files
+cmd-signatures-list = Show the signature files the loader would read
+cli-signatures-unsupported = signature files are used by the Windows loader only
+cli-signatures-added = Added { $path } (builds: { $builds })
+cli-signatures-replaced = Replaced { $path } (builds: { $builds })
+cli-signatures-overridden = Warning: { $file } is read later and also has build { $build }, so its table is used
+cli-signatures-restart = Restart Discord for the new signatures to take effect
+cli-signatures-folder = Signature folder: { $path }
+cli-signatures-none = No signature files
+cli-signatures-broken =   { $file }: skipped by the loader: { $why }

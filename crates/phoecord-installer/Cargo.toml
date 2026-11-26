@@ -11,6 +11,8 @@ publish = false
 
 [dependencies]
 phoecord-core.workspace = true
+# Signature files only (2.2.10); without the DLL itself.
+phoecord-loader = { path = "../phoecord-loader", default-features = false }
 phoecord-proxy.workspace = true
 anyhow.workspace = true
 dirs.workspace = true

@@ -13,7 +13,22 @@
 use crate::aob::Pattern;
 use crate::version::ClientVersion;
 use serde::Deserialize;
-use std::{collections::BTreeMap, fmt, fs, io, path::Path};
+use std::{
+    collections::BTreeMap,
+    ffi::OsString,
+    fmt, fs, io,
+    path::{Path, PathBuf},
+};
+
+/// Where the loader reads signatures: `%LOCALAPPDATA%\PhoeCord\signatures`, given the value of
+/// `LOCALAPPDATA`. The installer writes hot-fixes to the same place (2.2.10).
+pub fn default_dir(local_app_data: Option<OsString>) -> Option<PathBuf> {
+    Some(
+        PathBuf::from(local_app_data?)
+            .join("PhoeCord")
+            .join("signatures"),
+    )
+}
 
 #[derive(Debug)]
 pub enum SignatureError {
@@ -160,6 +175,11 @@ impl SignatureSet {
 
     pub fn is_empty(&self) -> bool {
         self.builds.is_empty()
+    }
+
+    /// Every build key with the number of signatures in its table.
+    pub fn builds(&self) -> impl Iterator<Item = (&str, usize)> {
+        self.builds.iter().map(|(k, s)| (k.as_str(), s.len()))
     }
 
     /// Picks the table for a client: first `"<version>+<hash prefix>"` (prefix of at least 8 hex

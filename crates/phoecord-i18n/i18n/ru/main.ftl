@@ -627,3 +627,17 @@ cli-check-ambiguous = неоднозначна (совпадений: { $count }
 cli-check-bad-rip = неверное смещение rip
 cli-check-summary = Найдено { $found } из { $total }
 cli-check-failed = проверка сигнатур не пройдена
+
+# phoecord signatures (задача 2.2.10)
+cmd-signatures = Обновить файлы сигнатур, которые читает загрузчик (быстрое исправление, Windows)
+cmd-signatures-install = Проверить файлы сигнатур (*.toml) и положить их туда, откуда их читает загрузчик
+cli-arg-signatures-install-source = Файл сигнатур или папка с файлами *.toml
+cmd-signatures-list = Показать файлы сигнатур, которые прочитает загрузчик
+cli-signatures-unsupported = файлы сигнатур использует только загрузчик под Windows
+cli-signatures-added = Добавлен { $path } (сборки: { $builds })
+cli-signatures-replaced = Заменён { $path } (сборки: { $builds })
+cli-signatures-overridden = Внимание: { $file } читается позже и тоже содержит сборку { $build }, поэтому берётся его таблица
+cli-signatures-restart = Перезапустите Discord, чтобы новые сигнатуры начали действовать
+cli-signatures-folder = Папка сигнатур: { $path }
+cli-signatures-none = Файлов сигнатур нет
+cli-signatures-broken =   { $file }: загрузчик его пропустит: { $why }

@@ -14,7 +14,6 @@ use crate::{
 use std::{
     ffi::c_void,
     panic,
-    path::PathBuf,
     time::{Duration, Instant},
 };
 use windows_sys::{
@@ -113,11 +112,6 @@ unsafe extern "system" fn worker(_: *mut c_void) -> u32 {
     0
 }
 
-fn signatures_dir() -> Option<PathBuf> {
-    let base = std::env::var_os("LOCALAPPDATA")?;
-    Some(PathBuf::from(base).join("PhoeCord").join("signatures"))
-}
-
 /// What the worker tells the proxy about the UI layer.
 struct Report {
     version: version::ClientVersion,
@@ -202,7 +196,7 @@ fn analyze(log: &Logger) -> Option<Report> {
         })
     };
 
-    let Some(dir) = signatures_dir() else {
+    let Some(dir) = signatures::default_dir(std::env::var_os("LOCALAPPDATA")) else {
         log.log("no LOCALAPPDATA: UI layer stays off");
         return off(v, "no LOCALAPPDATA");
     };

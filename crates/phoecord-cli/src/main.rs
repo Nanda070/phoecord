@@ -8,6 +8,7 @@ mod dev;
 mod help;
 mod log;
 mod selftest;
+mod signatures;
 
 use anyhow::{Context, Result};
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
@@ -129,6 +130,10 @@ enum Cmd {
         signatures: std::path::PathBuf,
     },
     Paths,
+    Signatures {
+        #[command(subcommand)]
+        cmd: signatures::SignaturesCmd,
+    },
     Dev {
         #[command(subcommand)]
         cmd: dev::DevCmd,
@@ -268,6 +273,7 @@ fn dispatch(cli: Cli, paths: Paths, resolved: &Resolved, l10n: &Localizer) -> Re
         Cmd::Log { n } => log::run(&paths, n, l10n),
         Cmd::ImportVencord { path } => import_vencord(&paths, path, l10n),
         Cmd::Dev { cmd } => dev::run(cmd, &paths, l10n),
+        Cmd::Signatures { cmd } => signatures::run(cmd, l10n),
         Cmd::Selftest => runtime()?.block_on(selftest::run(paths, l10n)),
         Cmd::Check { exe, signatures } => check::run(&exe, &signatures, l10n),
         Cmd::Paths => {
@@ -877,6 +883,7 @@ mod tests {
             include_str!("selftest.rs"),
             include_str!("help.rs"),
             include_str!("check.rs"),
+            include_str!("signatures.rs"),
         ] {
             for part in src.split('"').skip(1).step_by(2) {
                 let ok = part.starts_with("cli-")

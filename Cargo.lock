@@ -3350,6 +3350,7 @@ dependencies = [
  "anyhow",
  "dirs",
  "phoecord-core",
+ "phoecord-loader",
  "phoecord-proxy",
  "serde",
  "serde_json",
