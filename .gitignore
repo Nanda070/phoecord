@@ -9,3 +9,8 @@ ca.pem
 .env
 dumps/
 local_dumps/
+
+# Website build output and dependencies (site/)
+site/node_modules/
+site/.astro/
+site/dist/
