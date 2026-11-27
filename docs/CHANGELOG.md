@@ -16,6 +16,10 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 - 2.2.3 / 2.4.1: in an in-process launch on Phoenix, an event a plugin renames now reaches the client under its new name. MessageLogger shows a deleted message by turning its `MESSAGE_DELETE` into a `MESSAGE_UPDATE`; the gateway hook rebuilt the frame with the new data but the old name, so the client still removed the message. Through the proxy this already worked.
 - 2.2.7: in an in-process launch on Desktop Phoenix, plugins now see `READY` and `READY_SUPPLEMENTAL`. The loader's signature scan was byte by byte and took about 6 s, so the network hooks went in after the client had already connected to the gateway; the scan now uses a SIMD substring search and the hooks are in about 1 s after start. `phoecord check` is faster too.
 
+### Changed
+
+- 2.3.3: `phoecord-catalog` (plugin packages and the catalog) no longer depends on the proxy crate, only on `phoecord-transport` for `config.toml`; it used nothing else from it. This is a step towards installing and removing packages from PhoeCord's settings tab inside Phoenix. Nothing changes for users.
+
 ### Removed
 
 - The release announcement webhook (`.github/workflows/discord-release.yml`, `scripts/notify_release.py`): the community bot posts release updates now, so a release was announced twice.

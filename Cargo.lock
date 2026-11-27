@@ -3368,7 +3368,7 @@ version = "0.7.0"
 dependencies = [
  "anyhow",
  "phoecord-plugin-runtime",
- "phoecord-proxy",
+ "phoecord-transport",
  "semver",
  "serde",
  "serde_json",

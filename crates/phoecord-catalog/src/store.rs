@@ -6,7 +6,7 @@
 //! the package, [`Store::commit`] moves it into place and switches it on.
 
 use phoecord_plugin_runtime::package::PackageManifest;
-use phoecord_proxy::config::Config;
+use phoecord_transport::config::Config;
 use serde::Deserialize;
 use std::io::Read;
 use std::path::{Path, PathBuf};
