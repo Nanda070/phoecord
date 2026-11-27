@@ -22,6 +22,8 @@
 //! | `message_menu_after_anchor` | the instruction right after the call that appends the native "Copy Message Link" entry (a return address) | message menu |
 //! | `user_menu_push`, `channel_menu_push`, `server_menu_push` | entry of that menu's entry-append helper (inline hook; menus may share one) | context menus (2.3.11) |
 //! | `user_menu_after_anchor`, `channel_menu_after_anchor`, `server_menu_after_anchor` | the instruction after the call that appends the menu's anchor entry ("Block", "Copy Link", "Mark As Read") | context menus |
+//! | `link_website_trusted`, `link_protocol_trusted` | entry of the link classifier's "is this website / app protocol trusted" check (inline hook) | AlwaysTrust (2.3.20) |
+//! | `link_suspicious_download` | entry of the suspicious-download detector the classifier calls (inline hook) | AlwaysTrust |
 //! | `message_menu_build_call` | the `call` (E8 rel32) of the menu build function in its live caller; its target is the build function | message menu |
 
 use crate::signatures::{ResolveError, Signature};
@@ -48,6 +50,9 @@ pub const CHANNEL_PUSH: &str = "channel_menu_push";
 pub const CHANNEL_AFTER: &str = "channel_menu_after_anchor";
 pub const SERVER_PUSH: &str = "server_menu_push";
 pub const SERVER_AFTER: &str = "server_menu_after_anchor";
+pub const LINK_WEBSITE_TRUSTED: &str = "link_website_trusted";
+pub const LINK_PROTOCOL_TRUSTED: &str = "link_protocol_trusted";
+pub const LINK_SUSPICIOUS_DOWNLOAD: &str = "link_suspicious_download";
 
 /// Why a locator found nothing usable.
 #[derive(Debug, PartialEq, Eq)]
@@ -108,6 +113,15 @@ pub struct GatewayFrame;
 /// The serializer of the gateway session's `ClientState`, which `IDENTIFY` carries (2.2.7).
 #[derive(Debug, PartialEq, Eq)]
 pub struct ClientState;
+/// The link classifier's check that a website is trusted (2.3.20).
+#[derive(Debug, PartialEq, Eq)]
+pub struct LinkWebsiteTrusted;
+/// The same check for an app protocol (`steam://`, `ms-settings:`).
+#[derive(Debug, PartialEq, Eq)]
+pub struct LinkProtocolTrusted;
+/// The detector of download links the client warns about.
+#[derive(Debug, PartialEq, Eq)]
+pub struct LinkSuspiciousDownload;
 /// Another context menu's entry-append helper (the `Found` RVA) and its anchor.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ContextMenu {
@@ -224,6 +238,27 @@ impl Scan<'_> {
                 after_anchor_rva: self.rva(MENU_AFTER_ANCHOR)?,
                 build_call_rva: self.rva(MENU_BUILD_CALL)?,
             },
+        })
+    }
+
+    pub fn link_website_trusted(&self) -> Result<Found<LinkWebsiteTrusted>, LocatorError> {
+        Ok(Found {
+            rva: self.rva(LINK_WEBSITE_TRUSTED)?,
+            target: LinkWebsiteTrusted,
+        })
+    }
+
+    pub fn link_protocol_trusted(&self) -> Result<Found<LinkProtocolTrusted>, LocatorError> {
+        Ok(Found {
+            rva: self.rva(LINK_PROTOCOL_TRUSTED)?,
+            target: LinkProtocolTrusted,
+        })
+    }
+
+    pub fn link_suspicious_download(&self) -> Result<Found<LinkSuspiciousDownload>, LocatorError> {
+        Ok(Found {
+            rva: self.rva(LINK_SUSPICIOUS_DOWNLOAD)?,
+            target: LinkSuspiciousDownload,
         })
     }
 

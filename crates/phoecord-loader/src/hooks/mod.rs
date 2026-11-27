@@ -17,6 +17,7 @@
 //! `docs/research/phoenix-recon.md`, "Open questions".
 
 pub mod abi;
+pub mod behaviour;
 pub mod client_state;
 #[cfg(all(windows, target_arch = "x86_64"))]
 pub mod context_menu;

@@ -280,6 +280,7 @@ fn analyze(log: &Logger) -> Option<Report> {
     }
     let kind = version::ClientKind::of(&exe.to_string_lossy(), v.file_version.as_deref());
     let mut menu = false;
+    let mut patched = false;
     #[cfg(target_arch = "x86_64")]
     report_full_ready(log, sigs);
     if kind == version::ClientKind::Phoenix {
@@ -291,10 +292,11 @@ fn analyze(log: &Logger) -> Option<Report> {
             start_in_process(l, found, &v.text_hash);
         }
         menu = install_context_menus(log, sigs, text, &v);
+        patched = install_behaviour_patches(log, sigs, text, &v);
     } else {
         log.log("Electron client: the in-process network hooks do not apply");
     }
-    if menu {
+    if menu || patched {
         return Some(Report {
             version: v,
             detect_ms,
@@ -456,6 +458,84 @@ fn install_context_menus(
     {
         let _ = (sigs, text, v);
         log.log("context menu: not on this architecture");
+        false
+    }
+}
+
+/// The client behaviour patches the user switched on (2.3.20, AlwaysTrust). Each is located and
+/// hooked on its own. Returns whether at least one is on.
+fn install_behaviour_patches(
+    log: &Logger,
+    sigs: &[signatures::Signature],
+    text: &[u8],
+    v: &version::ClientVersion,
+) -> bool {
+    #[cfg(target_arch = "x86_64")]
+    {
+        use crate::hooks::behaviour;
+        use phoecord_transport::config::{Config, Paths};
+        let paths = Paths::resolve();
+        if !paths.config.is_file() {
+            return false;
+        }
+        let wanted = match Config::load(&paths.config) {
+            Ok(cfg) => behaviour::wanted(&cfg),
+            Err(e) => {
+                log.log(&format!(
+                    "{}: off ({} not readable: {e:#})",
+                    behaviour::ID,
+                    paths.config.display()
+                ));
+                return false;
+            }
+        };
+        if wanted.is_empty() {
+            return false;
+        }
+        let scan = crate::hooks::found::Scan {
+            sigs,
+            text,
+            text_rva: v.text_rva,
+            image_len: image_len(),
+        };
+        // SAFETY: a null module name returns the host exe's base, mapped for the life of the
+        // process.
+        let base = unsafe { GetModuleHandleW(std::ptr::null()) } as usize;
+        let Ok(mut set) = crate::hook::global().lock() else {
+            log.log(&format!("{}: off (hook set poisoned)", behaviour::ID));
+            return false;
+        };
+        let mut on = Vec::new();
+        for patch in wanted {
+            let name = patch.setting();
+            let prepared = match patch.locate(&scan) {
+                // SAFETY: the target is the unique match of this patch's locator in this image.
+                Ok(rva) => unsafe { behaviour::prepare(&mut set, patch, base + rva as usize) }
+                    .map_err(|e| e.to_string()),
+                Err(e) => Err(e.to_string()),
+            };
+            match prepared {
+                Ok(()) => on.push(name),
+                Err(e) => log.log(&format!("{}: {name} off ({e})", behaviour::ID)),
+            }
+        }
+        if on.is_empty() {
+            return false;
+        }
+        match set.install_all() {
+            Ok(()) => {
+                log.log(&format!("{}: patched ({})", behaviour::ID, on.join(", ")));
+                true
+            }
+            Err(e) => {
+                log.log(&format!("{}: not installed ({e})", behaviour::ID));
+                false
+            }
+        }
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        let _ = (log, sigs, text, v);
         false
     }
 }
