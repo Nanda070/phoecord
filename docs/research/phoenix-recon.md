@@ -269,6 +269,8 @@ With a working setup, use the client for a few minutes (open channels, send a me
 
 **Result (2026-11-26, signed in past the account screen, no user actions: start-up, the friends list, about 90 seconds idle with incoming messages).** Through `--proxy-server` (mitmproxy as a plain recorder): `discord.com`, `gateway.discord.gg`, `cdn.discordapp.com` (changelog config, bad-domains list), `status.discord.com`, `latency.discord.media` (`/rtc`) and the Spotify connection's `api.spotify.com` and `dealer.spotify.com`. Through `phoecord launch --channel phoenix` with the same idle session, all of the client's 15 established TCP connections went to `127.0.0.1:18463` and none to a public address; no UDP endpoint was open. Nothing went around the proxy in this window (the Sentry bypass of 2026-11-25 shows only when the client reports an error). **Not covered:** uploads, voice (UDP), and picture and attachment loading from `media.discordapp.net` / `cdn.discordapp.com` while scrolling a channel; they need someone at the keyboard.
 
+**Result (2026-11-27, two `phoecord launch --channel phoenix --transport proxy` runs, PhoeCord's `upstream` pointed at mitmproxy as a recorder of `CONNECT` hosts, nothing decrypted by mitmproxy).** First run tunnel-only (`intercept = []`, no CA trusted), second with the PhoeCord CA trusted and the usual `intercept` list (gateway intercepted, full `READY` asked for). In both every TCP connection of the client went to `127.0.0.1:18463` and no UDP endpoint was open; the hosts were the 2026-11-26 set (`discord.com`, `gateway.discord.gg`, `cdn.discordapp.com`, `status.discord.com`, `latency.discord.media`, the Spotify hosts) plus `o64374.ingest.us.sentry.io`, **through the proxy** this time. Both runs stopped at the account screen ("This app isn't available for your account"), which this account had passed on 2026-11-26; the second run shows the screen does not depend on interception or on the full `READY`. Uploads, voice and media while scrolling stay open: they need an account the client lets in.
+
 ### Results
 
 | Question | Windows | Linux |
@@ -282,7 +284,7 @@ With a working setup, use the client for a few minutes (open channels, send a me
 | TLS crates seen | `rustls` 0.23.46, `rustls-platform-verifier` 0.7.1, `rustls-native-certs` 0.8.5, `aws-lc-rs` 1.18.2; no `webpki-roots` path | not run |
 | HTTP/2 or QUIC required | HTTP/2 not required; no UDP seen outside voice (voice not tested); `h2` 0.4.20 and `quinn` 0.11.9 are linked | not run |
 | Hosts through the proxy | intercepted: `discord.com`, `gateway.discord.gg`; tunnelled: `status.discord.com`, `cdn.discordapp.com`, `latency.discord.media`, `remote-auth-gateway.discord.gg` (signed out), connected-account services (`api.spotify.com`, `dealer.spotify.com`); signed in past the account screen (2026-11-26): the same set, and every TCP connection of the client went to the proxy | not run |
-| Hosts that bypass it | `o64374.ingest.sentry.io` (error reporting), with the flag and with the system proxy | not run |
+| Hosts that bypass it | `o64374.ingest.sentry.io` (error reporting), with the flag and with the system proxy; on 2026-11-27 (`phoecord launch`, two runs) `o64374.ingest.us.sentry.io` went through the proxy instead, so the bypass is not constant | not run |
 
 ### What the answers mean for 2.1.8
 
@@ -468,7 +470,7 @@ What the reconnaissance confirmed, and what each later task takes from it:
 | Locators work on string anchors, call fan-in and the `.pdata` function table, never on a fixed address | **confirmed**: the allocator shims have no string anchor, so "called by many, calls nothing back" is the rule | 2.2.5, 2.2.6, 2.2.9 |
 | UI hooks attach at the exit of `DiscordApp::render`, at `MenuView::render` and at the workspace regions | **proposed** by the GPUI notes, nothing hooked yet | 2.3.3, 2.3.4, 2.3.5 |
 | Themes: no `GlobalTheme` / `ThemeColors` symbol was matched by name; whether Phoenix keeps its palette in code or reads it as data is not known | **open** | 2.3.1 part 2, 2.3.2 |
-| NoTrack cannot block Phoenix's error reports through the proxy: Sentry connects directly | **new** | 2.4.1 (NoTrack on Phoenix needs an in-process answer or stays partial) |
+| NoTrack cannot block Phoenix's error reports through the proxy: Sentry connects directly (2026-11-25; on 2026-11-27 it went through the proxy, tunnelled, so not seen by plugins) | **new** | 2.4.1 (NoTrack on Phoenix needs an in-process answer or stays partial) |
 
 ## Open questions and risks
 
