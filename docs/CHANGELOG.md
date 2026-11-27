@@ -4,6 +4,10 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Removed
+
+- The release announcement webhook (`.github/workflows/discord-release.yml`, `scripts/notify_release.py`): the community bot posts release updates now, so a release was announced twice.
+
 ## [0.7.0] - 2026-11-27
 
 The end of stage 2.1 and most of stage 2.2 on Desktop Phoenix: plugin entries in Phoenix's own message, user, channel and server menus, a full `READY` through the proxy, plugins that see your own deletes at once, and the first in-process launch (no proxy) with the REST and gateway hooks. Signature tables now ship inside PhoeCord. New website at https://phoecord.dev. ShowHiddenChannels is removed.
