@@ -7,13 +7,14 @@ use clap::Subcommand;
 use phoecord_i18n::Localizer;
 use phoecord_installer::log::InstallLog;
 use phoecord_installer::signatures::{Installed, Present, install, list};
+use phoecord_loader::signatures::{BUILTIN, SignatureSet};
 use std::path::PathBuf;
 
 #[derive(Subcommand)]
 pub enum SignaturesCmd {
     /// Check signature files and put them where the loader reads them. Windows only.
     Install { source: PathBuf },
-    /// Show the signature files the loader would read. Windows only.
+    /// Show the compiled-in tables and the hot-fix files the loader would read. Windows only.
     List,
 }
 
@@ -39,7 +40,8 @@ pub fn run(cmd: SignaturesCmd, l10n: &Localizer) -> Result<()> {
                 "{}",
                 tf(l10n, "cli-signatures-folder", &[("path", &folder)])
             );
-            for line in listed_lines(&list(&target)?, l10n) {
+            let builtin = SignatureSet::parse(BUILTIN).context("compiled-in signatures")?;
+            for line in listed_lines(&builtin, &list(&target)?, l10n) {
                 println!("{line}");
             }
         }
@@ -74,15 +76,46 @@ fn installed_lines(done: &[Installed], l10n: &Localizer) -> Vec<String> {
     out
 }
 
-fn listed_lines(files: &[Present], l10n: &Localizer) -> Vec<String> {
-    if files.is_empty() {
-        return vec![l10n.t("cli-signatures-none")];
+/// The compiled-in tables first, each marked as replaced when a hot-fix file has the same build
+/// key (the loader takes the hot-fix one), then the hot-fix files.
+fn listed_lines(builtin: &SignatureSet, files: &[Present], l10n: &Localizer) -> Vec<String> {
+    let mut out = Vec::new();
+    for (build, count) in builtin.builds() {
+        let count = count.to_string();
+        // The loader reads the files in path order and the last table of a key wins.
+        let winner = files.iter().rfind(|f| {
+            f.builds
+                .as_ref()
+                .is_ok_and(|b| b.iter().any(|k| k == build))
+        });
+        let line = match winner {
+            Some(w) => tf(
+                l10n,
+                "cli-signatures-builtin-replaced",
+                &[("build", build), ("count", &count), ("file", &w.name())],
+            ),
+            None => tf(
+                l10n,
+                "cli-signatures-builtin",
+                &[("build", build), ("count", &count)],
+            ),
+        };
+        out.push(format!("  {line}"));
     }
-    files
-        .iter()
-        .map(|f| match &f.builds {
-            Ok(builds) => format!("  {}: {}", f.name(), builds.join(", ")),
-            // Fluent drops leading spaces of a value, so the indent is added here.
+    if files.is_empty() {
+        out.push(format!("  {}", l10n.t("cli-signatures-none")));
+    }
+    for f in files {
+        // Fluent drops leading spaces of a value, so the indent is added here.
+        out.push(match &f.builds {
+            Ok(builds) => format!(
+                "  {}",
+                tf(
+                    l10n,
+                    "cli-signatures-hotfix",
+                    &[("file", &f.name()), ("builds", &builds.join(", "))],
+                )
+            ),
             Err(why) => format!(
                 "  {}",
                 tf(
@@ -91,8 +124,9 @@ fn listed_lines(files: &[Present], l10n: &Localizer) -> Vec<String> {
                     &[("file", &f.name()), ("why", why)],
                 )
             ),
-        })
-        .collect()
+        });
+    }
+    out
 }
 
 #[cfg(test)]
@@ -112,12 +146,56 @@ mod tests {
         for part in ["a.toml", "1.0.0.1", "z.toml"] {
             assert!(text.contains(part), "{part} not in {text}");
         }
-        assert_eq!(listed_lines(&[], &l10n), [l10n.t("cli-signatures-none")]);
+        let builtin = SignatureSet::parse(
+            "[build.\"1.0.0.1\"]
+a = { aob = \"90\" }
+[build.\"1.0.0.2\"]
+a = { aob = \"90\" }
+b = { aob = \"91\" }
+",
+        )
+        .unwrap();
+        let none = listed_lines(&builtin, &[], &l10n).join(
+            "
+",
+        );
+        assert!(
+            none.contains("1.0.0.1") && none.contains("1.0.0.2"),
+            "{none}"
+        );
+        assert!(none.contains(&l10n.t("cli-signatures-none")), "{none}");
         let broken = Present {
             path: "b.toml".into(),
             builds: Err("bad".into()),
         };
-        let line = &listed_lines(&[broken], &l10n)[0];
+        let line = &listed_lines(&builtin, &[broken], &l10n)[2];
         assert!(line.starts_with("  b.toml"), "{line:?}");
+    }
+
+    #[test]
+    fn a_hotfix_file_is_said_to_replace_the_builtin_build() {
+        let l10n = Localizer::new("en");
+        let builtin = SignatureSet::parse(
+            "[build.\"1.0.0.1\"]
+a = { aob = \"90\" }
+[build.\"1.0.0.2\"]
+a = { aob = \"90\" }
+",
+        )
+        .unwrap();
+        let fix = Present {
+            path: "fix.toml".into(),
+            builds: Ok(vec!["1.0.0.2".into()]),
+        };
+        let lines = listed_lines(&builtin, &[fix], &l10n);
+        assert!(!lines[0].contains("fix.toml"), "{lines:?}");
+        assert!(
+            lines[1].contains("1.0.0.2") && lines[1].contains("fix.toml"),
+            "{lines:?}"
+        );
+        assert!(
+            lines[2].contains("fix.toml") && lines[2].contains("1.0.0.2"),
+            "{lines:?}"
+        );
     }
 }

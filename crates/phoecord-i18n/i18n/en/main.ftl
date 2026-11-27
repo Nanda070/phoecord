@@ -646,7 +646,10 @@ cli-signatures-replaced = Replaced { $path } (builds: { $builds })
 cli-signatures-overridden = Warning: { $file } is read later and also has build { $build }, so its table is used
 cli-signatures-restart = Restart Discord for the new signatures to take effect
 cli-signatures-folder = Signature folder: { $path }
-cli-signatures-none = No signature files
+cli-signatures-none = No hot-fix files
+cli-signatures-builtin = built in: build { $build }, { $count } signatures
+cli-signatures-builtin-replaced = built in: build { $build }, { $count } signatures, replaced by the hot-fix file { $file }
+cli-signatures-hotfix = hot-fix { $file }: { $builds }
 cli-signatures-broken = { $file }: skipped by the loader: { $why }
 
 # phoecord upgrade / stop (task 2.4.5)

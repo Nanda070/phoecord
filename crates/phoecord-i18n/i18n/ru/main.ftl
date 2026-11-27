@@ -651,7 +651,10 @@ cli-signatures-replaced = Заменён { $path } (сборки: { $builds })
 cli-signatures-overridden = Внимание: { $file } читается позже и тоже содержит сборку { $build }, поэтому берётся его таблица
 cli-signatures-restart = Перезапустите Discord, чтобы новые сигнатуры начали действовать
 cli-signatures-folder = Папка сигнатур: { $path }
-cli-signatures-none = Файлов сигнатур нет
+cli-signatures-none = Файлов горячего исправления нет
+cli-signatures-builtin = встроено: сборка { $build }, сигнатур: { $count }
+cli-signatures-builtin-replaced = встроено: сборка { $build }, сигнатур: { $count }, заменена файлом горячего исправления { $file }
+cli-signatures-hotfix = горячее исправление { $file }: { $builds }
 cli-signatures-broken = { $file }: загрузчик его пропустит: { $why }
 
 # phoecord upgrade / stop (задача 2.4.5)
