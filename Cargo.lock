@@ -3364,7 +3364,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "phoecord-catalog"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "phoecord-plugin-runtime",
@@ -3381,7 +3381,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-cli"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -3412,7 +3412,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-core"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "flate2",
@@ -3421,7 +3421,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-i18n"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "fluent-bundle",
  "sys-locale",
@@ -3431,7 +3431,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-installer"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -3453,7 +3453,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-installer-gui"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "dirs",
@@ -3474,7 +3474,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-loader"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "phoecord-core",
  "phoecord-i18n",
@@ -3492,7 +3492,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-plugin-runtime"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "notify",
  "phoecord-core",
@@ -3505,7 +3505,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-plugin-sdk"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "phoecord-plugin-sdk-macros",
  "wit-bindgen 0.46.0",
@@ -3513,11 +3513,11 @@ dependencies = [
 
 [[package]]
 name = "phoecord-plugin-sdk-macros"
-version = "0.6.0"
+version = "0.7.0"
 
 [[package]]
 name = "phoecord-plugins"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "image",
  "phoecord-core",
@@ -3530,7 +3530,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-proxy"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -3565,7 +3565,7 @@ dependencies = [
 
 [[package]]
 name = "phoecord-transport"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "dirs",
