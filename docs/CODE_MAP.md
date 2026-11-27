@@ -54,7 +54,7 @@ Related: [`ARCHITECTURE.md`](ARCHITECTURE.md) explains how the layers work; [`PL
 | `phoecord-installer` | `crates/phoecord-installer/` | lib | core |
 | `phoecord-cli` | `crates/phoecord-cli/` | bin `phoecord` | catalog, core, proxy, transport, plugin-runtime, plugins |
 | `phoecord-i18n` | `crates/phoecord-i18n/` | lib | none |
-| `phoecord-catalog` | `crates/phoecord-catalog/` | lib | plugin-runtime, proxy |
+| `phoecord-catalog` | `crates/phoecord-catalog/` | lib | plugin-runtime, transport |
 | `phoecord-installer-gui` | `crates/phoecord-installer-gui/` | bin `phoecord-installer` | catalog, core, i18n, installer, plugin-runtime, plugins, proxy |
 
 ## 3. Files by crate
