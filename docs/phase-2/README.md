@@ -76,7 +76,7 @@ Open tasks only, 27.11.2026: 28 (matvee 11, buslan 10, ken 7, Nanda 1). "Waits o
 | **2.2.7** | In-process transport | ken | second build (2.2.9) | 2.2.9 (a second Phoenix build) |
 | **2.2.9** | Signatures unique on two builds | buslan | not started | buslan; a second Phoenix build |
 | **2.3.1** | Theme engine | matvee | `ManaTheme`'s palette layout (found, static; the hook's first dump confirms it), the hook | matvee |
-| **2.3.3** | Settings tab in Phoenix | ken | the native page, package install / remove | ken; the owner's call on the package store |
+| **2.3.3** | Settings tab in Phoenix | ken | the native page, package install / remove | ken (package store: a1 ruled 2026-11-27, #206) |
 | **2.3.4** | MessageLogger UI | matvee | the locator and the hook on `RowView`'s render (render function found live 27.11 (`phoecord-recon`, live-probes-2026-11-27.md, UI pass)), wiring `Accessory::for_message` | matvee |
 | **2.3.8** | CDN picture hook | buslan | CDN images do pass the in-process hyper client, the same layer as REST (live 27.11: `hyper_send_request` sees avatar, icon, badge, collectible and attachment URLs, with `?size=`); the old probe crash was the probe's own unguarded reads. Its arguments bury the URL deep in a future, so it only observes; the hook target is the per-asset URL builders of `libdiscord_media` (avatar, banner, guild banner, icons, decoration preset, size appenders), found statically, addresses in `phoecord-recon`. Open: their calling convention and return layout (decompile, then one live entry/return pass) | buslan (locator and hook), from Nanda's notes |
 | **2.3.9** | FixImagesQuality default mode | buslan | everything | 2.3.8 |
