@@ -54,10 +54,48 @@ impl Pattern {
             .all(|(p, b)| p.is_none_or(|p| p == *b))
     }
 
-    /// Every offset in `hay` where the pattern matches.
+    /// The longest run of fixed bytes (the first of equal ones): where it starts in the pattern,
+    /// and its bytes. `parse` guarantees at least one fixed byte.
+    fn anchor(&self) -> (usize, Vec<u8>) {
+        let (mut best, mut start) = ((0, 0), 0);
+        for (i, b) in self.bytes.iter().enumerate() {
+            if b.is_none() {
+                start = i + 1;
+            } else if i + 1 - start > best.1 {
+                best = (start, i + 1 - start);
+            }
+        }
+        let run = self.bytes[best.0..best.0 + best.1].iter().flatten();
+        (best.0, run.copied().collect())
+    }
+
+    /// Every offset in `hay` where the pattern matches, in increasing order.
+    ///
+    /// A client's `.text` is hundreds of MiB and the loader resolves its signatures while the
+    /// client is already starting, so the scan looks for the pattern's longest fixed run with
+    /// `memchr`'s SIMD substring search and checks the whole pattern only where that run occurs.
+    /// Overlapping matches are all reported, as a byte-by-byte scan would.
     pub fn find_all<'a>(&'a self, hay: &'a [u8]) -> impl Iterator<Item = usize> + 'a {
         let end = (hay.len() + 1).saturating_sub(self.len());
-        (0..end).filter(move |&i| self.matches_at(hay, i))
+        let (off, run) = self.anchor();
+        let finder = memchr::memmem::Finder::new(&run).into_owned();
+        // `pos` is where the next search for the run starts; one past the last hit, so runs that
+        // overlap each other are not skipped.
+        let mut pos = off;
+        std::iter::from_fn(move || {
+            while pos < hay.len() {
+                let hit = pos + finder.find(&hay[pos..])?;
+                pos = hit + 1;
+                let start = hit - off;
+                if start >= end {
+                    return None;
+                }
+                if self.matches_at(hay, start) {
+                    return Some(start);
+                }
+            }
+            None
+        })
     }
 
     /// The single match, or `None` if there are zero or several (an ambiguous signature is a miss).
@@ -91,5 +129,64 @@ mod tests {
         assert_eq!(Pattern::parse("05 33").unwrap().find_unique(&hay), Some(8));
         let too_long = Pattern::parse("90 48 8B 05 11 22 48 8B 05 33 00").unwrap();
         assert_eq!(too_long.find_unique(&hay), None);
+    }
+
+    /// The byte-by-byte scan `find_all` replaced: the reference for its results.
+    fn naive(p: &Pattern, hay: &[u8]) -> Vec<usize> {
+        let end = (hay.len() + 1).saturating_sub(p.len());
+        (0..end).filter(|&i| p.matches_at(hay, i)).collect()
+    }
+
+    #[test]
+    fn overlapping_and_edge_matches_are_all_found() {
+        let hay = [0xAA; 6];
+        let p = Pattern::parse("AA AA").unwrap();
+        assert_eq!(p.find_all(&hay).collect::<Vec<_>>(), [0, 1, 2, 3, 4]);
+        // The anchor is the second run; a match must still start at the pattern's first byte.
+        let p = Pattern::parse("AA ?? AA AA").unwrap();
+        assert_eq!(p.find_all(&hay).collect::<Vec<_>>(), [0, 1, 2]);
+        // A leading wildcard cannot start before the haystack.
+        let p = Pattern::parse("?? AA").unwrap();
+        assert_eq!(p.find_all(&hay).collect::<Vec<_>>(), [0, 1, 2, 3, 4]);
+        // The run occurs at the very end, but the pattern does not fit there.
+        let p = Pattern::parse("AA ??").unwrap();
+        assert_eq!(p.find_all(&hay[..1]).count(), 0);
+    }
+
+    #[test]
+    fn the_anchor_is_the_longest_fixed_run() {
+        let p = Pattern::parse("48 ?? 8B 05 0D ?? E8 E9").unwrap();
+        assert_eq!(p.anchor(), (2, vec![0x8B, 0x05, 0x0D]));
+        assert_eq!(Pattern::parse("?? 01").unwrap().anchor(), (1, vec![1]));
+    }
+
+    #[test]
+    fn matches_the_byte_by_byte_scan() {
+        // A small alphabet, so patterns occur often, overlap and cross wildcards.
+        let mut x = 0x2545_f491_u32;
+        let hay: Vec<u8> = (0..20_000)
+            .map(|_| {
+                x ^= x << 13;
+                x ^= x >> 17;
+                x ^= x << 5;
+                (x % 3) as u8
+            })
+            .collect();
+        for pat in [
+            "00",
+            "01 02",
+            "00 ?? 00",
+            "?? 01 01 ??",
+            "02 02 02",
+            "00 ?? ?? 01 02 00",
+            "01 00 02 01 00 02 01",
+        ] {
+            let p = Pattern::parse(pat).unwrap();
+            assert_eq!(
+                p.find_all(&hay).collect::<Vec<_>>(),
+                naive(&p, &hay),
+                "{pat}"
+            );
+        }
     }
 }

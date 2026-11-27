@@ -216,7 +216,7 @@ The transport boundary (task 1.1.12): everything between "an event arrived" and 
 | File | What | Easy to break |
 |:---|:---|:---|
 | `src/lib.rs` | Module list and design notes | |
-| `src/aob.rs` | `Pattern`: parse `48 8B ?? …`, `find_all`, `find_unique` (ambiguous = miss) | All-wildcard patterns are rejected on purpose |
+| `src/aob.rs` | `Pattern`: parse `48 8B ?? …`, `find_all`, `find_unique` (ambiguous = miss) | All-wildcard patterns are rejected on purpose; `find_all` searches the longest fixed run with `memchr::memmem` and checks the whole pattern only there (the loader scans while the client starts) |
 | `build.rs`, `exports.txt` | Generates one assembly forwarding stub per `version.dll` export and `/EXPORT` link args (MSVC x86_64) | A Windows test checks `exports.txt` against the real DLL |
 | `src/proxy_dll.rs` | `FORWARD_TABLE`, `resolve_export`: loads the real DLL from `GetSystemDirectoryW` on first call | Never load by name: it would resolve to this DLL |
 | `src/entry.rs` | `DllMain` (only `DisableThreadLibraryCalls` + `CreateThread`, and no worker at all when the command line has `--type=`), the worker: log (including the transport `phoecord launch` passed, 2.2.8), detect the build from the mapped image (`GetModuleHandleW(null)`, logs the time in ms), load signatures | No work under the loader lock; panics are caught; child processes must still forward every export |

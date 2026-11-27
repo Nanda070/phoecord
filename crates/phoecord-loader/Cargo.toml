@@ -20,6 +20,7 @@ phoecord-plugins = { workspace = true, optional = true }
 phoecord-i18n = { path = "../phoecord-i18n", optional = true }
 serde.workspace = true
 serde_json.workspace = true
+memchr = "2"
 sha2 = "0.11"
 toml = "1.2"
 
