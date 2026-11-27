@@ -1,0 +1,67 @@
+---
+import { t, DISCORD, type Lang } from "../i18n";
+import { FAQ } from "../lib/faq";
+import { inline } from "../lib/richtext";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = t(lang);
+const p = s.faqPage;
+const cats = FAQ[lang];
+---
+<div class="wrap doc">
+  <header class="doc-hero">
+    <h1>{p.title}</h1>
+    <p class="doc-lead">{p.lead}</p>
+    <input id="faq-search" class="doc-search" type="search" placeholder={p.search} autocomplete="off" aria-label={p.search} />
+    <nav class="doc-chips" aria-label={p.title}>
+      {cats.map((c) => <a href={`#${c.id}`}>{c.title}</a>)}
+    </nav>
+  </header>
+
+  {cats.map((c) => (
+    <section class="faq-cat" id={c.id} data-cat>
+      <h2>{c.title}</h2>
+      {c.items.map((it) => (
+        <details class="faq-item" data-q={(it.q + " " + it.a).toLowerCase()}>
+          <summary>{it.q}</summary>
+          <div class="faq-a" set:html={inline(it.a)} />
+        </details>
+      ))}
+    </section>
+  ))}
+  <p class="doc-empty" id="faq-empty" hidden>{p.empty}</p>
+
+  <section class="doc-cta">
+    <h2>{p.stillTitle}</h2>
+    <p>{p.stillText}</p>
+    <div class="cr-actions">
+      <a class="btn btn-ghost" href={`${s.prefix}/wiki`}>{p.wiki}</a>
+      <a class="btn btn-discord" href={DISCORD} rel="noopener">{s.community.button}</a>
+    </div>
+  </section>
+</div>
+
+<script is:inline>
+  (function () {
+    var input = document.getElementById("faq-search");
+    var empty = document.getElementById("faq-empty");
+    if (!input) return;
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase();
+      var any = false;
+      document.querySelectorAll("[data-cat]").forEach(function (cat) {
+        var shown = 0;
+        cat.querySelectorAll(".faq-item").forEach(function (it) {
+          var hit = !q || it.getAttribute("data-q").indexOf(q) !== -1;
+          it.hidden = !hit;
+          if (hit) { shown++; it.open = !!q; }
+        });
+        cat.hidden = shown === 0;
+        if (shown) any = true;
+      });
+      empty.hidden = any;
+    });
+    // Open the question a link points at (e.g. /faq#basics keeps categories visible).
+  })();
+</script>

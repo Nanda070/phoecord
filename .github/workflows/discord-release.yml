@@ -1,0 +1,47 @@
+name: Announce release
+
+# When a release is published (the owner publishes the signed draft with scripts/sign-release.ps1),
+# post a short update to the community Discord: what changed, and where to download it.
+# The webhook is the repository secret DISCORD_RELEASE_WEBHOOK; it never appears in the tree.
+# Prereleases and drafts are not announced. `workflow_dispatch` re-sends a tag by hand (dry run by default).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to announce, e.g. v0.7.0"
+        required: true
+      dry_run:
+        description: "Print the message, do not post it"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: announce-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Post to Discord
+        env:
+          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          TAG: ${{ inputs.tag }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$EVENT_NAME" = release ]; then
+            python3 scripts/notify_release.py --event "$GITHUB_EVENT_PATH"
+          elif [ "$DRY_RUN" = true ]; then
+            python3 scripts/notify_release.py --tag "$TAG" --dry-run
+          else
+            python3 scripts/notify_release.py --tag "$TAG"
+          fi

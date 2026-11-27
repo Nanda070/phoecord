@@ -1,0 +1,8 @@
+---
+import Base from "../layouts/Base.astro";
+import Faq from "../components/Faq.astro";
+import { t } from "../i18n";
+---
+<Base lang="en" path="/faq" title={t("en").faqPage.title}>
+  <Faq lang="en" />
+</Base>

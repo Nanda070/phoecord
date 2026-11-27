@@ -11,7 +11,7 @@ const en = {
   title: "PhoeCord: plugins for Discord's native client",
   description:
     "PhoeCord brings Vencord-style plugins to Discord's native Phoenix client and to today's Discord. Free, open source, GPL-3.0.",
-  nav: { home: "Home", plugins: "Plugins", download: "Download", credits: "Credits", source: "Source", discord: "Discord" },
+  nav: { home: "Home", plugins: "Plugins", download: "Download", wiki: "Wiki", faq: "FAQ", credits: "Credits", source: "Source", discord: "Discord" },
   switchLang: "Русский",
   hero: {
     tag: "For Discord's new native client",
@@ -79,6 +79,22 @@ const en = {
     uninstallText: "Uninstall from Installed apps (Windows), or run phoecord uninstall. Both remove the certificate, the shortcuts and every file PhoeCord added.",
     verify: "Every release is signed: SHA256SUMS comes with a minisign signature.",
   },
+  faqPage: {
+    title: "FAQ",
+    lead: "Answers to the questions people ask most: what PhoeCord is, whether it is safe, how to install it and what to do when something breaks.",
+    search: "Search questions…",
+    empty: "Nothing found. Ask in our Discord and we will add it.",
+    stillTitle: "Did not find your answer?",
+    stillText: "Read the wiki, or ask the community and the team in Discord.",
+    wiki: "Open the wiki",
+  },
+  wikiPage: {
+    title: "Wiki",
+    lead: "The complete guide: installing, using, how it works under the hood, troubleshooting and writing plugins.",
+    contents: "Contents",
+    top: "Back to top",
+    editHint: "Found a mistake? Docs live in the repository: pull requests are welcome.",
+  },
   creditsPage: {
     group: "Cheterin Group",
     title: "Credits",
@@ -100,7 +116,7 @@ const ru: typeof en = {
   title: "PhoeCord: плагины для нативного клиента Discord",
   description:
     "PhoeCord добавляет плагины в стиле Vencord в нативный клиент Discord Phoenix и в нынешний Discord. Бесплатно, открытый код, GPL-3.0.",
-  nav: { home: "Главная", plugins: "Плагины", download: "Скачать", credits: "Авторы", source: "Код", discord: "Discord" },
+  nav: { home: "Главная", plugins: "Плагины", download: "Скачать", wiki: "Вики", faq: "FAQ", credits: "Авторы", source: "Код", discord: "Discord" },
   switchLang: "English",
   hero: {
     tag: "Для нового нативного клиента Discord",
@@ -167,6 +183,22 @@ const ru: typeof en = {
     uninstallTitle: "Удаление",
     uninstallText: "Удалите через «Установленные приложения» (Windows) или выполните phoecord uninstall. Оба способа убирают сертификат, ярлыки и все файлы, которые добавил PhoeCord.",
     verify: "Каждый релиз подписан: к SHA256SUMS прилагается подпись minisign.",
+  },
+  faqPage: {
+    title: "FAQ",
+    lead: "Ответы на самые частые вопросы: что такое PhoeCord, безопасен ли он, как его установить и что делать, если что-то сломалось.",
+    search: "Поиск по вопросам…",
+    empty: "Ничего не найдено. Спросите в нашем Discord, и мы добавим ответ.",
+    stillTitle: "Не нашли ответ?",
+    stillText: "Загляните в вики или спросите сообщество и команду в Discord.",
+    wiki: "Открыть вики",
+  },
+  wikiPage: {
+    title: "Вики",
+    lead: "Полное руководство: установка, использование, как всё устроено, решение проблем и написание плагинов.",
+    contents: "Содержание",
+    top: "Наверх",
+    editHint: "Нашли ошибку? Документация лежит в репозитории: pull request'ы приветствуются.",
   },
   creditsPage: {
     group: "Cheterin Group",
