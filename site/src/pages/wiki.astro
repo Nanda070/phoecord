@@ -1,0 +1,8 @@
+---
+import Base from "../layouts/Base.astro";
+import Wiki from "../components/Wiki.astro";
+import { t } from "../i18n";
+---
+<Base lang="en" path="/wiki" title={t("en").wikiPage.title}>
+  <Wiki lang="en" />
+</Base>
