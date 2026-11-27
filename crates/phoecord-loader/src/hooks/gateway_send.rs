@@ -152,7 +152,8 @@ fn observe(state: &State, out: usize) {
         });
     };
     match state.sink.frame(&text) {
-        GatewayAction::Pass => {}
+        // `Rename` comes from incoming dispatches only, never from an outgoing frame.
+        GatewayAction::Pass | GatewayAction::Rename { .. } => {}
         GatewayAction::Drop => once(state, LOG_DROP, || {
             "gateway_send: dropping an outgoing frame is not applied in-process (the caller sends what the encoder returns); frame sent unchanged".into()
         }),

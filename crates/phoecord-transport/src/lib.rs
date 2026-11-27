@@ -28,6 +28,7 @@ pub mod dev;
 pub mod full_ready;
 pub mod host;
 pub mod menu;
+pub mod net_rules;
 pub mod timers;
 
 use config::Config;

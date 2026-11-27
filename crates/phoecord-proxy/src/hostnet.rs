@@ -1,14 +1,14 @@
 //! The network side of `Host::rest` and `Host::fetch`.
 //!
-//! * [`Session`]: the client's own Discord API headers (`Authorization`, `User-Agent`,
-//!   `X-Super-Properties`, …), kept in memory only, refreshed from each client request, dropped after
-//!   [`SESSION_TTL`] without client traffic, on a 401 from Discord, and on `clear`. They never leave
-//!   this module: plugins get a [`HostResponse`] and nothing else.
-//! * [`Net`]: runs one HTTPS request at a time for a plugin. The plugin chain is synchronous, so
+//! The rules (the client's session, Discord's rate limits, route and URL checks, size limits,
+//! what a plugin gets back) are `phoecord_transport::net_rules`, shared with the loader's
+//! in-process network. This module is the proxy's HTTP client for them:
+//!
+//! * [`Net::observe`] feeds the session from the client's own requests through the proxy.
+//! * [`Net`] runs one HTTPS request at a time for a plugin. The plugin chain is synchronous, so
 //!   the request runs on a small runtime of its own and the calling thread waits (with
-//!   `block_in_place` when it is a worker of a multi-threaded runtime, so the proxy keeps serving).
-//! * Discord's rate limits ([`Limits`]): `X-RateLimit-*` and `Retry-After` are remembered per route
-//!   bucket and globally; a call into a blocked bucket returns an error instead of waiting.
+//!   `block_in_place` when it is a worker of a multi-threaded runtime, so the proxy keeps serving),
+//!   optionally through the configured upstream proxy.
 
 use crate::egress;
 use anyhow::{Context, Result, anyhow, bail};
@@ -18,69 +18,15 @@ use hyper::header::{self, HeaderMap, HeaderName, HeaderValue};
 use hyper::{Method, Request};
 use hyper_util::rt::TokioIo;
 use phoecord_core::{FilePart, HostResponse, Val};
+use phoecord_transport::net_rules::{self, FetchUrl as Url, NetState};
 use rustls::pki_types::ServerName;
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex, OnceLock};
-use std::time::{Duration, Instant};
 
-/// How long the session headers stay after the client's last authenticated API request.
-pub const SESSION_TTL: Duration = Duration::from_secs(30 * 60);
-/// Largest response body a plugin gets (`rest` and `fetch`).
-pub const MAX_BODY: usize = 5 * 1024 * 1024;
-/// Largest request body a plugin may send.
-pub const MAX_REQUEST: usize = 1024 * 1024;
-/// Largest multipart upload `Host::rest_files` sends (Discord's own limit for most accounts).
-pub const MAX_UPLOAD: usize = 25 * 1024 * 1024;
-/// Whole-call timeout, connect to last byte.
-pub const TIMEOUT: Duration = Duration::from_secs(15);
 pub use phoecord_transport::host::GLOBAL_PER_SECOND;
-
-/// Client headers that make a call look like the client's own. Cookies are deliberately absent.
-const KEPT: &[&str] = &[
-    "user-agent",
-    "x-super-properties",
-    "x-discord-locale",
-    "x-discord-timezone",
-];
-/// Response headers handed to plugins.
-const SHOWN: &[&str] = &[
-    "content-type",
-    "retry-after",
-    "link",
-    "location",
-    "x-ratelimit-limit",
-    "x-ratelimit-remaining",
-    "x-ratelimit-reset",
-    "x-ratelimit-reset-after",
-    "x-ratelimit-bucket",
-    "x-ratelimit-global",
-    "x-ratelimit-scope",
-];
-
-fn is_api_host(h: &str) -> bool {
-    matches!(
-        h,
-        "discord.com" | "ptb.discord.com" | "canary.discord.com" | "discordapp.com"
-    )
-}
-
-/// The client's Discord API session. `Debug` never prints the values.
-#[derive(Clone)]
-struct Session {
-    host: String,
-    /// `/api/v9`, as the client used it.
-    prefix: String,
-    authorization: String,
-    headers: Vec<(&'static str, String)>,
-    seen: Instant,
-}
-
-impl std::fmt::Debug for Session {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Session({} {} <redacted>)", self.host, self.prefix)
-    }
-}
+pub use phoecord_transport::net_rules::{
+    MAX_BODY, MAX_REQUEST, MAX_UPLOAD, SESSION_TTL, TIMEOUT, bucket_key, clean_route, multipart,
+};
 
 /// Where a request really goes. `Test` points at a loopback fake server (tests only).
 #[derive(Clone)]
@@ -93,37 +39,13 @@ pub enum Target {
     },
 }
 
-/// Discord's rate-limit state, from response headers.
-#[derive(Default)]
-struct Limits {
-    global_until: Option<Instant>,
-    buckets: HashMap<String, Instant>,
-}
-
-/// `GET /channels/123/messages/456` → `GET /channels/123/messages/:id`: channel, guild and webhook
-/// ids are Discord's major parameters (own bucket each), other ids share one.
-pub fn bucket_key(method: &str, path: &str) -> String {
-    let mut out = String::from(method);
-    let mut prev = "";
-    for seg in path.split('?').next().unwrap_or("").split('/') {
-        if seg.is_empty() {
-            continue;
-        }
-        out.push('/');
-        let numeric = seg.bytes().all(|b| b.is_ascii_digit());
-        if numeric && !matches!(prev, "channels" | "guilds" | "webhooks") {
-            out.push_str(":id");
-        } else {
-            out.push_str(seg);
-        }
-        prev = seg;
-    }
-    out
+/// A header of `h` as text (`None` when absent or not visible ASCII).
+fn text(h: &HeaderMap) -> impl Fn(&str) -> Option<String> + '_ {
+    |n: &str| h.get(n).and_then(|v| v.to_str().ok()).map(str::to_string)
 }
 
 pub struct Net {
-    session: Mutex<Option<Session>>,
-    limits: Mutex<Limits>,
+    state: NetState,
     tls: Arc<rustls::ClientConfig>,
     target: Mutex<Target>,
     rt: OnceLock<tokio::runtime::Runtime>,
@@ -132,8 +54,7 @@ pub struct Net {
 impl Net {
     pub fn new() -> Net {
         Net {
-            session: Mutex::new(None),
-            limits: Mutex::new(Limits::default()),
+            state: NetState::default(),
             tls: crate::upstream_tls(None),
             target: Mutex::new(Target::Live),
             rt: OnceLock::new(),
@@ -149,124 +70,16 @@ impl Net {
     /// Discord host it connected to). Requests without `Authorization` or for other hosts or paths
     /// change nothing.
     pub fn observe(&self, host: &str, path: &str, headers: &HeaderMap) {
-        let host = host.to_ascii_lowercase();
-        let Some(rest) = path.strip_prefix("/api/") else {
-            return;
-        };
-        if !is_api_host(&host) {
-            return;
-        }
-        let version = rest.split('/').next().unwrap_or("");
-        let Some(auth) = headers
-            .get(header::AUTHORIZATION)
-            .and_then(|v| v.to_str().ok())
-            .filter(|v| !v.is_empty())
-        else {
-            return;
-        };
-        let prefix = if version.starts_with('v') && version[1..].bytes().all(|b| b.is_ascii_digit())
-        {
-            format!("/api/{version}")
-        } else {
-            "/api/v9".to_string()
-        };
-        let mut kept = Vec::new();
-        for name in KEPT {
-            if let Some(v) = headers.get(*name).and_then(|v| v.to_str().ok()) {
-                kept.push((*name, v.to_string()));
-            }
-        }
-        let mut s = self.session.lock().unwrap();
-        // Keep what an earlier request had when this one omits a header.
-        if let Some(old) = s.as_ref().filter(|o| o.authorization == auth) {
-            for (name, v) in &old.headers {
-                if !kept.iter().any(|(n, _)| n == name) {
-                    kept.push((name, v.clone()));
-                }
-            }
-        }
-        *s = Some(Session {
-            host,
-            prefix,
-            authorization: auth.to_string(),
-            headers: kept,
-            seen: Instant::now(),
-        });
+        self.state.sessions.observe(host, path, &text(headers));
     }
 
     /// Forget the session (the client signed out, Discord said 401, …).
     pub fn clear(&self) {
-        *self.session.lock().unwrap() = None;
+        self.state.sessions.clear();
     }
 
     pub fn signed_in(&self) -> bool {
-        self.session_now().is_some()
-    }
-
-    fn session_now(&self) -> Option<Session> {
-        let mut s = self.session.lock().unwrap();
-        if s.as_ref().is_some_and(|x| x.seen.elapsed() > SESSION_TTL) {
-            *s = None;
-        }
-        s.clone()
-    }
-
-    fn check_limits(&self, key: &str) -> Result<(), String> {
-        let now = Instant::now();
-        let mut l = self.limits.lock().unwrap();
-        l.buckets.retain(|_, until| *until > now);
-        if l.global_until.is_some_and(|u| u <= now) {
-            l.global_until = None;
-        }
-        let wait = l
-            .global_until
-            .into_iter()
-            .chain(l.buckets.get(key).copied())
-            .max()
-            .map(|u| u.saturating_duration_since(now));
-        match wait {
-            Some(w) => Err(format!(
-                "rate limited by Discord: retry in {:.1}s",
-                w.as_secs_f32()
-            )),
-            None => Ok(()),
-        }
-    }
-
-    fn learn_limits(&self, key: &str, status: u16, h: &HeaderMap, body: &[u8]) {
-        let secs = |name: &str| {
-            h.get(name)
-                .and_then(|v| v.to_str().ok())
-                .and_then(|v| v.trim().parse::<f64>().ok())
-                .filter(|v| v.is_finite() && *v >= 0.0)
-        };
-        let now = Instant::now();
-        let mut l = self.limits.lock().unwrap();
-        if status == 429 {
-            let retry = secs("retry-after")
-                .or_else(|| {
-                    serde_json::from_slice::<serde_json::Value>(body)
-                        .ok()?
-                        .get("retry_after")?
-                        .as_f64()
-                })
-                .unwrap_or(1.0)
-                .clamp(0.0, 3600.0);
-            let until = now + Duration::from_secs_f64(retry);
-            if h.get("x-ratelimit-global").is_some() {
-                l.global_until = Some(until);
-            } else {
-                l.buckets.insert(key.to_string(), until);
-            }
-        } else if h
-            .get("x-ratelimit-remaining")
-            .and_then(|v| v.to_str().ok())
-            .is_some_and(|v| v.trim() == "0")
-            && let Some(after) = secs("x-ratelimit-reset-after")
-        {
-            let until = now + Duration::from_secs_f64(after.min(3600.0));
-            l.buckets.insert(key.to_string(), until);
-        }
+        self.state.sessions.signed_in()
     }
 
     /// A Discord API call as the client's own session.
@@ -277,7 +90,7 @@ impl Net {
         body: Option<&Val>,
         upstream: Option<egress::Upstream>,
     ) -> Result<HostResponse, String> {
-        let json = encode_body(body)?;
+        let json = net_rules::encode_body(body)?;
         self.rest_raw(
             method,
             path,
@@ -295,7 +108,7 @@ impl Net {
         files: &[FilePart],
         upstream: Option<egress::Upstream>,
     ) -> Result<HostResponse, String> {
-        let (body, content_type) = multipart(payload, files, &new_boundary())?;
+        let (body, content_type) = multipart(payload, files, &net_rules::new_boundary())?;
         self.rest_raw(method, path, Some((body, content_type)), upstream)
     }
 
@@ -306,34 +119,25 @@ impl Net {
         body: Option<(Vec<u8>, String)>,
         upstream: Option<egress::Upstream>,
     ) -> Result<HostResponse, String> {
-        let session = self
-            .session_now()
-            .ok_or("client not signed in yet: Discord has not made an authenticated API request through PhoeCord")?;
-        let method = parse_method(method)?;
-        let path = clean_route(path)?;
-        let key = bucket_key(method.as_str(), &path);
-        self.check_limits(&key)?;
+        let call = self.state.begin_rest(method, path)?;
         let mut headers = HeaderMap::new();
-        for (n, v) in &session.headers {
+        for (n, v) in &call.headers {
             headers.insert(
                 HeaderName::from_static(n),
                 HeaderValue::from_str(v).map_err(|e| e.to_string())?,
             );
         }
-        let mut auth = HeaderValue::from_str(&session.authorization).map_err(|e| e.to_string())?;
+        let mut auth = HeaderValue::from_str(&call.authorization).map_err(|e| e.to_string())?;
         auth.set_sensitive(true);
         headers.insert(header::AUTHORIZATION, auth);
         let url = Url {
-            host: session.host.clone(),
+            host: call.host.clone(),
             port: 443,
-            path: format!("{}{}", session.prefix, path),
+            path: call.path.clone(),
         };
-        let r = self.run(method, url, headers, body, upstream)?;
-        self.learn_limits(&key, r.status, &r.raw_headers, &r.raw_body);
-        if r.status == 401 {
-            // The token is no good any more: stop using it until the client sends a new one.
-            self.clear();
-        }
+        let r = self.run(to_method(call.method), url, headers, body, upstream)?;
+        self.state
+            .end_rest(&call, r.status, &text(&r.raw_headers), &r.raw_body);
         Ok(r.into_response())
     }
 
@@ -361,33 +165,17 @@ impl Net {
         body: Option<&Val>,
         upstream: Option<egress::Upstream>,
     ) -> Result<HostResponse, String> {
-        let method = parse_method(method)?;
-        let url = parse_fetch_url(url)?;
-        if !allowed
-            .iter()
-            .any(|h| phoecord_core::plugin::fetch_host_matches(h, &url.host))
-        {
-            return Err(format!(
-                "host {} is not in this plugin's `fetch` list",
-                url.host
-            ));
-        }
+        let method = to_method(net_rules::check_method(method)?);
+        let url = net_rules::fetch_target(allowed, url)?;
         let mut headers = HeaderMap::new();
-        headers.insert(
-            header::USER_AGENT,
-            HeaderValue::from_static(concat!("PhoeCord/", env!("CARGO_PKG_VERSION"))),
-        );
-        for (name, value) in extra {
-            if phoecord_core::plugin::fetch_header_refused(name) {
-                return Err(format!("header {name:?} may not be set by a plugin"));
-            }
-            let n = HeaderName::from_bytes(name.trim().to_ascii_lowercase().as_bytes())
-                .map_err(|_| format!("bad header name {name:?}"))?;
-            let v = HeaderValue::from_str(value)
-                .map_err(|_| format!("bad value for header {name:?}"))?;
-            headers.insert(n, v);
+        for (n, v) in net_rules::fetch_headers(extra)? {
+            let name = HeaderName::from_bytes(n.as_bytes())
+                .map_err(|_| format!("bad header name {n:?}"))?;
+            let value =
+                HeaderValue::from_str(&v).map_err(|_| format!("bad value for header {n:?}"))?;
+            headers.insert(name, value);
         }
-        let json = encode_body(body)?;
+        let json = net_rules::encode_body(body)?;
         Ok(self
             .run(
                 method,
@@ -446,6 +234,11 @@ impl Net {
             _ => wait(),
         }
     }
+}
+
+/// `net_rules::check_method`'s uppercase name as `hyper`'s method.
+fn to_method(m: &'static str) -> Method {
+    Method::from_bytes(m.as_bytes()).unwrap_or(Method::GET)
 }
 
 /// The proxy's [`Network`] for the transport boundary: the client's session headers, rate limits
@@ -536,13 +329,6 @@ impl Default for Net {
     }
 }
 
-struct Url {
-    host: String,
-    port: u16,
-    /// Path and query, starting with `/`.
-    path: String,
-}
-
 struct Raw {
     status: u16,
     raw_headers: HeaderMap,
@@ -551,193 +337,8 @@ struct Raw {
 
 impl Raw {
     fn into_response(self) -> HostResponse {
-        let headers = SHOWN
-            .iter()
-            .filter_map(|n| {
-                let v = self.raw_headers.get(*n)?.to_str().ok()?;
-                Some((n.to_string(), v.to_string()))
-            })
-            .collect();
-        let (body, text, bytes) = match serde_json::from_slice::<serde_json::Value>(&self.raw_body)
-        {
-            Ok(j) => (Some(Val::from_json(j)), None, None),
-            Err(_) if self.raw_body.is_empty() => (None, None, None),
-            Err(_) => (
-                None,
-                Some(String::from_utf8_lossy(&self.raw_body).into_owned()),
-                Some(self.raw_body.to_vec()),
-            ),
-        };
-        let mut r = HostResponse::new(self.status);
-        r.body = body;
-        r.text = text;
-        r.headers = headers;
-        r.bytes = bytes;
-        r
+        net_rules::response(self.status, &text(&self.raw_headers), &self.raw_body)
     }
-}
-
-fn parse_method(m: &str) -> Result<Method, String> {
-    match m.to_ascii_uppercase().as_str() {
-        "GET" => Ok(Method::GET),
-        "POST" => Ok(Method::POST),
-        "PUT" => Ok(Method::PUT),
-        "PATCH" => Ok(Method::PATCH),
-        "DELETE" => Ok(Method::DELETE),
-        other => Err(format!("method {other:?} is not allowed")),
-    }
-}
-
-fn encode_body(body: Option<&Val>) -> Result<Option<Vec<u8>>, String> {
-    let Some(v) = body else { return Ok(None) };
-    let b = serde_json::to_vec(&v.to_json()).map_err(|e| e.to_string())?;
-    if b.len() > MAX_REQUEST {
-        return Err(format!("request body over {MAX_REQUEST} bytes"));
-    }
-    Ok(Some(b))
-}
-
-/// A random multipart boundary (no `rand` dependency: time and a counter are enough for a
-/// boundary, which only has to not occur in the parts).
-fn new_boundary() -> String {
-    use std::sync::atomic::{AtomicU64, Ordering};
-    static N: AtomicU64 = AtomicU64::new(0);
-    let t = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    format!("phoecord{t:x}{:x}", N.fetch_add(1, Ordering::Relaxed))
-}
-
-/// Quote a form-data header value: no CR, LF or `"` may reach the wire.
-fn form_value(s: &str) -> String {
-    s.chars()
-        .map(|c| {
-            if matches!(c, '"' | '\r' | '\n') {
-                '_'
-            } else {
-                c
-            }
-        })
-        .collect()
-}
-
-/// The `multipart/form-data` body Discord's client sends for uploads, and its content type.
-pub fn multipart(
-    payload: Option<&Val>,
-    files: &[FilePart],
-    boundary: &str,
-) -> Result<(Vec<u8>, String), String> {
-    if files.is_empty() {
-        return Err("rest_files needs at least one file".into());
-    }
-    if files.len() > 10 {
-        return Err("Discord takes at most 10 files per message".into());
-    }
-    let mut out = Vec::new();
-    if let Some(p) = payload {
-        let json = serde_json::to_vec(&p.to_json()).map_err(|e| e.to_string())?;
-        out.extend_from_slice(
-            format!(
-                "--{boundary}\r\nContent-Disposition: form-data; name=\"payload_json\"\r\nContent-Type: application/json\r\n\r\n"
-            )
-            .as_bytes(),
-        );
-        out.extend_from_slice(&json);
-        out.extend_from_slice(b"\r\n");
-    }
-    for (i, f) in files.iter().enumerate() {
-        if f.content_type.contains(['\r', '\n']) {
-            return Err("bad content type".into());
-        }
-        out.extend_from_slice(
-            format!(
-                "--{boundary}\r\nContent-Disposition: form-data; name=\"files[{i}]\"; filename=\"{}\"\r\nContent-Type: {}\r\n\r\n",
-                form_value(&f.filename),
-                f.content_type
-            )
-            .as_bytes(),
-        );
-        out.extend_from_slice(&f.data);
-        out.extend_from_slice(b"\r\n");
-        if out.len() > MAX_UPLOAD {
-            return Err(format!("upload over {MAX_UPLOAD} bytes"));
-        }
-    }
-    out.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
-    Ok((out, format!("multipart/form-data; boundary={boundary}")))
-}
-
-/// A route a plugin gives: `/channels/1/messages?limit=5`, optionally with the `/api/vN` prefix.
-/// Absolute URLs, other hosts, `..` and anything that is not a plain path are refused.
-pub fn clean_route(route: &str) -> Result<String, String> {
-    let bad = |why: &str| Err(format!("bad route {route:?}: {why}"));
-    if !route.starts_with('/') || route.starts_with("//") {
-        return bad("must be a path starting with a single `/`");
-    }
-    if route.contains("://")
-        || route.contains('\\')
-        || route.contains('#')
-        || route.chars().any(|c| c.is_control() || c.is_whitespace())
-    {
-        return bad("not a plain path");
-    }
-    let path = route.split('?').next().unwrap_or("");
-    // A dot segment in any spelling: `.`, `..`, or with `%2e` / `%2E` for any of its dots.
-    let dot_segment = |s: &str| {
-        let plain = s.to_ascii_lowercase().replace("%2e", ".");
-        plain == "." || plain == ".."
-    };
-    if path.split('/').any(dot_segment) {
-        return bad("`..` is not allowed in the path");
-    }
-    let mut r = route;
-    if let Some(rest) = route.strip_prefix("/api/v") {
-        let digits = rest.bytes().take_while(u8::is_ascii_digit).count();
-        if digits > 0 && rest[digits..].starts_with('/') {
-            r = &rest[digits..];
-        } else {
-            return bad("`/api/` prefix must be `/api/v<N>/`");
-        }
-    }
-    Ok(r.to_string())
-}
-
-fn parse_fetch_url(url: &str) -> Result<Url, String> {
-    let rest = url
-        .strip_prefix("https://")
-        .ok_or("only https:// URLs are allowed")?;
-    if url.chars().any(|c| c.is_control() || c.is_whitespace()) || url.contains('\\') {
-        return Err("bad URL".into());
-    }
-    let (auth, path) = match rest.find(['/', '?', '#']) {
-        Some(i) => rest.split_at(i),
-        None => (rest, "/"),
-    };
-    if auth.contains('@') {
-        return Err("credentials in a URL are not allowed".into());
-    }
-    let (host, port) = match auth.rsplit_once(':') {
-        Some((h, p)) => (h, p.parse::<u16>().map_err(|_| "bad port")?),
-        None => (auth, 443),
-    };
-    if port != 443 {
-        return Err("only port 443 is allowed".into());
-    }
-    if host.is_empty() {
-        return Err("no host in the URL".into());
-    }
-    let path = path.split('#').next().unwrap_or("/");
-    let path = if path.starts_with('/') {
-        path.to_string()
-    } else {
-        format!("/{path}")
-    };
-    Ok(Url {
-        host: host.to_ascii_lowercase(),
-        port,
-        path,
-    })
 }
 
 async fn request(
@@ -825,85 +426,4 @@ where
         raw_headers: parts.headers,
         raw_body: Bytes::from(raw),
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn routes_are_plain_paths() {
-        assert_eq!(clean_route("/users/@me").unwrap(), "/users/@me");
-        assert_eq!(clean_route("/api/v9/users/@me").unwrap(), "/users/@me");
-        for bad in [
-            "https://evil.example/x",
-            "//evil.example/x",
-            "users/@me",
-            "/a/../b",
-            "/a/%2e%2e/b",
-            "/a/.%2E/b",
-            "/a/%2E./b",
-            "/a/%2e/b",
-            "/a\\b",
-            "/a b",
-            "/a#b",
-            "/a://b",
-        ] {
-            assert!(clean_route(bad).is_err(), "{bad}");
-        }
-    }
-
-    #[test]
-    fn multipart_has_payload_and_files() {
-        let payload = Val::from_json(serde_json::json!({"content": "hi"}));
-        let files = [FilePart {
-            filename: "pet\"pet.gif".into(),
-            content_type: "image/gif".into(),
-            data: b"GIF89a".to_vec(),
-        }];
-        let (body, ct) = multipart(Some(&payload), &files, "B").unwrap();
-        assert_eq!(ct, "multipart/form-data; boundary=B");
-        let text = String::from_utf8_lossy(&body);
-        assert!(text.starts_with("--B\r\nContent-Disposition: form-data; name=\"payload_json\""));
-        assert!(text.contains("{\"content\":\"hi\"}"));
-        assert!(text.contains("name=\"files[0]\"; filename=\"pet_pet.gif\"\r\nContent-Type: image/gif\r\n\r\nGIF89a\r\n"));
-        assert!(text.ends_with("--B--\r\n"));
-        assert!(multipart(None, &[], "B").is_err());
-        let bad = [FilePart {
-            filename: "a".into(),
-            content_type: "x\r\ny".into(),
-            data: vec![],
-        }];
-        assert!(multipart(None, &bad, "B").is_err());
-    }
-
-    #[test]
-    fn bucket_keys_keep_major_ids_only() {
-        assert_eq!(
-            bucket_key("GET", "/channels/5/messages/6?x=1"),
-            "GET/channels/5/messages/:id"
-        );
-        assert_eq!(bucket_key("GET", "/users/7"), "GET/users/:id");
-    }
-
-    #[test]
-    fn fetch_urls() {
-        let u = parse_fetch_url("https://Api.Example.com/a/b?c=1").unwrap();
-        assert_eq!(
-            (u.host.as_str(), u.path.as_str()),
-            ("api.example.com", "/a/b?c=1")
-        );
-        assert_eq!(parse_fetch_url("https://x.com").unwrap().path, "/");
-        assert_eq!(parse_fetch_url("https://x.com?q=1").unwrap().path, "/?q=1");
-        for bad in [
-            "http://x.com/",
-            "https://u:p@x.com/",
-            "https://x.com:8443/",
-            "https:///a",
-            "ftp://x.com",
-            "https://x.com/a b",
-        ] {
-            assert!(parse_fetch_url(bad).is_err(), "{bad}");
-        }
-    }
 }

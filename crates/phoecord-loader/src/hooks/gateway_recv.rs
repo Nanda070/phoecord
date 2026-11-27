@@ -11,13 +11,16 @@
 //!
 //! Verdicts are applied in the same buffer, so nothing is allocated: the buffer's capacity is the
 //! decompressor's working size (256 KiB on this build), far above an ordinary event.
-//! - **changed:** the frame is rebuilt with the new `d` and written over the old text, when it fits
-//!   the capacity; a bigger one is logged and passes unchanged;
+//! - **changed:** the frame is rebuilt with the new `d` (and the new `t` when a plugin renamed the
+//!   event) and written over the old text, when it fits the capacity; a bigger one is logged and
+//!   passes unchanged;
 //! - **dropped:** the frame becomes a dispatch of [`DROPPED_EVENT`] with the same sequence
 //!   number, which the client ignores while its session's `s` still advances.
 //!
 //! Server → client payloads plugins queue (`Host::emit_dispatch`) cannot be handed to the client
-//! from here yet; they are counted and logged once.
+//! from here: the inflater returns one frame per call and this buffer holds one frame, so there
+//! is no slot for an extra one. They are counted and logged once. Delivering them needs the
+//! client's per-frame handler (RE, `docs/research/inprocess-dispatch.md`).
 
 use super::abi::Memory;
 use super::detour::ProcessMemory;
@@ -176,6 +179,14 @@ fn observe(state: &State, out: usize) {
             Err(e) => {
                 return once(state, LOG_ENCODE, || {
                     format!("gateway_dispatch: {e}; event passes unchanged")
+                });
+            }
+        },
+        GatewayAction::Rename { name: to, data } => match rebuild(&to, s, &data) {
+            Ok(f) => f,
+            Err(e) => {
+                return once(state, LOG_ENCODE, || {
+                    format!("gateway_dispatch: {name} as {to}: {e}; event passes unchanged")
                 });
             }
         },

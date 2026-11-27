@@ -5,7 +5,8 @@
 //! ([`crate::choice::Launched`]). In an `in-process` launch no proxy runs, so the loader builds its
 //! own [`Engine`]: the built-in plugins and the WASM packages of `<data>/plugins/`, enabled from
 //! `config.toml` (ruling 2026-11-26: the loader reads its settings from `config.toml` itself, no
-//! pipe). [`engine_from`] is that part, on any OS.
+//! pipe), with [`LoaderNet`] behind plugins' `rest` and `fetch`. [`engine_from`] is that part, on
+//! any OS.
 //!
 //! The rest is Windows x64 ([`start`]): the [`InProcessTransport`] over the hooks found in this
 //! build, the effects [`Clock`], and the `send` detour fed by a [`SendSink`]. All or nothing per
@@ -17,6 +18,7 @@
 //! [`Clock`]: crate::transport::Clock
 //! [`SendSink`]: crate::transport::SendSink
 
+use crate::net::LoaderNet;
 use phoecord_plugin_runtime::{Chain, package::PackageSet, wasm::WasmRuntime};
 use phoecord_transport::{
     Engine,
@@ -29,7 +31,11 @@ use std::sync::Arc;
 /// `<data>/plugins/`, enabled as `paths.config` says. A missing `config.toml` means the defaults
 /// (the loader never writes one); an unreadable one is an error, so a broken file does not
 /// silently turn every plugin off. A WASM runtime that does not start only turns packages off.
-pub fn engine_from(paths: &Paths, log: &dyn Fn(&str)) -> Result<Arc<Engine>, String> {
+pub fn engine_from(
+    paths: &Paths,
+    net: Arc<LoaderNet>,
+    log: &dyn Fn(&str),
+) -> Result<Arc<Engine>, String> {
     let cfg = if paths.config.is_file() {
         Config::load(&paths.config).map_err(|e| format!("{}: {e:#}", paths.config.display()))?
     } else {
@@ -39,7 +45,7 @@ pub fn engine_from(paths: &Paths, log: &dyn Fn(&str)) -> Result<Arc<Engine>, Str
         ));
         Config::default()
     };
-    let mut shared = Shared::new(paths.data.join("plugins"));
+    let mut shared = Shared::with_network(paths.data.join("plugins"), net);
     shared.config_path = paths.config.clone();
     let engine = Arc::new(Engine::new(
         Chain::new(phoecord_plugins::builtin()),
@@ -77,6 +83,7 @@ mod windows {
         found::HookPlan,
         hook,
         hooks::guard::LogFn,
+        net::LoaderNet,
         transport::{Clock, DecodeSink, EncodeSink, InProcessTransport, SendSink},
     };
     use phoecord_transport::config::Paths;
@@ -104,7 +111,9 @@ mod windows {
         text_hash: &str,
         log: LogFn,
     ) {
-        let engine = match engine_from(&Paths::resolve(), &*log) {
+        // Plugins' `rest` and `fetch`: the session comes from the `send` detour below.
+        let net = Arc::new(LoaderNet::new());
+        let engine = match engine_from(&Paths::resolve(), net.clone(), &*log) {
             Ok(e) => e,
             Err(e) => {
                 log(&format!(
@@ -125,7 +134,8 @@ mod windows {
             .as_ref()
             .ok()
             .map(|f| (abs(f.rva), abs(f.target.dealloc_rva)));
-        let transport = Arc::new(InProcessTransport::new(engine, found, log.clone()));
+        let transport =
+            Arc::new(InProcessTransport::new(engine, found, log.clone()).with_network(net));
         if !transport.is_active() {
             log(
                 "in-process: the launcher chose in-process but this build lacks an entry point in memory; nothing hooked",
@@ -257,7 +267,7 @@ mod tests {
     fn no_config_means_defaults_and_is_logged() {
         let p = paths("none");
         let (got, log) = lines();
-        let engine = engine_from(&p, &log).unwrap();
+        let engine = engine_from(&p, Arc::new(LoaderNet::new()), &log).unwrap();
         assert!(!p.config.exists(), "the loader never writes config.toml");
         assert!(
             !engine.chain.enabled_ids().is_empty(),
@@ -273,11 +283,11 @@ mod tests {
         let p = paths("cfg");
         std::fs::write(&p.config, "[plugins.no_track]\nenabled = false\n").unwrap();
         let (_, log) = lines();
-        let engine = engine_from(&p, &log).unwrap();
+        let engine = engine_from(&p, Arc::new(LoaderNet::new()), &log).unwrap();
         assert!(!engine.chain.enabled_ids().iter().any(|id| id == "no_track"));
         let p = paths("cfg-on");
         std::fs::write(&p.config, "[plugins.no_track]\nenabled = true\n").unwrap();
-        let engine = engine_from(&p, &log).unwrap();
+        let engine = engine_from(&p, Arc::new(LoaderNet::new()), &log).unwrap();
         assert!(engine.chain.enabled_ids().iter().any(|id| id == "no_track"));
     }
 
@@ -286,6 +296,6 @@ mod tests {
         let p = paths("broken");
         std::fs::write(&p.config, "this is = = not toml").unwrap();
         let (_, log) = lines();
-        assert!(engine_from(&p, &log).is_err());
+        assert!(engine_from(&p, Arc::new(LoaderNet::new()), &log).is_err());
     }
 }

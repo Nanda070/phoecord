@@ -56,6 +56,10 @@ pub mod hooks;
 #[cfg(feature = "dll")]
 pub mod transport;
 
+/// The in-process `Network` behind plugins' `rest` and `fetch` (task 2.2.7).
+#[cfg(feature = "dll")]
+pub mod net;
+
 /// Starting the in-process transport in a launch that chose it: the engine from `config.toml`,
 /// the transport, the clock and the `send` detour (task 2.2.7).
 #[cfg(feature = "dll")]

@@ -80,6 +80,13 @@ pub trait SendSink: Send + Sync {
     fn wants_response(&self, method: &str, url: &str) -> bool;
     /// The plugin chain's verdict on the answer.
     fn response(&self, method: &str, url: &str, status: u16, body: &[u8]) -> HttpAction;
+    /// Whether the headers of this request should be read for the plugins' network session
+    /// (a Discord API URL, and no session yet or one due for a refresh); when not, they never are.
+    fn wants_session(&self, _url: &str) -> bool {
+        false
+    }
+    /// The headers of a request [`SendSink::wants_session`] asked for.
+    fn session(&self, _url: &str, _headers: &[abi::Header]) {}
 }
 
 /// Absolute addresses of what the detours use, from the locators of this build.
@@ -328,6 +335,7 @@ const LOG_NO_RESP_BODY: u32 = 128;
 const LOG_ALLOC: u32 = 256;
 const LOG_FIRST_SEND: u32 = 512;
 const LOG_FIRST_POLL: u32 = 1024;
+const LOG_HEADERS: u32 = 2048;
 
 fn once(state: &State, kind: u32, line: impl FnOnce() -> String) {
     if LOGGED.fetch_or(kind, Ordering::Relaxed) & kind == 0 {
@@ -345,6 +353,16 @@ fn observe_request(state: &State, request: usize) {
         Err(e) => return abi_error(state, &e),
     };
     let route = super::http::route_of(&head.url);
+    if state.sink.wants_session(&head.url) {
+        match abi::read_headers(&mem, request, state.image.clone()) {
+            Ok(headers) => state.sink.session(&head.url, &headers),
+            Err(e) => once(state, LOG_HEADERS, || {
+                format!(
+                    "http_send: request headers not readable ({e}); plugins' rest stays signed out"
+                )
+            }),
+        }
+    }
     if state.poll_vtable.is_some() && state.sink.wants_response(&head.method, &head.url) {
         PENDING.with(|p| *p.borrow_mut() = Some((head.method.clone(), head.url.clone())));
     }

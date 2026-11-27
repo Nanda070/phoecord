@@ -13,6 +13,10 @@ pub enum GatewayAction {
     Pass,
     /// Call it with this `d` instead.
     Replace(Vec<u8>),
+    /// Deliver it as another event: this name and this `d`. Only from [`dispatch`], when a plugin
+    /// changed `t` (MessageLogger shows a deleted message by turning its `MESSAGE_DELETE` into a
+    /// `MESSAGE_UPDATE`).
+    Rename { name: String, data: Vec<u8> },
     /// Do not call it.
     Drop,
 }
@@ -48,7 +52,13 @@ pub fn dispatch(engine: &Engine, name: &str, data: &[u8]) -> Result<GatewayOutco
         let d = r.payload.get("d").unwrap_or(&Val::Null);
         let bytes = serde_json::to_vec(&d.to_json())
             .map_err(|e| format!("{name}: cannot encode data: {e}"))?;
-        GatewayAction::Replace(bytes)
+        match r.payload.get("t").and_then(Val::as_str) {
+            Some(t) if t != name => GatewayAction::Rename {
+                name: t.to_string(),
+                data: bytes,
+            },
+            _ => GatewayAction::Replace(bytes),
+        }
     } else {
         GatewayAction::Pass
     };
@@ -186,5 +196,41 @@ mod tests {
             (v["t"].as_str(), v["s"].as_i64(), v["op"].as_i64()),
             (Some(DROPPED_EVENT), Some(7), Some(0))
         );
+    }
+
+    #[test]
+    fn a_renamed_event_keeps_its_new_name() {
+        // MessageLogger shows a deleted message by turning the MESSAGE_DELETE into a
+        // MESSAGE_UPDATE; the inflate hook must rebuild the frame under the new name, or the
+        // client gets a MESSAGE_DELETE and removes the message anyway.
+        let e = engine("[plugins.message_logger]\nenabled = true\nwrite_log = false\n");
+        let created = br#"{"id":"5","channel_id":"2","author":{"id":"9"},"content":"hi"}"#;
+        assert_eq!(
+            dispatch(&e, "MESSAGE_CREATE", created).unwrap().action,
+            GatewayAction::Pass
+        );
+        let out = dispatch(&e, "MESSAGE_DELETE", br#"{"id":"5","channel_id":"2"}"#).unwrap();
+        let GatewayAction::Rename { name, data } = out.action else {
+            panic!("expected a rename, got {:?}", out.action);
+        };
+        assert_eq!(name, "MESSAGE_UPDATE");
+        let frame: serde_json::Value =
+            serde_json::from_slice(&rebuild(&name, Some(8), &data).unwrap()).unwrap();
+        assert_eq!(frame["t"], "MESSAGE_UPDATE");
+        assert_eq!(frame["s"], 8);
+        assert_eq!(frame["d"]["id"], "5");
+        assert!(frame["d"]["content"].as_str().unwrap().contains("hi"));
+    }
+
+    #[test]
+    fn a_change_that_keeps_the_name_is_a_replace() {
+        // FakeNitro edits READY in place: same event, new `d`.
+        let e = engine("[plugins.fake_nitro]\nenabled = true\n");
+        let out = dispatch(&e, "READY", br#"{"user":{"id":"1","premium_type":0}}"#).unwrap();
+        let GatewayAction::Replace(d) = out.action else {
+            panic!("expected a replace, got {:?}", out.action);
+        };
+        let d: serde_json::Value = serde_json::from_slice(&d).unwrap();
+        assert_eq!(d["user"]["premium_type"], 2);
     }
 }

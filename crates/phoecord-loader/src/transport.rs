@@ -7,7 +7,8 @@
 //!
 //! - server → client payloads can only be handed to the client from inside a registry handler
 //!   (`docs/research/phoenix-desktop.md` §3.2), so they wait in a queue that the dispatch detour
-//!   empties; without a dispatch hook they are dropped;
+//!   empties; without a dispatch hook they are dropped. The inflate hook empties it but cannot
+//!   hand them over yet (`docs/research/inprocess-dispatch.md`);
 //! - client → server frames leave through a [`FrameSink`]. No send function is known (2.1.6,
 //!   2.2.4), so for now they are dropped;
 //! - plugin timers need a clock: [`Clock`], one thread.
@@ -17,17 +18,19 @@
 //! launch goes through the proxy and every entry point here passes the traffic untouched, so the
 //! same traffic never meets the plugin chain twice and nothing is handed over to the proxy.
 //!
-//! Not here yet: the detours of `poll`, the Gateway registry and the send path (the `send` detour
-//! is `crate::hooks::detour`, read-only), and the `Network` behind `Host::rest` and `Host::fetch`
-//! in-process.
+//! The `Network` behind `Host::rest` and `Host::fetch` in-process is [`crate::net::LoaderNet`];
+//! the transport only tells the `send` detour when to hand it the client's request headers
+//! ([`InProcessTransport::wants_session`], [`InProcessTransport::session`]).
 
 use crate::hooks::{
     HookRuntime,
+    abi::Header,
     found::HookPlan,
     gateway::GatewayAction,
     guard::{Breaker, LogFn},
     http::HttpAction,
 };
+use crate::net::LoaderNet;
 use crate::plan::{EntryPoint, Plan, Reason, Route};
 use phoecord_core::Val;
 use phoecord_transport::{Effects, Engine};
@@ -186,6 +189,8 @@ pub struct InProcessTransport {
     delivery: Arc<Delivery>,
     queued: Breaker,
     log: LogFn,
+    /// The plugins' network, fed with the client's session headers by the `send` detour.
+    net: Option<Arc<LoaderNet>>,
 }
 
 impl InProcessTransport {
@@ -213,6 +218,26 @@ impl InProcessTransport {
             delivery: Arc::new(delivery),
             queued: Breaker::new("delivery"),
             log,
+            net: None,
+        }
+    }
+
+    /// The same transport feeding `net` (the engine's `Network`) with the client's session.
+    pub fn with_network(mut self, net: Arc<LoaderNet>) -> InProcessTransport {
+        self.net = Some(net);
+        self
+    }
+
+    /// Whether the `send` detour should read this request's headers for the plugins' session:
+    /// only Discord API URLs, and only when the session is missing or due for a refresh.
+    pub fn wants_session(&self, url: &str) -> bool {
+        self.active && self.net.as_ref().is_some_and(|n| n.wants_session(url))
+    }
+
+    /// The headers of the client's request to `url`, for the plugins' session.
+    pub fn session(&self, url: &str, headers: &[Header]) {
+        if let Some(net) = self.net.as_ref().filter(|_| self.active) {
+            net.observe(url, headers);
         }
     }
 
@@ -354,6 +379,14 @@ impl crate::hooks::detour::SendSink for SendSink {
 
     fn response(&self, method: &str, url: &str, status: u16, body: &[u8]) -> HttpAction {
         self.0.response(method, url, status, body)
+    }
+
+    fn wants_session(&self, url: &str) -> bool {
+        self.0.wants_session(url)
+    }
+
+    fn session(&self, url: &str, headers: &[Header]) {
+        self.0.session(url, headers)
     }
 }
 
@@ -601,6 +634,32 @@ mod tests {
                 .iter()
                 .any(|l| l.starts_with("no way to send"))
         );
+    }
+
+    #[test]
+    fn the_send_detour_feeds_the_session_only_when_it_is_due() {
+        use phoecord_transport::host::Network;
+        let api = "https://discord.com/api/v9/users/@me";
+        let auth = [Header {
+            name: "authorization".into(),
+            value: b"tok".to_vec(),
+            sensitive: true,
+        }];
+        // Without a network, or with the transport off, nothing is read.
+        let bare = InProcessTransport::new(engine(), all(), logger().0);
+        assert!(!bare.wants_session(api));
+        let net = Arc::new(LoaderNet::new());
+        let off = InProcessTransport::new(engine(), found(false, true, true, true), logger().0)
+            .with_network(net.clone());
+        assert!(!off.wants_session(api));
+        off.session(api, &auth);
+        assert!(!net.signed_in());
+        let on = InProcessTransport::new(engine(), all(), logger().0).with_network(net.clone());
+        assert!(on.wants_session(api));
+        assert!(!on.wants_session("https://cdn.discordapp.com/x.png"));
+        on.session(api, &auth);
+        assert!(net.signed_in());
+        assert!(!on.wants_session(api), "a fresh session is not read again");
     }
 
     #[test]

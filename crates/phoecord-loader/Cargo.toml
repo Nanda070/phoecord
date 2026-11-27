@@ -23,6 +23,8 @@ serde_json.workspace = true
 memchr = "2"
 sha2 = "0.11"
 toml = "1.2"
+# The in-process `Network` (`net`): HTTPS for plugins' `rest` and `fetch` inside the client.
+ureq = { version = "3", default-features = false, features = ["rustls"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 retour = { version = "0.3", default-features = false, optional = true }
@@ -56,6 +58,7 @@ dll = [
     "dep:phoecord-plugin-runtime",
     "dep:phoecord-plugins",
     "dep:phoecord-i18n",
+    "dep:ureq",
 ]
 
 [dev-dependencies]
