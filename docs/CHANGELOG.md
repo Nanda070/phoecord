@@ -6,6 +6,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Added
 
+- 2.3.8 (first part): typed locators and signatures (build 0.1.0.2208) for the functions that build avatar, banner, server icon, channel icon and avatar decoration URLs and the two that append `size=`. Nothing hooks them yet.
 - 2.3.15, 2.3.17–2.3.19, 2.3.23 (first part): typed locators and signatures (build 0.1.0.2208) for the render functions of the chat input, account panel, media viewer and video, server rail, channel, DM and member lists and the window chrome. Nothing hooks them yet.
 - 2.3.16 (first part): the loader can raise the ceiling of Phoenix's user and stream volume clamps (VolumeBooster: `[plugins.volume_booster]`, off by default, `multiplier` 1–10). The client's own slider still ends at 200 %, so nothing changes in its UI yet, and the patch has not been run on Phoenix.
 - 2.3.20 (first part): the loader can patch Phoenix's untrusted-link and suspicious-download checks (AlwaysTrust: `[plugins.always_trust]`, off by default; app protocols only with `protocol = true`). The signatures of the three functions for build 0.1.0.2208 are in `signatures/phoenix.toml` (`phoecord check` finds them); the patches have not been run on Phoenix.

@@ -26,6 +26,7 @@
 //! | `link_suspicious_download` | entry of the suspicious-download detector the classifier calls (inline hook) | AlwaysTrust |
 //! | `<view>_render` ([`View`]) | entry of a view's `Render::render` (no hook yet) | UI surfaces 2.3.15, 2.3.17–2.3.19, 2.3.23 |
 //! | `volume_user_ceiling`, `volume_stream_ceiling` | [`CEILING_LOAD_OFFSET`] bytes before the `movss` that loads the 200 % ceiling in the user / stream volume clamp (operand patch) | VolumeBooster (2.3.16) |
+//! | `picture_url_*`, `picture_size_*` ([`PictureUrl`]) | entry of a media library function that builds or sizes a picture URL (no hook yet) | CDN pictures (2.3.8, 2.3.9) |
 //! | `message_menu_build_call` | the `call` (E8 rel32) of the menu build function in its live caller; its target is the build function | message menu |
 
 use crate::signatures::{ResolveError, Signature};
@@ -129,6 +130,60 @@ pub struct LinkProtocolTrusted;
 /// The detector of download links the client warns about.
 #[derive(Debug, PartialEq, Eq)]
 pub struct LinkSuspiciousDownload;
+/// A function of the client's media library that builds a picture's URL (2.3.8, 2.3.9).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PictureUrl {
+    /// A user's avatar.
+    Avatar,
+    /// A user's profile banner.
+    UserBanner,
+    /// A server's banner.
+    GuildBanner,
+    /// A channel's icon (group chats).
+    ChannelIcon,
+    /// A server's icon.
+    GuildIcon,
+    /// An avatar decoration preset.
+    DecorationPreset,
+    /// One of the two functions that append `size=`.
+    SizeFirst,
+    /// The other one.
+    SizeSecond,
+}
+
+impl PictureUrl {
+    pub const ALL: [PictureUrl; 8] = [
+        PictureUrl::Avatar,
+        PictureUrl::UserBanner,
+        PictureUrl::GuildBanner,
+        PictureUrl::ChannelIcon,
+        PictureUrl::GuildIcon,
+        PictureUrl::DecorationPreset,
+        PictureUrl::SizeFirst,
+        PictureUrl::SizeSecond,
+    ];
+
+    /// The name of the signature that finds this function.
+    pub fn signature(self) -> &'static str {
+        match self {
+            PictureUrl::Avatar => "picture_url_avatar",
+            PictureUrl::UserBanner => "picture_url_user_banner",
+            PictureUrl::GuildBanner => "picture_url_guild_banner",
+            PictureUrl::ChannelIcon => "picture_url_channel_icon",
+            PictureUrl::GuildIcon => "picture_url_guild_icon",
+            PictureUrl::DecorationPreset => "picture_url_decoration",
+            PictureUrl::SizeFirst => "picture_size_first",
+            PictureUrl::SizeSecond => "picture_size_second",
+        }
+    }
+}
+
+/// Entry of one [`PictureUrl`] function. Its calling convention is not read yet.
+#[derive(Debug, PartialEq, Eq)]
+pub struct PictureUrlBuilder {
+    pub builds: PictureUrl,
+}
+
 /// A view whose render function the UI surfaces of 2.3.15–2.3.23 hook.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum View {
@@ -387,6 +442,17 @@ impl Scan<'_> {
         })
     }
 
+    /// One picture URL function; each is located on its own.
+    pub fn picture_url(
+        &self,
+        builds: PictureUrl,
+    ) -> Result<Found<PictureUrlBuilder>, LocatorError> {
+        Ok(Found {
+            rva: self.rva(builds.signature())?,
+            target: PictureUrlBuilder { builds },
+        })
+    }
+
     pub fn gateway_send(&self) -> Result<Found<GatewaySend>, LocatorError> {
         Ok(Found {
             rva: self.rva(GATEWAY_SEND)?,
@@ -589,5 +655,41 @@ mod view_tests {
                 view.signature()
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod picture_url_tests {
+    use super::*;
+    use crate::signatures::SignatureSet;
+
+    #[test]
+    fn each_builder_has_its_own_signature_in_the_built_in_table() {
+        let set = SignatureSet::parse(crate::signatures::BUILTIN).unwrap();
+        let version = crate::version::ClientVersion {
+            file_version: Some("0.1.0.2208".into()),
+            text_hash: "00".into(),
+            text_rva: 0x1000,
+            text_len: 0,
+        };
+        let (_, sigs) = set.select(&version).unwrap();
+        let mut names: Vec<&str> = PictureUrl::ALL.iter().map(|p| p.signature()).collect();
+        for name in &names {
+            assert!(sigs.iter().any(|s| s.name == *name), "{name}");
+        }
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(names.len(), PictureUrl::ALL.len());
+        // Without a table entry only that function is missing.
+        let scan = Scan {
+            sigs: &[],
+            text: &[],
+            text_rva: 0,
+            image_len: 0,
+        };
+        assert_eq!(
+            scan.picture_url(PictureUrl::Avatar),
+            Err(LocatorError::Missing("picture_url_avatar"))
+        );
     }
 }

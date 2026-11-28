@@ -50,3 +50,14 @@ window_chrome_render      = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 E
 # loaded 36 bytes into each match.
 volume_user_ceiling       = { aob = "48 89 43 18 48 8B 0B 48 FF C1 EB 02 31 C9 48 89 0B 45 84 FF 0F 85 ?? ?? ?? ?? 0F 57 C9 0F 57 C0 F3 0F 5F C6 F3 0F 10 35 ?? ?? ?? ?? F3 0F 5D F0" }
 volume_stream_ceiling     = { aob = "49 89 46 18 49 8B 0E 48 FF C1 EB 02 31 C9 49 89 0E 45 84 FF 0F 85 ?? ?? ?? ?? 0F 57 C9 0F 57 C0 F3 0F 5F C6 F3 0F 10 35 ?? ?? ?? ?? F3 0F 5D F0" }
+
+# Picture URL functions of the media library (2.3.8, 2.3.9), checked with `phoecord check` on
+# 0.1.0.2208.
+picture_url_avatar        = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC A8 00 00 00 48 8D AC 24 80 00 00 00 48 C7 45 20 FE FF FF FF 48 89 D7 48 89 CE 4C 89 45 D8 4D 85 C9" }
+picture_url_user_banner   = { aob = "55 41 57 41 56 56 57 53 48 81 EC C8 00 00 00 48 8D AC 24 80 00 00 00 48 C7 45 40 FE FF FF FF 4C 89 CF 48 89 D3 48 89 CE" }
+picture_url_guild_banner  = { aob = "55 41 57 41 56 56 57 53 48 81 EC B8 00 00 00 48 8D AC 24 80 00 00 00 48 C7 45 30 FE FF FF FF 4C 89 CF 48 89 D3 48 89 CE 4C 8D 75 F0" }
+picture_url_channel_icon  = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC C8 00 00 00 48 8D AC 24 80 00 00 00 48 C7 45 40 FE FF FF FF 48 89 CE 4C 89 45 18 4D 85" }
+picture_url_guild_icon    = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC A8 00 00 00 48 8D AC 24 80 00 00 00 48 C7 45 20 FE FF FF FF 4C 89 CF 48 89 D3 48 89 CE 4C 8D 65 F8 4D 89 04 24 4C 8D 45 C0 4D 89 20 4C 8D 2D ?? ?? ?? ?? 4D 89 68 08 48 8D 15 ?? ?? ?? ?? 4C 8D 75 E0 4C 89 F1 E8 ?? ?? ?? ?? 4D 8B 7E 08 4D 8B 76 10 49 89 E8 4D 89 20 4D 89 68 08 48 8D 15 ?? ?? ?? ?? 48 8D 4D C0 E8 ?? ?? ?? ?? 90 8A 85 A0 00" }
+picture_url_decoration    = { aob = "41 56 56 57 53 48 83 EC 78 48 89 D7 48 89 CE 48 8B 9C 24 C0 00 00 00 4C" }
+picture_size_first        = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC 48 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 C0 00 00 00 FE FF FF FF 4C 89 4D 78 4D 89" }
+picture_size_second       = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC 78 01 00 00 48 8D AC 24 80 00 00 00 66 44 0F 29 95" }
