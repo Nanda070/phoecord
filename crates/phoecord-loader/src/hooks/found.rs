@@ -15,7 +15,8 @@
 //! | `rust_alloc`, `rust_dealloc` | the host's allocator shims | replacing a body |
 //! | `gateway_registry` | the build/insert function the first static pass took for the event registry; live it is not on the dispatch path (2.2.3), kept for 2.2.5 | none |
 //! | `gateway_inflate` | the function that inflates one gateway frame into its JSON text (`zstd-stream`), entry for an inline hook | Gateway dispatch |
-//! | `gateway_send` | entry of the outgoing frame encoder (`gateway_send_encode` in the recon notes) | Gateway send |
+//! | `gateway_send` | entry of the outgoing frame encoder (`gateway_send_encode` in the recon notes) | Gateway send (fallback when `gateway_send_text` is missing) |
+//! | `gateway_send_text` | entry of the connection loop's `send_text`, which every outgoing text frame ends in (inline hook, installed from `DllMain` in an in-process launch) | Gateway send: every frame, `IDENTIFY` / resume / heartbeat too, and dropping a frame |
 //! | `gateway_frame` | entry of the per-frame handler the inflate wrapper calls with each frame's text (inline hook) | queued server → client payloads |
 //! | `client_state` | entry of the `ClientState` serializer `IDENTIFY`'s builder calls (inline hook, installed from `DllMain`) | `full_ready` (2.2.7) |
 //! | `message_menu_push` | entry of the helper that appends one entry record to the message menu's `Vec` (inline hook) | message menu (2.3.5) |
@@ -41,6 +42,7 @@ pub const RUST_ALLOC: &str = "rust_alloc";
 pub const RUST_DEALLOC: &str = "rust_dealloc";
 pub const GATEWAY_REGISTRY: &str = "gateway_registry";
 pub const GATEWAY_SEND: &str = "gateway_send";
+pub const GATEWAY_SEND_TEXT: &str = "gateway_send_text";
 pub const GATEWAY_INFLATE: &str = "gateway_inflate";
 pub const GATEWAY_FRAME: &str = "gateway_frame";
 pub const CLIENT_STATE: &str = "client_state";
@@ -110,6 +112,10 @@ pub struct GatewayInflate;
 /// The encoder of outgoing gateway frames (2.2.4): takes a typed command, not JSON.
 #[derive(Debug, PartialEq, Eq)]
 pub struct GatewaySend;
+
+/// The connection loop's `send_text`: every outgoing text frame ends in it (2.2.4).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GatewaySendText;
 /// The client's per-frame gateway handler (2.2.3): delivers queued payloads.
 #[derive(Debug, PartialEq, Eq)]
 pub struct GatewayFrame;
@@ -517,6 +523,13 @@ impl Scan<'_> {
         })
     }
 
+    pub fn gateway_send_text(&self) -> Result<Found<GatewaySendText>, LocatorError> {
+        Ok(Found {
+            rva: self.rva(GATEWAY_SEND_TEXT)?,
+            target: GatewaySendText,
+        })
+    }
+
     pub fn gateway_frame(&self) -> Result<Found<GatewayFrame>, LocatorError> {
         Ok(Found {
             rva: self.rva(GATEWAY_FRAME)?,
@@ -541,6 +554,8 @@ pub struct HookPlan {
     pub allocator: Result<Found<Allocator>, LocatorError>,
     pub registry: Result<Found<GatewayRegistry>, LocatorError>,
     pub gateway_send: Result<Found<GatewaySend>, LocatorError>,
+    /// The `send_text` hook (2.2.4); the encoder detour stands in for it when it is missing.
+    pub send_text: Result<Found<GatewaySendText>, LocatorError>,
     pub inflate: Result<Found<GatewayInflate>, LocatorError>,
     /// Not needed for the transport to run: without it queued payloads are dropped.
     pub frame: Result<Found<GatewayFrame>, LocatorError>,
@@ -555,6 +570,7 @@ impl HookPlan {
             allocator: scan.allocator(),
             registry: scan.gateway_registry(),
             gateway_send: scan.gateway_send(),
+            send_text: scan.gateway_send_text(),
             inflate: scan.gateway_inflate(),
             frame: scan.gateway_frame(),
         }
@@ -594,6 +610,11 @@ impl HookPlan {
         self.inflate.is_ok()
     }
 
+    /// The outgoing Gateway hook: `send_text`, or the encoder when it is missing (2.2.4).
+    pub fn outgoing(&self) -> bool {
+        self.send_text.is_ok() || self.gateway_send.is_ok()
+    }
+
     /// One line per locator that failed, for the log.
     pub fn failures(&self) -> Vec<String> {
         let mut out = Vec::new();
@@ -607,7 +628,14 @@ impl HookPlan {
         note(self.bytes_static.as_ref().err(), "request body replacement");
         note(self.allocator.as_ref().err(), "response body replacement");
         note(self.inflate.as_ref().err(), "Gateway hook");
-        note(self.gateway_send.as_ref().err(), "Gateway send hook");
+        note(
+            self.gateway_send.as_ref().err(),
+            "the encoder fallback of the Gateway send hook",
+        );
+        note(
+            self.send_text.as_ref().err(),
+            "dropping outgoing frames and IDENTIFY / resume / heartbeat in on_send",
+        );
         note(self.frame.as_ref().err(), "delivery of queued payloads");
         out
     }

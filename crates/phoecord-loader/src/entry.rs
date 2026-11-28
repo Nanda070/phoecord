@@ -48,6 +48,9 @@ pub unsafe extern "system" fn DllMain(module: HMODULE, reason: u32, reserved: *m
                 // one hook goes in now, before the client's code runs (no logging here).
                 #[cfg(target_arch = "x86_64")]
                 crate::hooks::client_state::early_install();
+                // 2.2.4: every outgoing frame, `IDENTIFY` too, in an in-process launch.
+                #[cfg(target_arch = "x86_64")]
+                crate::hooks::gateway_send_text::early_install();
                 let h = CreateThread(
                     std::ptr::null(),
                     0,
@@ -264,7 +267,9 @@ fn analyze(log: &Logger) -> Option<Report> {
         // Hooked from `DllMain` already: its first bytes are the hook's jump now, so a rescan
         // cannot match; `report_full_ready` checks it instead.
         #[cfg(target_arch = "x86_64")]
-        if name == crate::found::CLIENT_STATE && crate::hooks::client_state::installed() {
+        if (name == crate::found::CLIENT_STATE && crate::hooks::client_state::installed())
+            || (name == crate::found::GATEWAY_SEND_TEXT && crate::hooks::gateway_send_text::early())
+        {
             log.log(&format!(
                 "signature {name}: hooked before the client started"
             ));
@@ -283,6 +288,8 @@ fn analyze(log: &Logger) -> Option<Report> {
     let mut patched = false;
     #[cfg(target_arch = "x86_64")]
     report_full_ready(log, sigs);
+    #[cfg(target_arch = "x86_64")]
+    report_send_text(log, sigs);
     if kind == version::ClientKind::Phoenix {
         let found = report_network_plan(log, sigs, text, &v, image_len());
         if let Some(l) = launched
@@ -365,6 +372,19 @@ fn report_full_ready(log: &Logger, sigs: &[signatures::Signature]) {
         }
         Err(e) if e == "not installed" => {}
         Err(e) => log.log(&format!("full_ready: {e}")),
+    }
+}
+
+/// Logs what the early `send_text` hook (2.2.4) did and checks it against the hashed build's table.
+#[cfg(target_arch = "x86_64")]
+fn report_send_text(log: &Logger, sigs: &[signatures::Signature]) {
+    use crate::hooks::gateway_send_text as text;
+    let Some(status) = text::status() else { return };
+    log.log(&format!("gateway send: {status}"));
+    if text::early()
+        && let Err(e) = text::confirm(sigs)
+    {
+        log.log(&format!("gateway send: {e}"));
     }
 }
 
@@ -769,12 +789,21 @@ fn report_network_plan(
     v: &version::ClientVersion,
     image_len: u32,
 ) -> crate::hooks::found::HookPlan {
-    let found = crate::hooks::found::HookPlan::locate(&crate::hooks::found::Scan {
+    #[allow(unused_mut)]
+    let mut found = crate::hooks::found::HookPlan::locate(&crate::hooks::found::Scan {
         sigs,
         text,
         text_rva: v.text_rva,
         image_len,
     });
+    // Hooked from `DllMain`: the rescan cannot match its patched first bytes.
+    #[cfg(target_arch = "x86_64")]
+    if crate::hooks::gateway_send_text::early() {
+        found.send_text = Ok(crate::hooks::found::Found {
+            rva: crate::hooks::gateway_send_text::rva(),
+            target: crate::hooks::found::GatewaySendText,
+        });
+    }
     for line in found.failures() {
         log.log(&line);
     }

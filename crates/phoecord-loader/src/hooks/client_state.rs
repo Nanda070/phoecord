@@ -37,15 +37,13 @@ mod imp {
     use super::{GUILD_VERSIONS, should_empty};
     use crate::aob::Pattern;
     use crate::found::CLIENT_STATE;
-    use crate::found::Scan;
     use crate::hooks::abi::Memory;
     use crate::hooks::detour::ProcessMemory;
-    use crate::signatures::{self, Signature, SignatureSet};
-    use crate::version::ClientVersion;
+    use crate::hooks::early;
+    use crate::signatures::Signature;
     use std::sync::OnceLock;
     use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
     use std::time::Instant;
-    use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 
     /// Whether the detour empties the map; `false` makes it a pass-through.
     static ENABLED: AtomicBool = AtomicBool::new(true);
@@ -80,59 +78,24 @@ mod imp {
     }
 
     fn try_install() -> Result<u32, String> {
-        // SAFETY: a null module name returns the host exe's base, mapped for the life of the
-        // process; its first page holds the PE headers and `SizeOfImage` bytes are mapped.
-        let (base, image) = unsafe {
-            let base = GetModuleHandleW(std::ptr::null()) as *const u8;
-            if base.is_null() {
-                return Err("cannot get the host module".into());
+        early::with_scan(|base, scan| {
+            let found = scan.client_state().map_err(|e| e.to_string())?;
+            if let Some(p) = early::placed_by(scan.sigs, CLIENT_STATE) {
+                let _ = PLACED_BY.set(p);
             }
-            let size = crate::pe::Pe::image_size(std::slice::from_raw_parts(base, 0x1000))
+            let target = base + found.rva as usize;
+            let mut set = crate::hook::global()
+                .lock()
+                .map_err(|_| "the hook set is poisoned")?;
+            // SAFETY: `target` is the entry of the `ClientState` serializer the locator found (its
+            // first bytes are pushes, no RIP-relative operand); `entry` keeps its ABI: it passes
+            // the argument registers to the original and returns its `rax`.
+            let hook = unsafe { set.add(target as *const (), entry as *const ()) }
                 .map_err(|e| e.to_string())?;
-            (base as usize, std::slice::from_raw_parts(base, size))
-        };
-        let pe = crate::pe::Pe::parse_mapped(image).map_err(|e| e.to_string())?;
-        let version = pe.file_version().ok_or("the exe has no version resource")?;
-        let text = pe.section(".text").ok_or("the exe has no .text")?.clone();
-        let (start, len) = (text.virtual_address as usize, text.virtual_size as usize);
-        let bytes = image
-            .get(start..start + len)
-            .ok_or(".text is outside the image")?;
-        let dir = signatures::default_dir(std::env::var_os("LOCALAPPDATA"));
-        let (set, _) = SignatureSet::load_with_builtin(dir.as_deref());
-        // No hash yet: `select` falls back to the plain version key.
-        let v = ClientVersion {
-            file_version: Some(version.clone()),
-            text_hash: String::new(),
-            text_rva: text.virtual_address,
-            text_len: text.virtual_size,
-        };
-        let (_, sigs) = set
-            .select(&v)
-            .ok_or_else(|| format!("no signature table for build {version}"))?;
-        let found = Scan {
-            sigs,
-            text: bytes,
-            text_rva: text.virtual_address,
-            image_len: image.len() as u32,
-        }
-        .client_state()
-        .map_err(|e| e.to_string())?;
-        if let Some(s) = sigs.iter().find(|s| s.name == CLIENT_STATE) {
-            let _ = PLACED_BY.set((s.pattern.clone(), s.rip));
-        }
-        let target = base + found.rva as usize;
-        let mut set = crate::hook::global()
-            .lock()
-            .map_err(|_| "the hook set is poisoned")?;
-        // SAFETY: `target` is the entry of the `ClientState` serializer the locator found (its
-        // first bytes are pushes, no RIP-relative operand); `entry` keeps its ABI: it passes the
-        // argument registers to the original and returns its `rax`.
-        let hook = unsafe { set.add(target as *const (), entry as *const ()) }
-            .map_err(|e| e.to_string())?;
-        ORIGINAL.store(hook.original() as usize, Ordering::Release);
-        set.install_all().map_err(|e| e.to_string())?;
-        Ok(found.rva)
+            ORIGINAL.store(hook.original() as usize, Ordering::Release);
+            set.install_all().map_err(|e| e.to_string())?;
+            Ok(found.rva)
+        })
     }
 
     /// `[phoenix] full_ready` from the config.
@@ -154,11 +117,7 @@ mod imp {
         if rva == 0 {
             return Err("not installed".into());
         }
-        let same = sigs
-            .iter()
-            .find(|s| s.name == CLIENT_STATE)
-            .zip(PLACED_BY.get())
-            .is_some_and(|(s, (pattern, rip))| s.pattern == *pattern && s.rip == *rip);
+        let same = early::same_signature(sigs, CLIENT_STATE, PLACED_BY.get());
         if same {
             return Ok(rva);
         }

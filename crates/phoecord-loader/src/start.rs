@@ -128,6 +128,7 @@ mod windows {
         let poll_vtable = found.poll.as_ref().ok().map(|f| abs(f.rva));
         let bytes_static = found.bytes_static.as_ref().ok().map(|f| abs(f.rva));
         let gateway_send = found.gateway_send.as_ref().ok().map(|f| abs(f.rva));
+        let send_text = found.send_text.as_ref().ok().map(|f| (abs(f.rva), f.rva));
         let inflate = found.inflate.as_ref().ok().map(|f| abs(f.rva));
         let frame = found.frame.as_ref().ok().map(|f| abs(f.rva));
         let allocator = found
@@ -181,18 +182,33 @@ mod windows {
                     log.clone(),
                 )
             }
-            .and_then(|()| match gateway_send {
-                // SAFETY: the unique match of the `gateway_send` locator inside this image.
-                Some(target) => unsafe {
-                    crate::hooks::gateway_send::prepare(
-                        &mut set,
-                        target,
-                        allocator,
-                        Box::new(EncodeSink(transport.clone())),
-                        log.clone(),
-                    )
-                },
-                None => Ok(()),
+            .and_then(|()| {
+                // The outgoing frames: `send_text` (placed from `DllMain`, or now), else the
+                // encoder. Never both, or `on_send` runs twice per frame.
+                use crate::hooks::gateway_send_text as text;
+                let sink = Box::new(EncodeSink(transport.clone()));
+                if text::installed() {
+                    text::attach(allocator, sink, log.clone());
+                    return Ok(());
+                }
+                match (send_text, gateway_send) {
+                    // SAFETY: the unique match of the `gateway_send_text` locator inside this
+                    // image, at RVA `rva`, and the allocator shims of the same build.
+                    (Some((target, rva)), _) => unsafe {
+                        text::prepare(&mut set, target, rva, allocator, sink, log.clone())
+                    },
+                    // SAFETY: the unique match of the `gateway_send` locator inside this image.
+                    (None, Some(target)) => unsafe {
+                        crate::hooks::gateway_send::prepare(
+                            &mut set,
+                            target,
+                            allocator,
+                            sink,
+                            log.clone(),
+                        )
+                    },
+                    (None, None) => Ok(()),
+                }
             })
             .and_then(|()| match inflate {
                 // SAFETY: the unique match of the `gateway_inflate` locator inside this image.
@@ -224,9 +240,11 @@ mod windows {
             .and_then(|()| crate::hooks::detour::install_poll())
         };
         match installed {
-            Ok(()) => log(
-                "in-process: send, poll, gateway inflate and gateway encoder hooks installed; plugins see REST and the gateway in-process",
-            ),
+            Ok(()) => log(if crate::hooks::gateway_send_text::installed() {
+                "in-process: send, poll, gateway inflate and gateway send_text hooks installed; plugins see REST and the gateway in-process"
+            } else {
+                "in-process: send, poll, gateway inflate and gateway encoder hooks installed; plugins see REST and the gateway in-process"
+            }),
             Err(e) => {
                 log(&format!("in-process: send detour not installed ({e})"));
                 return mark_failed(launched, text_hash, &log);
@@ -242,6 +260,8 @@ mod windows {
     /// folder changes. `phoecord launch` passes the cache in every in-process launch, forced or
     /// not; a launch without one (`phoecord dev inject`) marks nothing.
     fn mark_failed(launched: &Launched, text_hash: &str, log: &LogFn) {
+        // No plugin chain will come: an `IDENTIFY` held by the early `send_text` hook goes on.
+        crate::hooks::gateway_send_text::give_up();
         let (Some(cache), Some(sigs)) = (&launched.cache, &launched.signatures_hash) else {
             return;
         };

@@ -20,6 +20,7 @@ rust_dealloc              = { aob = "56 48 83 EC 20 48 89 D6 48 89 CA 48 8D 0D ?
 http_poll                 = { aob = "B9 18 06 00 00 48 89 C7 48 8B 75 F0 F3 A4 48 8D 15 ?? ?? ?? ??", rip = 17 }
 bytes_static_vtable       = { aob = "48 8D 05 ?? ?? ?? ?? 48 89 06 48 89 F0 48 83 C4 58 5B", rip = 3 }
 gateway_send              = { aob = "55 56 57 48 81 EC D0 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 48 01 00 00 FE FF FF FF 48 89 D7 48 89 CE 48 8D 0D ?? ?? ?? ??" }
+gateway_send_text         = { aob = "55 56 57 48 83 EC 70 48 8D 6C 24 70 48 C7 45 F8 FE FF FF FF 48 89 D7 48 89 CE 49 8B 48 08 4C 89 45 E8 49 8B 50 10 C6 45 ?? ?? ?? ??" }
 gateway_frame             = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC A8 02 00 00 48 8D AC 24 80 00 00 00 48 C7 85 20 02 00 00 FE FF FF FF 4C 89 CF 49 89 D4 49 89 CE 48 8B 82 38 04 00 00" }
 client_state              = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC 08 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 80 00 00 00 FE FF FF FF 48 89 D7 48 89 CE 4C 8B 72 40 31 C0 49 83 FE FF" }
 gateway_inflate           = { aob = "55 56 57 53 48 81 EC C8 00 00 00 48 8D AC 24 80 00 00 00 48 C7 45 40 FE FF FF FF 48 89 D7 48 89 CE 0F 10 02 0F 29 45 F0" }

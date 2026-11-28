@@ -11,11 +11,13 @@
 //! - **changed:** the `String` is replaced. The client frees it, so the new text is allocated and the
 //!   old freed with the client's `__rust_alloc` / `__rust_dealloc`; without them it is not applied;
 //! - **dropped:** logged and not applied. The caller sends whatever the encoder returned, and an
-//!   empty or invalid frame would close the connection; skipping the send needs the caller, which is
-//!   not located yet.
+//!   empty or invalid frame would close the connection.
 //!
 //! Heartbeat, identify and resume are not built here (recon notes), so plugins see presence, voice
-//! state, member requests, guild subscriptions and the stream commands, not op 1, 2 or 6.
+//! state, member requests, guild subscriptions and the stream commands, not op 2, 6 or 40. The
+//! `send_text` hook ([`super::gateway_send_text`]) sees all of them and can drop a frame; this
+//! detour is the fallback for a build where that one is not located, and is not placed alongside
+//! it.
 
 use super::abi::Memory;
 use super::detour::ProcessMemory;
@@ -172,22 +174,43 @@ fn replace(state: &State, out: usize, old_cap: usize, old_ptr: usize, new: Vec<u
     if new.is_empty() {
         return;
     }
-    // SAFETY: `alloc` / `dealloc` are the client's `__rust_alloc(size, align)` and
-    // `__rust_dealloc(ptr, size, align)` (scalar arguments: the same registers in the Rust and C
-    // ABIs on Windows x64). The new buffer is filled before the `String` points at it; the old one
-    // is freed with its capacity and alignment 1 once nothing refers to it. `out` is the `String`
-    // the encoder just wrote, owned by its caller.
+    // SAFETY: the client's allocator shims; `out` is the `String` the encoder just wrote, owned
+    // by its caller.
+    if !unsafe { put_string(alloc, dealloc, out, old_cap, old_ptr, &new) } {
+        once(state, LOG_ALLOC, || {
+            format!(
+                "gateway_send: the client's allocator refused {} bytes; frame sent unchanged",
+                new.len()
+            )
+        });
+    }
+}
+
+/// Points the `String` record at `out` at a copy of `new` in the client's allocator and frees the
+/// old buffer (`old_cap`, `old_ptr`) the same way. `false` when the allocator refused; the record
+/// is then unchanged. Shared with the `send_text` hook.
+///
+/// # Safety
+/// `alloc` / `dealloc` must be the client's `__rust_alloc(size, align)` and
+/// `__rust_dealloc(ptr, size, align)` (scalar arguments: the same registers in the Rust and C ABIs
+/// on Windows x64); `out` must be a live `String` record holding `old_cap` / `old_ptr`, owned by
+/// the client code the hook runs in; `new` must not be empty.
+pub unsafe fn put_string(
+    alloc: usize,
+    dealloc: usize,
+    out: usize,
+    old_cap: usize,
+    old_ptr: usize,
+    new: &[u8],
+) -> bool {
+    // SAFETY: see the contract above. The new buffer is filled before the `String` points at it;
+    // the old one is freed with its capacity and alignment 1 once nothing refers to it.
     unsafe {
         let alloc: unsafe extern "C" fn(usize, usize) -> *mut u8 = std::mem::transmute(alloc);
         let dealloc: unsafe extern "C" fn(*mut u8, usize, usize) = std::mem::transmute(dealloc);
         let p = alloc(new.len(), 1);
         if p.is_null() {
-            return once(state, LOG_ALLOC, || {
-                format!(
-                    "gateway_send: the client's allocator refused {} bytes; frame sent unchanged",
-                    new.len()
-                )
-            });
+            return false;
         }
         std::ptr::copy_nonoverlapping(new.as_ptr(), p, new.len());
         let w = |i: usize| (out + 8 * i) as *mut usize;
@@ -198,6 +221,7 @@ fn replace(state: &State, out: usize, old_cap: usize, old_ptr: usize, new: Vec<u
             dealloc(old_ptr as *mut u8, old_cap, 1);
         }
     }
+    true
 }
 
 #[cfg(test)]
