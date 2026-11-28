@@ -13,8 +13,7 @@
 //! the engine: the plugins come over the loader IPC (`plugins.get`, labels already translated)
 //! and an edit is written to `config.toml`, which the proxy reloads live.
 //!
-//! Installing and removing WASM packages from the tab is not here yet: the package store
-//! (`phoecord-catalog::Store`) depends on the proxy crate, which the loader DLL does not link.
+//! Installing and removing WASM packages from the tab is in [`super::packages`].
 
 use phoecord_core::{Manifest, SettingKind, SettingSpec, Val};
 use phoecord_transport::config::Config;

@@ -3477,6 +3477,7 @@ name = "phoecord-loader"
 version = "0.7.0"
 dependencies = [
  "memchr",
+ "phoecord-catalog",
  "phoecord-core",
  "phoecord-i18n",
  "phoecord-plugin-runtime",

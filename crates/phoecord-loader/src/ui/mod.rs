@@ -5,9 +5,13 @@
 //! recon notes do not have yet.
 //! `settings` (2.3.3) is the PhoeCord settings tab as plain data: the page, its controls and the
 //! edits written to `config.toml`; the native page that draws it waits on its hook.
+//! `packages` (2.3.3) installs and removes local WASM packages from that tab: the confirm and
+//! remove dialogs as plain data, the store calls, and loading the result into the engine.
 
 pub mod context_menu;
 pub mod message_logger;
+#[cfg(feature = "dll")]
+pub mod packages;
 #[cfg(feature = "dll")]
 pub mod settings;
 #[cfg(feature = "dll")]
