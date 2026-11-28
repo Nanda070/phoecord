@@ -39,7 +39,7 @@ The 30 🎨 plugins of v1.0: BetterFolders, ShowMeYourName, RoleColorEverywhere,
 | AddAttachments | Add attachments while editing a message | 🎨 UI | 1.x | 2 |
 | AlwaysAnimate | Animate everything that can be animated | 🎨 UI | 1.x | 2 |
 | AlwaysExpandRoles | Expand the role list in profile popouts | 🎨 UI | 1.x | 2 |
-| AlwaysTrust | Skip untrusted-domain and suspicious-file warnings | 🎨 UI | v1.0 | 2.3.20: hooks written (`[plugins.always_trust]`), off until the signatures are added and checked live |
+| AlwaysTrust | Skip untrusted-domain and suspicious-file warnings | 🎨 UI | v1.0 | 2.3.20: hooks written (`[plugins.always_trust]`), off by default, signatures for 0.1.0.2208, not checked live |
 | AnonymiseFileNames | Anonymise uploaded file names | 🌐 Network | v1.0 | done (cloud uploads; the per-file toggle button is Phase 2) |
 | AutoDNDWhilePlaying | Set your status automatically while a game runs | 🌐 Network | v1.0 | done (shown status only, the setting stays) |
 | BetterFolders | Server folders in their own sidebar | 🎨 UI | v1.0 | 2 |
