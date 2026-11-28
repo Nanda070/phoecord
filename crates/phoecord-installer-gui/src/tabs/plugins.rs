@@ -8,6 +8,7 @@ use crate::theme::{self, color};
 use crate::widgets::{self, Button, Kind, Tone};
 use eframe::egui::{self, Align2, Id, Rect, Sense, StrokeKind, pos2, vec2};
 use egui_phosphor::regular as icon;
+use phoecord_catalog::asks as words;
 
 /// A row in one of the two lists.
 struct Row {
@@ -19,9 +20,6 @@ struct Row {
     package: bool,
     problem: Option<String>,
 }
-
-/// Rights that act as the user on Discord: shown in the warning colour.
-const STRONG_RIGHTS: &[&str] = &["rest", "emit_send"];
 
 impl App {
     pub(crate) fn plugins_tab(&mut self, ui: &mut egui::Ui) {
@@ -571,25 +569,8 @@ impl App {
             );
         }
         for e in &asks.events {
-            let (kind, detail) = e.split_once(':').unwrap_or((e.as_str(), ""));
-            let key = match kind {
-                "rest_request" => "gui-event-rest-request",
-                "rest_response" => "gui-event-rest-response",
-                "dispatch" => "gui-event-dispatch",
-                "send" => "gui-event-send",
-                _ => "",
-            };
-            let what = if key.is_empty() {
-                kind.to_string()
-            } else {
-                self.tr.t(key)
-            };
-            let which = if detail.is_empty() || detail == "*" {
-                self.tr.t("gui-event-all")
-            } else {
-                detail.to_string()
-            };
-            self.ask_line(ui, icon::EYE, &format!("{what}: {which}"), color::MUTED);
+            let text = words::event_text(e, |k| self.tr.t(k));
+            self.ask_line(ui, icon::EYE, &text, color::MUTED);
         }
         ui.add_space(theme::S3);
         widgets::text(
@@ -609,9 +590,9 @@ impl App {
         }
         for r in &asks.rights {
             let text = self
-                .tr_opt(&format!("gui-right-{}", r.replace('_', "-")))
+                .tr_opt(&words::right_key(r))
                 .unwrap_or_else(|| r.clone());
-            let strong = STRONG_RIGHTS.contains(&r.as_str());
+            let strong = words::is_strong(r);
             self.ask_line(
                 ui,
                 if strong { icon::WARNING } else { icon::CHECK },

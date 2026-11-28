@@ -311,6 +311,13 @@ impl Shared {
         Ok(cfg)
     }
 
+    /// Run `f` under the config lock, for a writer of `config.toml` that does not go through
+    /// [`Shared::persist`] (the package store, task 2.3.3), so neither overwrites the other.
+    pub fn with_config_lock<R>(&self, f: impl FnOnce() -> R) -> R {
+        let _guard = self.config_lock.lock().unwrap();
+        f()
+    }
+
     /// Everything in `id`'s `kv.json`.
     pub fn kv_dump(&self, id: &str) -> serde_json::Value {
         serde_json::Value::Object(self.kv.lock().unwrap().dump(id))

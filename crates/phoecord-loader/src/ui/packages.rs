@@ -14,11 +14,10 @@
 //! in the loader's own engine. On the proxy transport the proxy watches `data/plugins/` and
 //! `config.toml`, so [`Store::commit`] and [`Store::remove`] are all the tab has to call.
 
+use phoecord_catalog::asks;
 use phoecord_catalog::store::{self, Candidate, Error, Store};
+use phoecord_transport::config::Config;
 use std::path::Path;
-
-/// Rights that let a plugin act as the user; the confirm dialog marks them.
-const STRONG_RIGHTS: &[&str] = &["rest", "emit_send"];
 
 /// Words for the tab: a key and its Fluent arguments.
 pub type Ui<'a> = &'a dyn Fn(&str, &[(&str, &str)]) -> String;
@@ -93,7 +92,7 @@ pub fn confirm(c: &Candidate, ui: Ui<'_>) -> Confirm {
         .events
         .iter()
         .map(|e| Line {
-            text: event_text(ui, e),
+            text: asks::event_text(e, |k| ui(k, &[])),
             strong: false,
         })
         .collect();
@@ -109,7 +108,7 @@ pub fn confirm(c: &Candidate, ui: Ui<'_>) -> Confirm {
         .iter()
         .map(|r| Line {
             text: right_text(ui, r),
-            strong: STRONG_RIGHTS.contains(&r.as_str()),
+            strong: asks::is_strong(r),
         })
         .collect();
     if can.is_empty() {
@@ -139,32 +138,9 @@ pub fn confirm(c: &Candidate, ui: Ui<'_>) -> Confirm {
     }
 }
 
-/// `rest_request:POST /channels/*/messages` → "Requests your Discord sends: POST …".
-fn event_text(ui: Ui<'_>, event: &str) -> String {
-    let (kind, detail) = event.split_once(':').unwrap_or((event, ""));
-    let key = match kind {
-        "rest_request" => "gui-event-rest-request",
-        "rest_response" => "gui-event-rest-response",
-        "dispatch" => "gui-event-dispatch",
-        "send" => "gui-event-send",
-        _ => "",
-    };
-    let what = if key.is_empty() {
-        kind.to_string()
-    } else {
-        ui(key, &[])
-    };
-    let which = if detail.is_empty() || detail == "*" {
-        ui("gui-event-all", &[])
-    } else {
-        detail.to_string()
-    };
-    format!("{what}: {which}")
-}
-
 /// The words for right `name`, the name itself when the bundle lacks them.
 fn right_text(ui: Ui<'_>, name: &str) -> String {
-    let key = format!("gui-right-{}", name.replace('_', "-"));
+    let key = asks::right_key(name);
     let text = ui(&key, &[]);
     if text == key { name.to_string() } else { text }
 }
@@ -218,34 +194,45 @@ pub fn localized(tr: &phoecord_i18n::Localizer) -> impl Fn(&str, &[(&str, &str)]
 
 /// Install staged `c` and load it into the running `engine`: a first install is switched on, an
 /// update keeps its data and switch. Compiles the WASM, so call it off the client's UI thread.
+/// The store writes `config.toml` under the engine's config lock, so a settings edit or a
+/// plugin's `set_plugin_enabled` at the same moment cannot overwrite it.
 pub fn engine_install(
     engine: &phoecord_transport::Engine,
     store: &Store,
     c: &Candidate,
 ) -> Result<String, Error> {
-    let id = store.commit(c)?;
-    refresh(engine);
+    let id = engine.shared.with_config_lock(|| store.commit(c))?;
+    reload(engine, store)?;
+    engine.sync_packages();
     Ok(id)
 }
 
 /// Remove package `id` (its folder, its data and its config entry) and unload it from `engine`.
+/// The plugin is switched off in the engine first, so it gets no more events (and writes no more
+/// data) while its folder is deleted.
 pub fn engine_remove(
     engine: &phoecord_transport::Engine,
     store: &Store,
     id: &str,
 ) -> Result<String, Error> {
-    let id = store.remove(id)?;
-    refresh(engine);
+    engine
+        .shared
+        .with_config_lock(|| store.set_enabled(id, false))?;
+    reload(engine, store)?;
+    let id = engine.shared.with_config_lock(|| store.remove(id))?;
+    reload(engine, store)?;
+    engine.sync_packages();
     Ok(id)
 }
 
-/// The store wrote `config.toml` itself: hand the engine the file as it is now (under the config
-/// lock), then load and unload packages to match `data/plugins/`.
-fn refresh(engine: &phoecord_transport::Engine) {
-    if let Ok(cfg) = engine.shared.persist(|_| Ok(())) {
-        engine.apply(cfg);
-    }
-    engine.sync_packages();
+/// Hand the engine `config.toml` as the store left it.
+fn reload(engine: &phoecord_transport::Engine, store: &Store) -> Result<(), Error> {
+    let cfg = engine
+        .shared
+        .with_config_lock(|| Config::load_or_init(&store.config))
+        .map_err(|e| Error::Io(format!("{e:#}")))?;
+    engine.apply(cfg);
+    Ok(())
 }
 
 #[cfg(test)]
