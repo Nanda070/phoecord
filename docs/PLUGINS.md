@@ -195,7 +195,7 @@ The 30 🎨 plugins of v1.0: BetterFolders, ShowMeYourName, RoleColorEverywhere,
 | VoiceChatDoubleClick | Join voice on double-click | 🎨 UI | 1.x | 2 |
 | VoiceDownload | Download voice messages | 🎨 UI | v1.0 | 2 |
 | VoiceMessages | Send voice messages like on mobile | 🌐 + 🎨 | v1.0 | done: data — `/phoecord voicemessage` (an .ogg file) / 2 (recording) |
-| VolumeBooster | Volume above 200% | 🎨 UI | v1.0 | 2 |
+| VolumeBooster | Volume above 200% | 🎨 UI | v1.0 | 2.3.16: the volume clamps can be raised (`[plugins.volume_booster]`, off by default); the slider still ends at 200 %; not checked live |
 | WebContextMenus | Context menus on web | ⛔ N/A | — | web only |
 | WebKeybinds | Keybinds on web | ⛔ N/A | — | web only |
 | WebPWA | Install as a PWA | ⛔ N/A | — | browser only |

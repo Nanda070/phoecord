@@ -293,6 +293,7 @@ fn analyze(log: &Logger) -> Option<Report> {
         }
         menu = install_context_menus(log, sigs, text, &v);
         patched = install_behaviour_patches(log, sigs, text, &v);
+        patched |= install_volume_booster(log, sigs, text, &v);
     } else {
         log.log("Electron client: the in-process network hooks do not apply");
     }
@@ -532,6 +533,93 @@ fn install_behaviour_patches(
                 false
             }
         }
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        let _ = (log, sigs, text, v);
+        false
+    }
+}
+
+/// VolumeBooster (2.3.16), if the user switched it on: the user and stream volume clamps each get
+/// the higher ceiling. Returns whether at least one did.
+fn install_volume_booster(
+    log: &Logger,
+    sigs: &[signatures::Signature],
+    text: &[u8],
+    v: &version::ClientVersion,
+) -> bool {
+    #[cfg(target_arch = "x86_64")]
+    {
+        use crate::hooks::volume;
+        use crate::ui::voice;
+        use phoecord_transport::config::{Config, Paths};
+        let paths = Paths::resolve();
+        if !paths.config.is_file() {
+            return false;
+        }
+        let ceiling = match Config::load(&paths.config) {
+            Ok(cfg) => voice::ceiling(&cfg),
+            Err(e) => {
+                log.log(&format!(
+                    "{}: off ({} not readable: {e:#})",
+                    voice::ID,
+                    paths.config.display()
+                ));
+                return false;
+            }
+        };
+        let Some(ceiling) = ceiling else {
+            return false;
+        };
+        let image_len = image_len();
+        let scan = crate::hooks::found::Scan {
+            sigs,
+            text,
+            text_rva: v.text_rva,
+            image_len,
+        };
+        // Both are located before either is patched.
+        let targets = [
+            ("user", scan.user_volume_ceiling().map(|f| f.rva)),
+            ("stream", scan.stream_volume_ceiling().map(|f| f.rva)),
+        ];
+        // SAFETY: a null module name returns the host exe's base, mapped for the life of the
+        // process.
+        let base = unsafe { GetModuleHandleW(std::ptr::null()) } as usize;
+        let slot = match volume::Slot::near(base, ceiling) {
+            Ok(slot) => slot,
+            Err(e) => {
+                log.log(&format!("{}: off ({e})", voice::ID));
+                return false;
+            }
+        };
+        let mut on = Vec::new();
+        for (name, target) in targets {
+            let lifted = match target {
+                // SAFETY: the host image is mapped for the life of the process; the address is
+                // the unique match of its locator, and the client has not called it yet.
+                Ok(rva) => unsafe {
+                    volume::lift(base..base + image_len as usize, base + rva as usize, &slot)
+                }
+                .map_err(|e| e.to_string()),
+                Err(e) => Err(e.to_string()),
+            };
+            match lifted {
+                // The patch stays for the life of the process.
+                Ok(_) => on.push(name),
+                Err(e) => log.log(&format!("{}: {name} volume unchanged ({e})", voice::ID)),
+            }
+        }
+        if on.is_empty() {
+            return false;
+        }
+        log.log(&format!(
+            "{}: ceiling {ceiling} % ({})",
+            voice::ID,
+            on.join(", ")
+        ));
+        true
     }
     #[cfg(not(target_arch = "x86_64"))]
     {

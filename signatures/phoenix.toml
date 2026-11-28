@@ -28,3 +28,8 @@ gateway_inflate           = { aob = "55 56 57 53 48 81 EC C8 00 00 00 48 8D AC 2
 link_website_trusted      = { aob = "55 56 53 48 81 EC 90 00 00 00 48 8D AC 24 80 00 00 00 48 C7 45 08 FE FF FF FF 48 89 CE 48 8D 4D F0 E8 ?? ?? ?? ?? B9 58 06 00 00" }
 link_protocol_trusted     = { aob = "55 56 57 53 48 83 EC 78 48 8D 6C 24 70 48 C7 45 00 FE FF FF FF 4C 89 C6 48 89 D7 48 89 CA 48 8D 4D B8 E8 ?? ?? ?? ?? 90 48 8D 4D E8 48 89 FA 49 89 F0" }
 link_suspicious_download  = { aob = "55 41 57 41 56 41 54 56 57 53 48 81 EC 80 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 F8 00 00 00 FE FF FF FF 4D 89 C1 49 89 D0 48 89 CE 48 C7 45 E0 00 00 00 00" }
+
+# VolumeBooster's two clamps (2.3.16), checked with `phoecord check` on 0.1.0.2208. The ceiling is
+# loaded 36 bytes into each match.
+volume_user_ceiling       = { aob = "48 89 43 18 48 8B 0B 48 FF C1 EB 02 31 C9 48 89 0B 45 84 FF 0F 85 ?? ?? ?? ?? 0F 57 C9 0F 57 C0 F3 0F 5F C6 F3 0F 10 35 ?? ?? ?? ?? F3 0F 5D F0" }
+volume_stream_ceiling     = { aob = "49 89 46 18 49 8B 0E 48 FF C1 EB 02 31 C9 49 89 0E 45 84 FF 0F 85 ?? ?? ?? ?? 0F 57 C9 0F 57 C0 F3 0F 5F C6 F3 0F 10 35 ?? ?? ?? ?? F3 0F 5D F0" }
