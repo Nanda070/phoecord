@@ -33,6 +33,8 @@ pub use crate::found;
 pub mod gateway;
 pub mod guard;
 pub mod http;
+#[cfg(windows)]
+pub mod volume;
 
 use found::HookPlan;
 use gateway::{GatewayAction, GatewayOutcome};

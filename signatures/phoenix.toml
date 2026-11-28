@@ -46,3 +46,7 @@ dm_row_render             = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 E
 guild_header_render       = { aob = "55 41 57 41 56 56 57 53 48 81 EC 28 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 A0 00 00 00 FE FF FF FF 4C 89 CB 4C 89 C7" }
 member_row_render         = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC 88 0A 00 00 48 8D AC 24 80 00 00 00 48 C7 85 00 0A 00 00 FE FF FF FF 4C 89 CE 4D 89 C6" }
 window_chrome_render      = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC 58 02 00 00 48 8D AC 24 80 00 00 00 48 C7 85 D0 01 00 00 FE FF FF FF 4D 89 CC 4D 89 C6 49 89 D7 48 89 CB 48 81" }
+# VolumeBooster's two clamps (2.3.16), checked with `phoecord check` on 0.1.0.2208. The ceiling is
+# loaded 36 bytes into each match.
+volume_user_ceiling       = { aob = "48 89 43 18 48 8B 0B 48 FF C1 EB 02 31 C9 48 89 0B 45 84 FF 0F 85 ?? ?? ?? ?? 0F 57 C9 0F 57 C0 F3 0F 5F C6 F3 0F 10 35 ?? ?? ?? ?? F3 0F 5D F0" }
+volume_stream_ceiling     = { aob = "49 89 46 18 49 8B 0E 48 FF C1 EB 02 31 C9 49 89 0E 45 84 FF 0F 85 ?? ?? ?? ?? 0F 57 C9 0F 57 C0 F3 0F 5F C6 F3 0F 10 35 ?? ?? ?? ?? F3 0F 5D F0" }

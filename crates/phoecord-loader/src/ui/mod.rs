@@ -10,3 +10,5 @@ pub mod context_menu;
 pub mod message_logger;
 #[cfg(feature = "dll")]
 pub mod settings;
+#[cfg(feature = "dll")]
+pub mod voice;

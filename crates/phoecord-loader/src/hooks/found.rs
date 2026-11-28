@@ -25,6 +25,7 @@
 //! | `link_website_trusted`, `link_protocol_trusted` | entry of the link classifier's "is this website / app protocol trusted" check (inline hook) | AlwaysTrust (2.3.20) |
 //! | `link_suspicious_download` | entry of the suspicious-download detector the classifier calls (inline hook) | AlwaysTrust |
 //! | `<view>_render` ([`View`]) | entry of a view's `Render::render` (no hook yet) | UI surfaces 2.3.15, 2.3.17–2.3.19, 2.3.23 |
+//! | `volume_user_ceiling`, `volume_stream_ceiling` | [`CEILING_LOAD_OFFSET`] bytes before the `movss` that loads the 200 % ceiling in the user / stream volume clamp (operand patch) | VolumeBooster (2.3.16) |
 //! | `message_menu_build_call` | the `call` (E8 rel32) of the menu build function in its live caller; its target is the build function | message menu |
 
 use crate::signatures::{ResolveError, Signature};
@@ -54,6 +55,11 @@ pub const SERVER_AFTER: &str = "server_menu_after_anchor";
 pub const LINK_WEBSITE_TRUSTED: &str = "link_website_trusted";
 pub const LINK_PROTOCOL_TRUSTED: &str = "link_protocol_trusted";
 pub const LINK_SUSPICIOUS_DOWNLOAD: &str = "link_suspicious_download";
+pub const VOLUME_USER_CEILING: &str = "volume_user_ceiling";
+pub const VOLUME_STREAM_CEILING: &str = "volume_stream_ceiling";
+/// A volume ceiling signature starts this many bytes before the instruction that loads the
+/// ceiling: the bytes that tell the two clamps apart come first.
+pub const CEILING_LOAD_OFFSET: u32 = 36;
 
 /// Why a locator found nothing usable.
 #[derive(Debug, PartialEq, Eq)]
@@ -205,6 +211,12 @@ pub struct ViewRender {
     pub view: View,
 }
 
+/// The instruction loading the ceiling of a user's volume (2.3.16).
+#[derive(Debug, PartialEq, Eq)]
+pub struct UserVolumeCeiling;
+/// The same instruction of a stream's volume.
+#[derive(Debug, PartialEq, Eq)]
+pub struct StreamVolumeCeiling;
 /// Another context menu's entry-append helper (the `Found` RVA) and its anchor.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ContextMenu {
@@ -350,6 +362,28 @@ impl Scan<'_> {
         Ok(Found {
             rva: self.rva(view.signature())?,
             target: ViewRender { view },
+        })
+    }
+
+    fn ceiling_load(&self, name: &'static str) -> Result<u32, LocatorError> {
+        let rva = self.rva(name)?.saturating_add(CEILING_LOAD_OFFSET);
+        if rva >= self.image_len {
+            return Err(LocatorError::OutOfImage(name, rva));
+        }
+        Ok(rva)
+    }
+
+    pub fn user_volume_ceiling(&self) -> Result<Found<UserVolumeCeiling>, LocatorError> {
+        Ok(Found {
+            rva: self.ceiling_load(VOLUME_USER_CEILING)?,
+            target: UserVolumeCeiling,
+        })
+    }
+
+    pub fn stream_volume_ceiling(&self) -> Result<Found<StreamVolumeCeiling>, LocatorError> {
+        Ok(Found {
+            rva: self.ceiling_load(VOLUME_STREAM_CEILING)?,
+            target: StreamVolumeCeiling,
         })
     }
 
