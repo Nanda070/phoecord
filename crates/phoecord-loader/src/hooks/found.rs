@@ -25,7 +25,7 @@
 //! | `link_website_trusted`, `link_protocol_trusted` | entry of the link classifier's "is this website / app protocol trusted" check (inline hook) | AlwaysTrust (2.3.20) |
 //! | `link_suspicious_download` | entry of the suspicious-download detector the classifier calls (inline hook) | AlwaysTrust |
 //! | `<view>_render` ([`View`]) | entry of a view's `Render::render` (no hook yet) | UI surfaces 2.3.15, 2.3.17–2.3.19, 2.3.23 |
-//! | `volume_user_ceiling`, `volume_stream_ceiling` | [`CEILING_LOAD_OFFSET`] bytes before the `movss` that loads the 200 % ceiling in the user / stream volume clamp (operand patch) | VolumeBooster (2.3.16) |
+//! | `volume_*` ([`VolumeSite`]) | the instructions that use the 200 % volume ceiling: clamps and sliders, [`VolumeSite::offset`] bytes into the match (operand patch) | VolumeBooster (2.3.16) |
 //! | `picture_url_*`, `picture_size_*` ([`PictureUrl`]) | entry of a media library function that builds or sizes a picture URL (no hook yet) | CDN pictures (2.3.8, 2.3.9) |
 //! | `message_menu_build_call` | the `call` (E8 rel32) of the menu build function in its live caller; its target is the build function | message menu |
 
@@ -56,11 +56,6 @@ pub const SERVER_AFTER: &str = "server_menu_after_anchor";
 pub const LINK_WEBSITE_TRUSTED: &str = "link_website_trusted";
 pub const LINK_PROTOCOL_TRUSTED: &str = "link_protocol_trusted";
 pub const LINK_SUSPICIOUS_DOWNLOAD: &str = "link_suspicious_download";
-pub const VOLUME_USER_CEILING: &str = "volume_user_ceiling";
-pub const VOLUME_STREAM_CEILING: &str = "volume_stream_ceiling";
-/// A volume ceiling signature starts this many bytes before the instruction that loads the
-/// ceiling: the bytes that tell the two clamps apart come first.
-pub const CEILING_LOAD_OFFSET: u32 = 36;
 
 /// Why a locator found nothing usable.
 #[derive(Debug, PartialEq, Eq)]
@@ -184,6 +179,83 @@ pub struct PictureUrlBuilder {
     pub builds: PictureUrl,
 }
 
+/// A place where Phoenix uses the 200 % volume ceiling (VolumeBooster, 2.3.16). Each is one
+/// instruction with a `[rip+disp32]` operand that reads the shared `200.0`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VolumeSite {
+    /// The clamp of a user's volume before the client stores it.
+    UserClamp,
+    /// The same clamp of a stream's volume.
+    StreamClamp,
+    /// The voice driver's clamp of a volume on its way to the audio side.
+    EngineClamp,
+    /// The maximum of the volume slider in the menus ("User Volume", "Stream Volume").
+    MenuSliderMax,
+    /// The stream volume button's slider: dragged position times the maximum.
+    StreamDrag,
+    /// The same slider's filled part: value divided by the maximum.
+    StreamFill,
+    /// The same slider's step up: not above the maximum.
+    StreamKeys,
+}
+
+impl VolumeSite {
+    pub const ALL: [VolumeSite; 7] = [
+        VolumeSite::UserClamp,
+        VolumeSite::StreamClamp,
+        VolumeSite::EngineClamp,
+        VolumeSite::MenuSliderMax,
+        VolumeSite::StreamDrag,
+        VolumeSite::StreamFill,
+        VolumeSite::StreamKeys,
+    ];
+
+    /// The name of the signature that finds this place.
+    pub fn signature(self) -> &'static str {
+        match self {
+            VolumeSite::UserClamp => "volume_user_ceiling",
+            VolumeSite::StreamClamp => "volume_stream_ceiling",
+            VolumeSite::EngineClamp => "volume_engine_ceiling",
+            VolumeSite::MenuSliderMax => "volume_menu_slider_max",
+            VolumeSite::StreamDrag => "volume_stream_slider_drag",
+            VolumeSite::StreamFill => "volume_stream_slider_fill",
+            VolumeSite::StreamKeys => "volume_stream_slider_keys",
+        }
+    }
+
+    /// How far into the signature's match the instruction starts.
+    pub fn offset(self) -> u32 {
+        match self {
+            VolumeSite::UserClamp | VolumeSite::StreamClamp => 36,
+            VolumeSite::EngineClamp => 17,
+            VolumeSite::StreamKeys => 16,
+            VolumeSite::StreamDrag => 3,
+            VolumeSite::MenuSliderMax | VolumeSite::StreamFill => 0,
+        }
+    }
+
+    /// The instruction's first four bytes; its `disp32` follows.
+    pub fn opcode(self) -> [u8; 4] {
+        let (operation, register) = match self {
+            // movss xmm6 / xmm2, mulss xmm6, divss xmm0, minss xmm6
+            VolumeSite::UserClamp | VolumeSite::StreamClamp | VolumeSite::EngineClamp => {
+                (0x10, 0x35)
+            }
+            VolumeSite::MenuSliderMax => (0x10, 0x15),
+            VolumeSite::StreamDrag => (0x59, 0x35),
+            VolumeSite::StreamFill => (0x5E, 0x05),
+            VolumeSite::StreamKeys => (0x5D, 0x35),
+        };
+        [0xF3, 0x0F, operation, register]
+    }
+}
+
+/// The instruction at one [`VolumeSite`].
+#[derive(Debug, PartialEq, Eq)]
+pub struct VolumeLoad {
+    pub site: VolumeSite,
+}
+
 /// A view whose render function the UI surfaces of 2.3.15–2.3.23 hook.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum View {
@@ -266,12 +338,6 @@ pub struct ViewRender {
     pub view: View,
 }
 
-/// The instruction loading the ceiling of a user's volume (2.3.16).
-#[derive(Debug, PartialEq, Eq)]
-pub struct UserVolumeCeiling;
-/// The same instruction of a stream's volume.
-#[derive(Debug, PartialEq, Eq)]
-pub struct StreamVolumeCeiling;
 /// Another context menu's entry-append helper (the `Found` RVA) and its anchor.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ContextMenu {
@@ -420,25 +486,16 @@ impl Scan<'_> {
         })
     }
 
-    fn ceiling_load(&self, name: &'static str) -> Result<u32, LocatorError> {
-        let rva = self.rva(name)?.saturating_add(CEILING_LOAD_OFFSET);
+    /// One instruction that uses the 200 % volume ceiling. The signature may start before it.
+    pub fn volume_load(&self, site: VolumeSite) -> Result<Found<VolumeLoad>, LocatorError> {
+        let name = site.signature();
+        let rva = self.rva(name)?.saturating_add(site.offset());
         if rva >= self.image_len {
             return Err(LocatorError::OutOfImage(name, rva));
         }
-        Ok(rva)
-    }
-
-    pub fn user_volume_ceiling(&self) -> Result<Found<UserVolumeCeiling>, LocatorError> {
         Ok(Found {
-            rva: self.ceiling_load(VOLUME_USER_CEILING)?,
-            target: UserVolumeCeiling,
-        })
-    }
-
-    pub fn stream_volume_ceiling(&self) -> Result<Found<StreamVolumeCeiling>, LocatorError> {
-        Ok(Found {
-            rva: self.ceiling_load(VOLUME_STREAM_CEILING)?,
-            target: StreamVolumeCeiling,
+            rva,
+            target: VolumeLoad { site },
         })
     }
 
@@ -655,6 +712,49 @@ mod view_tests {
                 view.signature()
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod volume_tests {
+    use super::*;
+    use crate::signatures::SignatureSet;
+
+    #[test]
+    fn each_volume_site_is_located_at_its_offset() {
+        let set = SignatureSet::parse(crate::signatures::BUILTIN).unwrap();
+        let version = crate::version::ClientVersion {
+            file_version: Some("0.1.0.2208".into()),
+            text_hash: "00".into(),
+            text_rva: 0x1000,
+            text_len: 0,
+        };
+        let (_, sigs) = set.select(&version).unwrap();
+        for site in VolumeSite::ALL {
+            let sig = sigs.iter().find(|s| s.name == site.signature());
+            assert!(sig.is_some(), "{}", site.signature());
+        }
+        // A made-up entry: the result is the match plus the site's offset, inside the image.
+        let made_up =
+            SignatureSet::parse("[build.\"1\"]\nvolume_engine_ceiling = { aob = \"11 22\" }")
+                .unwrap();
+        let one = crate::version::ClientVersion {
+            file_version: Some("1".into()),
+            ..version
+        };
+        let (_, sigs) = made_up.select(&one).unwrap();
+        let scan = |image_len| Scan {
+            sigs,
+            text: &[0x11, 0x22],
+            text_rva: 0x1000,
+            image_len,
+        };
+        let found = scan(0x2000).volume_load(VolumeSite::EngineClamp).unwrap();
+        assert_eq!(found.rva, 0x1000 + 17);
+        assert_eq!(
+            scan(0x1010).volume_load(VolumeSite::EngineClamp),
+            Err(LocatorError::OutOfImage("volume_engine_ceiling", 0x1011))
+        );
     }
 }
 

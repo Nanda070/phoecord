@@ -1,9 +1,11 @@
-//! VolumeBooster's patch (task 2.3.16): the two instructions that load the volume ceiling are
-//! pointed at a value of PhoeCord's own ([`crate::ui::voice`] says why not the constant itself).
+//! VolumeBooster's patch (task 2.3.16): the instructions that use the volume ceiling are pointed
+//! at a value of PhoeCord's own ([`crate::ui::voice`] says why not the constant itself).
 //!
 //! Only the four displacement bytes of each instruction change, after checking that the
-//! instruction is the expected one and that it loads exactly the client's `200.0`. The new value
+//! instruction is the expected one and that it reads exactly the client's `200.0`. The new value
 //! lives in one page allocated within reach of the code, kept for the life of the process.
+//! Places that only work together (a slider's drag, fill and keys) are patched all or none
+//! ([`lift_all`]).
 
 use crate::ui::voice::{self, INSTRUCTION_LEN, NATIVE_CEILING};
 use std::ffi::c_void;
@@ -21,7 +23,7 @@ use windows_sys::Win32::System::Threading::GetCurrentProcess;
 pub enum PatchError {
     /// The address is not inside the image.
     OutOfImage,
-    /// Not `movss xmm6, [rip+disp32]`.
+    /// Not the expected instruction.
     UnexpectedCode,
     /// The instruction does not load the client's ceiling from inside the image.
     UnexpectedCeiling,
@@ -35,7 +37,7 @@ impl fmt::Display for PatchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             PatchError::OutOfImage => "the address is outside the image",
-            PatchError::UnexpectedCode => "the code there is not the expected load",
+            PatchError::UnexpectedCode => "the code there is not the expected instruction",
             PatchError::UnexpectedCeiling => "the load there is not of the 200 % ceiling",
             PatchError::NoMemoryNear => "no free memory near the code",
             PatchError::Protect => "the page protection could not be changed",
@@ -110,13 +112,18 @@ pub struct Lifted {
     original: [u8; 4],
 }
 
-/// Points the ceiling load at address `at` to `slot`.
+/// Points the operand of the instruction at address `at`, which starts with `opcode`, to `slot`.
 ///
 /// # Safety
 /// `image` must be a module image mapped and readable in this process for its whole length, and
 /// `at` the instruction located by its signature. No thread may be executing that instruction
 /// while it is rewritten (the loader does this at client start, before any call).
-pub unsafe fn lift(image: Range<usize>, at: usize, slot: &Slot) -> Result<Lifted, PatchError> {
+pub unsafe fn lift(
+    image: Range<usize>,
+    at: usize,
+    opcode: [u8; 4],
+    slot: &Slot,
+) -> Result<Lifted, PatchError> {
     let inside = |a: usize, len: usize| {
         a >= image.start && a.checked_add(len).is_some_and(|end| end <= image.end)
     };
@@ -125,10 +132,10 @@ pub unsafe fn lift(image: Range<usize>, at: usize, slot: &Slot) -> Result<Lifted
     }
     // SAFETY: the instruction lies inside the readable image (checked above).
     let code = unsafe { (at as *const [u8; INSTRUCTION_LEN]).read_unaligned() };
-    if code[..4] != [0xF3, 0x0F, 0x10, 0x35] {
+    if code[..4] != opcode {
         return Err(PatchError::UnexpectedCode);
     }
-    let constant = voice::loaded_from(code, at)
+    let constant = voice::loaded_from(code, opcode, at)
         .filter(|&a| inside(a, size_of::<f32>()))
         .ok_or(PatchError::UnexpectedCeiling)?;
     // SAFETY: the constant lies inside the readable image (checked above).
@@ -142,6 +149,34 @@ pub unsafe fn lift(image: Range<usize>, at: usize, slot: &Slot) -> Result<Lifted
     // keeps other threads off the instruction.
     unsafe { write_code(at + 4, new)? };
     Ok(Lifted { at, original })
+}
+
+/// [`lift`] for places that only make sense together: if one fails, those already patched are
+/// put back and nothing changes.
+///
+/// # Safety
+/// [`lift`]'s contract for every `(address, opcode)`.
+pub unsafe fn lift_all(
+    image: Range<usize>,
+    places: &[(usize, [u8; 4])],
+    slot: &Slot,
+) -> Result<(), PatchError> {
+    let mut done = Vec::new();
+    for &(at, opcode) in places {
+        // SAFETY: forwarded from the caller's contract.
+        match unsafe { lift(image.clone(), at, opcode, slot) } {
+            Ok(lifted) => done.push(lifted),
+            Err(e) => {
+                for lifted in done {
+                    // SAFETY: as above. A refused restore leaves that one lifted; the error of
+                    // the patch is the one to report.
+                    let _ = unsafe { lifted.restore() };
+                }
+                return Err(e);
+            }
+        }
+    }
+    Ok(())
 }
 
 impl Lifted {
@@ -180,6 +215,9 @@ unsafe fn write_code(at: usize, bytes: [u8; 4]) -> Result<(), PatchError> {
 mod tests {
     use super::*;
     use windows_sys::Win32::System::Memory::PAGE_EXECUTE_READ;
+
+    /// `movss xmm6, [rip+disp32]`.
+    const LOAD: [u8; 4] = [0xF3, 0x0F, 0x10, 0x35];
 
     /// A page holding a function that returns the `f32` it loads into `xmm6`, as the client's
     /// clamp does, and the constant it loads. Returns the page and the load's address.
@@ -227,11 +265,11 @@ mod tests {
         assert_eq!(call(page), 200.0);
         let slot = Slot::near(page, 1000.0).unwrap();
         // SAFETY: the stand-in page is the image; only this thread calls it.
-        let lifted = unsafe { lift(page..page + 0x1000, load, &slot) }.unwrap();
+        let lifted = unsafe { lift(page..page + 0x1000, load, LOAD, &slot) }.unwrap();
         assert_eq!(call(page), 1000.0);
         // A second patch finds another value than the client's and leaves it.
         // SAFETY: as above.
-        let again = unsafe { lift(page..page + 0x1000, load, &slot) };
+        let again = unsafe { lift(page..page + 0x1000, load, LOAD, &slot) };
         assert_eq!(again.unwrap_err(), PatchError::UnexpectedCeiling);
         // SAFETY: as above.
         unsafe { lifted.restore() }.unwrap();
@@ -245,13 +283,27 @@ mod tests {
         let image = page..page + 0x1000;
         // SAFETY: the stand-in page is the image; nothing is rewritten in these cases.
         unsafe {
-            let other_value = lift(image.clone(), load, &slot);
+            let other_value = lift(image.clone(), load, LOAD, &slot);
             assert_eq!(other_value.unwrap_err(), PatchError::UnexpectedCeiling);
-            let other_code = lift(image.clone(), load + 1, &slot);
+            let other_code = lift(image.clone(), load + 1, LOAD, &slot);
             assert_eq!(other_code.unwrap_err(), PatchError::UnexpectedCode);
-            let outside = lift(image, page + 0x1000 - 4, &slot);
+            let outside = lift(image, page + 0x1000 - 4, LOAD, &slot);
             assert_eq!(outside.unwrap_err(), PatchError::OutOfImage);
         }
         assert_eq!(call(page), 100.0);
+    }
+
+    #[test]
+    fn a_group_is_lifted_whole_or_not_at_all() {
+        let (page, load) = stand_in(NATIVE_CEILING);
+        let slot = Slot::near(page, 1000.0).unwrap();
+        let image = page..page + 0x1000;
+        // SAFETY: the stand-in page is the image; only this thread calls it.
+        let failed = unsafe { lift_all(image.clone(), &[(load, LOAD), (load + 1, LOAD)], &slot) };
+        assert_eq!(failed, Err(PatchError::UnexpectedCode));
+        assert_eq!(call(page), 200.0);
+        // SAFETY: as above.
+        unsafe { lift_all(image, &[(load, LOAD)], &slot) }.unwrap();
+        assert_eq!(call(page), 1000.0);
     }
 }

@@ -541,8 +541,8 @@ fn install_behaviour_patches(
     }
 }
 
-/// VolumeBooster (2.3.16), if the user switched it on: the user and stream volume clamps each get
-/// the higher ceiling. Returns whether at least one did.
+/// VolumeBooster (2.3.16), if the user switched it on: the clamps and sliders get the higher
+/// ceiling, each group on its own. Returns whether at least one did.
 fn install_volume_booster(
     log: &Logger,
     sigs: &[signatures::Signature],
@@ -579,11 +579,26 @@ fn install_volume_booster(
             text_rva: v.text_rva,
             image_len,
         };
-        // Both are located before either is patched.
-        let targets = [
-            ("user", scan.user_volume_ceiling().map(|f| f.rva)),
-            ("stream", scan.stream_volume_ceiling().map(|f| f.rva)),
+        use crate::found::VolumeSite as Site;
+        // The stream slider's three places only make sense together.
+        let groups: [(&str, &[Site]); 5] = [
+            ("user", &[Site::UserClamp]),
+            ("stream", &[Site::StreamClamp]),
+            ("engine", &[Site::EngineClamp]),
+            ("menu slider", &[Site::MenuSliderMax]),
+            (
+                "stream slider",
+                &[Site::StreamDrag, Site::StreamFill, Site::StreamKeys],
+            ),
         ];
+        // All are located before any is patched.
+        let targets = groups.map(|(name, sites)| {
+            let found = sites
+                .iter()
+                .map(|&s| scan.volume_load(s).map(|f| (f.rva, s.opcode())))
+                .collect::<Result<Vec<_>, _>>();
+            (name, found)
+        });
         // SAFETY: a null module name returns the host exe's base, mapped for the life of the
         // process.
         let base = unsafe { GetModuleHandleW(std::ptr::null()) } as usize;
@@ -597,18 +612,22 @@ fn install_volume_booster(
         let mut on = Vec::new();
         for (name, target) in targets {
             let lifted = match target {
-                // SAFETY: the host image is mapped for the life of the process; the address is
-                // the unique match of its locator, and the client has not called it yet.
-                Ok(rva) => unsafe {
-                    volume::lift(base..base + image_len as usize, base + rva as usize, &slot)
+                Ok(places) => {
+                    let places: Vec<_> = places
+                        .into_iter()
+                        .map(|(rva, opcode)| (base + rva as usize, opcode))
+                        .collect();
+                    // SAFETY: the host image is mapped for the life of the process; each address
+                    // is the unique match of its locator, and the client has not run it yet.
+                    unsafe { volume::lift_all(base..base + image_len as usize, &places, &slot) }
+                        .map_err(|e| e.to_string())
                 }
-                .map_err(|e| e.to_string()),
                 Err(e) => Err(e.to_string()),
             };
             match lifted {
                 // The patch stays for the life of the process.
-                Ok(_) => on.push(name),
-                Err(e) => log.log(&format!("{}: {name} volume unchanged ({e})", voice::ID)),
+                Ok(()) => on.push(name),
+                Err(e) => log.log(&format!("{}: {name} unchanged ({e})", voice::ID)),
             }
         }
         if on.is_empty() {

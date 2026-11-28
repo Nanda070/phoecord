@@ -2,10 +2,11 @@
 //! by Nuckyz, sadan and Vendicated, GPL-3.0-or-later): a higher ceiling for a user's and a
 //! stream's volume.
 //!
-//! Phoenix clamps a volume (percent, `f32`) in two functions, one for users and one for streams,
-//! each with `movss xmm6, [rip+disp32]` loading the ceiling `200.0` (private recon notes,
-//! 2.3.16). The literal is shared by many other places, so it is never changed: the hook
-//! (`hooks::volume`) points those two instructions at a value of PhoeCord's own.
+//! Phoenix has the 200 % ceiling (an `f32` in percent) in several places: the clamps of the
+//! client and of its voice driver, the volume slider of the menus and the stream volume button's
+//! own slider. Each is an instruction with a `[rip+disp32]` operand reading one shared literal
+//! ([`crate::found::VolumeSite`]). The literal is shared by many other places, so it is never
+//! changed: the hook (`hooks::volume`) points those instructions at a value of PhoeCord's own.
 //!
 //! ```toml
 //! [plugins.volume_booster]
@@ -13,8 +14,8 @@
 //! multiplier = 2   # 1 to 10: the ceiling is 200 % times this
 //! ```
 //!
-//! **Only the clamp is lifted.** The client's own slider still ends at 200 %: where it gets that
-//! maximum is not located yet.
+//! **Not checked live.** Whether the audio engine limits the volume again further down is not
+//! established.
 
 use phoecord_transport::config::Config;
 
@@ -45,14 +46,13 @@ pub fn ceiling(cfg: &Config) -> Option<f32> {
     (ceiling > NATIVE_CEILING).then_some(ceiling)
 }
 
-/// The first bytes of `movss xmm6, [rip+disp32]`.
-const LOAD_CEILING: [u8; 4] = [0xF3, 0x0F, 0x10, 0x35];
-/// The whole instruction: opcode and `disp32`.
+/// The whole instruction: four bytes of opcode and `disp32`.
 pub const INSTRUCTION_LEN: usize = 8;
 
-/// The address the ceiling is loaded from, if `code` at address `at` is the expected load.
-pub fn loaded_from(code: [u8; INSTRUCTION_LEN], at: usize) -> Option<usize> {
-    if code[..4] != LOAD_CEILING {
+/// The address the operand is read from, if `code` at address `at` is the instruction `opcode`
+/// starts, with a RIP-relative operand.
+pub fn loaded_from(code: [u8; INSTRUCTION_LEN], opcode: [u8; 4], at: usize) -> Option<usize> {
+    if code[..4] != opcode {
         return None;
     }
     let disp = i32::from_le_bytes([code[4], code[5], code[6], code[7]]);
@@ -105,12 +105,13 @@ mod tests {
     fn the_load_is_recognised_and_repointed() {
         let at = 0x1000usize;
         let mut code = [0xF3, 0x0F, 0x10, 0x35, 0x10, 0, 0, 0];
-        assert_eq!(loaded_from(code, at), Some(0x1018));
+        let load = [0xF3, 0x0F, 0x10, 0x35];
+        assert_eq!(loaded_from(code, load, at), Some(0x1018));
         code[4..].copy_from_slice(&displacement(at, 0x800).unwrap());
-        assert_eq!(loaded_from(code, at), Some(0x800));
+        assert_eq!(loaded_from(code, load, at), Some(0x800));
         // Another register, another instruction.
         code[3] = 0x05;
-        assert_eq!(loaded_from(code, at), None);
+        assert_eq!(loaded_from(code, load, at), None);
         #[cfg(target_pointer_width = "64")]
         assert_eq!(displacement(at, 0x1_0000_0000), None);
     }
