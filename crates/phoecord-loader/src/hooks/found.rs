@@ -24,6 +24,7 @@
 //! | `user_menu_after_anchor`, `channel_menu_after_anchor`, `server_menu_after_anchor` | the instruction after the call that appends the menu's anchor entry ("Block", "Copy Link", "Mark As Read") | context menus |
 //! | `link_website_trusted`, `link_protocol_trusted` | entry of the link classifier's "is this website / app protocol trusted" check (inline hook) | AlwaysTrust (2.3.20) |
 //! | `link_suspicious_download` | entry of the suspicious-download detector the classifier calls (inline hook) | AlwaysTrust |
+//! | `<view>_render` ([`View`]) | entry of a view's `Render::render` (no hook yet) | UI surfaces 2.3.15, 2.3.17–2.3.19, 2.3.23 |
 //! | `message_menu_build_call` | the `call` (E8 rel32) of the menu build function in its live caller; its target is the build function | message menu |
 
 use crate::signatures::{ResolveError, Signature};
@@ -122,6 +123,88 @@ pub struct LinkProtocolTrusted;
 /// The detector of download links the client warns about.
 #[derive(Debug, PartialEq, Eq)]
 pub struct LinkSuspiciousDownload;
+/// A view whose render function the UI surfaces of 2.3.15–2.3.23 hook.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum View {
+    /// `chat::pane_parts::ComposerView` (2.3.15).
+    Composer,
+    /// `user_panel_view::PanelView` (2.3.17).
+    AccountPanel,
+    /// `media_viewer::view::Viewer` (2.3.18).
+    MediaViewer,
+    /// `media_viewer::video::VideoView` (2.3.18).
+    Video,
+    /// `ui::rail::view::RailView` (2.3.19).
+    Rail,
+    /// `ui::rail::tile_view::RailTileView` (2.3.19).
+    RailTile,
+    /// `ui::rail::tile_view::RailFolderView` (2.3.19).
+    RailFolder,
+    /// `ui::rail::tile_view::RailDmView` (2.3.19).
+    RailDm,
+    /// `ui::rail::tile_view::RailActionView` (2.3.19).
+    RailAction,
+    /// `ui::sidebar::channels::ChannelListView` (2.3.19).
+    ChannelList,
+    /// `ui::sidebar::channel_row_view::ChannelRowView` (2.3.19).
+    ChannelRow,
+    /// `ui::sidebar::dm_row_view::DmRowView` (2.3.19).
+    DmRow,
+    /// `ui::sidebar::banner::GuildHeaderView` (2.3.19).
+    GuildHeader,
+    /// `member_row_view::MemberRowView` (2.3.19).
+    MemberRow,
+    /// `workspace::ChromeView` (2.3.23).
+    WindowChrome,
+}
+
+impl View {
+    pub const ALL: [View; 15] = [
+        View::Composer,
+        View::AccountPanel,
+        View::MediaViewer,
+        View::Video,
+        View::Rail,
+        View::RailTile,
+        View::RailFolder,
+        View::RailDm,
+        View::RailAction,
+        View::ChannelList,
+        View::ChannelRow,
+        View::DmRow,
+        View::GuildHeader,
+        View::MemberRow,
+        View::WindowChrome,
+    ];
+
+    /// The name of the signature that finds this view's render function.
+    pub fn signature(self) -> &'static str {
+        match self {
+            View::Composer => "composer_render",
+            View::AccountPanel => "account_panel_render",
+            View::MediaViewer => "media_viewer_render",
+            View::Video => "video_view_render",
+            View::Rail => "rail_view_render",
+            View::RailTile => "rail_tile_render",
+            View::RailFolder => "rail_folder_render",
+            View::RailDm => "rail_dm_render",
+            View::RailAction => "rail_action_render",
+            View::ChannelList => "channel_list_render",
+            View::ChannelRow => "channel_row_render",
+            View::DmRow => "dm_row_render",
+            View::GuildHeader => "guild_header_render",
+            View::MemberRow => "member_row_render",
+            View::WindowChrome => "window_chrome_render",
+        }
+    }
+}
+
+/// Entry of a view's `Render::render`.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ViewRender {
+    pub view: View,
+}
+
 /// Another context menu's entry-append helper (the `Found` RVA) and its anchor.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ContextMenu {
@@ -259,6 +342,14 @@ impl Scan<'_> {
         Ok(Found {
             rva: self.rva(LINK_SUSPICIOUS_DOWNLOAD)?,
             target: LinkSuspiciousDownload,
+        })
+    }
+
+    /// The render function of one view; each is located on its own.
+    pub fn view_render(&self, view: View) -> Result<Found<ViewRender>, LocatorError> {
+        Ok(Found {
+            rva: self.rva(view.signature())?,
+            target: ViewRender { view },
         })
     }
 
@@ -409,5 +500,60 @@ mod tests {
             })
         );
         assert_eq!(scan(&all[..2]), Err(LocatorError::Missing(MENU_BUILD_CALL)));
+    }
+}
+
+#[cfg(test)]
+mod view_tests {
+    use super::*;
+    use crate::signatures::SignatureSet;
+
+    #[test]
+    fn each_view_asks_for_its_own_signature() {
+        // Made-up code and signatures: the n-th view's pattern is one byte of its own.
+        let toml: String = View::ALL
+            .iter()
+            .enumerate()
+            .map(|(i, v)| format!("{} = {{ aob = \"AA {i:02X}\" }}\n", v.signature()))
+            .collect();
+        let set = SignatureSet::parse(&format!("[build.\"1\"]\n{toml}")).unwrap();
+        let version = crate::version::ClientVersion {
+            file_version: Some("1".into()),
+            text_hash: "00".into(),
+            text_rva: 0x1000,
+            text_len: 0,
+        };
+        let (_, sigs) = set.select(&version).unwrap();
+        let text: Vec<u8> = (0..View::ALL.len() as u8).flat_map(|i| [0xAA, i]).collect();
+        let scan = Scan {
+            sigs,
+            text: &text,
+            text_rva: 0x1000,
+            image_len: 0x2000,
+        };
+        for (i, view) in View::ALL.into_iter().enumerate() {
+            let found = scan.view_render(view).unwrap();
+            assert_eq!(found.rva, 0x1000 + 2 * i as u32);
+            assert_eq!(found.target.view, view);
+        }
+    }
+
+    #[test]
+    fn the_built_in_phoenix_table_names_every_view() {
+        let set = SignatureSet::parse(crate::signatures::BUILTIN).unwrap();
+        let version = crate::version::ClientVersion {
+            file_version: Some("0.1.0.2208".into()),
+            text_hash: "00".into(),
+            text_rva: 0x1000,
+            text_len: 0,
+        };
+        let (_, sigs) = set.select(&version).unwrap();
+        for view in View::ALL {
+            assert!(
+                sigs.iter().any(|s| s.name == view.signature()),
+                "{}",
+                view.signature()
+            );
+        }
     }
 }

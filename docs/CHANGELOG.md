@@ -6,6 +6,7 @@ All notable changes to the project ([Keep a Changelog](https://keepachangelog.co
 
 ### Added
 
+- 2.3.15, 2.3.17–2.3.19, 2.3.23 (first part): typed locators and signatures (build 0.1.0.2208) for the render functions of the chat input, account panel, media viewer and video, server rail, channel, DM and member lists and the window chrome. Nothing hooks them yet.
 - 2.3.20 (first part): the loader can patch Phoenix's untrusted-link and suspicious-download checks (AlwaysTrust: `[plugins.always_trust]`, off by default; app protocols only with `protocol = true`). The signatures of the three functions for build 0.1.0.2208 are in `signatures/phoenix.toml` (`phoecord check` finds them); the patches have not been run on Phoenix.
 - 2.2.3 / 2.2.7: in an in-process launch on Phoenix, what plugins show the client themselves (`Host::emit_dispatch`: `/phoecord` command answers, message menu answers, SilentDelete's and MessageLogger's local events) now reaches it; before, it was dropped in-process (through the proxy it already worked). New signature `gateway_frame`.
 - 2.2.2 / 2.4.1: local replies work in an in-process launch on Phoenix: a request a plugin answers itself (NoTrack's analytics and crash reports, SilentTyping's typing indicator) no longer leaves the PC; the client gets the plugin's answer as if Discord had sent it. Before, these requests went out unchanged in-process (through the proxy they were already blocked).

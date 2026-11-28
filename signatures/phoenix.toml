@@ -28,3 +28,21 @@ gateway_inflate           = { aob = "55 56 57 53 48 81 EC C8 00 00 00 48 8D AC 2
 link_website_trusted      = { aob = "55 56 53 48 81 EC 90 00 00 00 48 8D AC 24 80 00 00 00 48 C7 45 08 FE FF FF FF 48 89 CE 48 8D 4D F0 E8 ?? ?? ?? ?? B9 58 06 00 00" }
 link_protocol_trusted     = { aob = "55 56 57 53 48 83 EC 78 48 8D 6C 24 70 48 C7 45 00 FE FF FF FF 4C 89 C6 48 89 D7 48 89 CA 48 8D 4D B8 E8 ?? ?? ?? ?? 90 48 8D 4D E8 48 89 FA 49 89 F0" }
 link_suspicious_download  = { aob = "55 41 57 41 56 41 54 56 57 53 48 81 EC 80 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 F8 00 00 00 FE FF FF FF 4D 89 C1 49 89 D0 48 89 CE 48 C7 45 E0 00 00 00 00" }
+
+# Render functions of the views the UI surfaces hook (2.3.15, 2.3.17-2.3.19, 2.3.23), checked
+# with `phoecord check` on 0.1.0.2208.
+composer_render           = { aob = "56 48 83 EC 30 48 89 D0 48 89 CE 80 7A 20 00 74 17 4C 89 44 24 20 48 89" }
+account_panel_render      = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC B8 0E 00 00 48 8D AC 24 80 00 00 00 48 C7 85 30 0E 00 00 FE FF FF FF 4D 89 CF 4D 89 C6" }
+media_viewer_render       = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC 88 09 00 00 48 8D AC 24 80 00 00 00 44 0F 29 BD F0" }
+video_view_render         = { aob = "55 41 57 41 56 41 54 56 57 53 48 81 EC 00 04 00 00 48 8D AC 24 80 00 00 00 48 C7 85 78 03 00 00 FE FF FF FF 48 8B BA 20" }
+rail_view_render          = { aob = "55 41 57 41 56 41 54 56 57 53 48 81 EC 40 02 00 00 48 8D AC 24 80 00 00 00 66 0F 29" }
+rail_tile_render          = { aob = "55 41 57 41 56 56 57 53 48 81 EC C8 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 40 01 00 00 FE FF FF FF 4D 89 C6 48 89 D3 48 89 CE 48 8D 4A 20 49" }
+rail_folder_render        = { aob = "55 41 57 41 56 56 57 53 48 81 EC A8 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 20 01 00 00 FE FF FF FF 4C 89 C3 49 89 D7" }
+rail_dm_render            = { aob = "55 41 57 41 56 56 57 53 48 81 EC 88 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 00 01 00 00 FE FF FF FF 4D 89 CF 4C 89 C7" }
+rail_action_render        = { aob = "55 41 57 41 56 56 57 53 48 81 EC 98 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 10 01 00 00 FE FF FF FF 4C 89 CB 4C 89 C7 48 89 CE 0F" }
+channel_list_render       = { aob = "55 41 57 41 56 41 54 56 57 53 48 81 EC 80 06 00 00 48 8D AC 24 80 00 00 00 66 0F 29" }
+channel_row_render        = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC C8 06 00 00 48 8D AC 24 80 00 00 00 48 C7 85 40 06 00 00 FE FF FF FF 4D 89 CF 4C 89 C3" }
+dm_row_render             = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC 68 02 00 00 48 8D AC 24 80 00 00 00 48 C7 85 E0 01 00 00 FE FF FF FF 4D 89 CF 4D 89 C6 49 89 D5 48" }
+guild_header_render       = { aob = "55 41 57 41 56 56 57 53 48 81 EC 28 01 00 00 48 8D AC 24 80 00 00 00 48 C7 85 A0 00 00 00 FE FF FF FF 4C 89 CB 4C 89 C7" }
+member_row_render         = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC 88 0A 00 00 48 8D AC 24 80 00 00 00 48 C7 85 00 0A 00 00 FE FF FF FF 4C 89 CE 4D 89 C6" }
+window_chrome_render      = { aob = "55 41 57 41 56 41 55 41 54 56 57 53 48 81 EC 58 02 00 00 48 8D AC 24 80 00 00 00 48 C7 85 D0 01 00 00 FE FF FF FF 4D 89 CC 4D 89 C6 49 89 D7 48 89 CB 48 81" }
